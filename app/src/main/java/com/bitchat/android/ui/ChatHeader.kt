@@ -145,7 +145,8 @@ fun ChatHeaderContent(
     onBackClick: () -> Unit,
     onSidebarClick: () -> Unit,
     onTripleClick: () -> Unit,
-    onShowAppInfo: () -> Unit
+    onShowAppInfo: () -> Unit,
+    onWalletClick: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
     var tripleClickCount by remember { mutableStateOf(0) }
@@ -191,7 +192,8 @@ fun ChatHeaderContent(
                     }
                 },
                 onSidebarClick = onSidebarClick,
-                viewModel = viewModel
+                viewModel = viewModel,
+                onWalletClick = onWalletClick
             )
         }
     }
@@ -346,7 +348,8 @@ private fun MainHeader(
     onNicknameChange: (String) -> Unit,
     onTitleClick: () -> Unit,
     onSidebarClick: () -> Unit,
-    viewModel: ChatViewModel
+    viewModel: ChatViewModel,
+    onWalletClick: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val connectedPeers by viewModel.connectedPeers.observeAsState(emptyList())
@@ -375,14 +378,30 @@ private fun MainHeader(
                 onValueChange = onNicknameChange
             )
         }
-        
-        PeerCounter(
-            connectedPeers = connectedPeers.filter { it != viewModel.meshService.myPeerID },
-            joinedChannels = joinedChannels,
-            hasUnreadChannels = hasUnreadChannels,
-            hasUnreadPrivateMessages = hasUnreadPrivateMessages,
-            isConnected = isConnected,
-            onClick = onSidebarClick
-        )
+        // RIGHT SIDE: Wallet Icon + PeerCounter
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Wallet IconButton
+            IconButton(
+                onClick = onWalletClick,
+                modifier = Modifier
+                    .padding(end = 4.dp)
+                    .size(24.dp) // Standard IconButton size for touch target
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.AccountBalanceWallet,
+                    contentDescription = "Wallet",
+                    modifier = Modifier.size(16.dp), // Match people icon size
+                    tint = colorScheme.primary
+                )
+            }
+            PeerCounter(
+                connectedPeers = connectedPeers.filter { it != viewModel.meshService.myPeerID },
+                joinedChannels = joinedChannels,
+                hasUnreadChannels = hasUnreadChannels,
+                hasUnreadPrivateMessages = hasUnreadPrivateMessages,
+                isConnected = isConnected,
+                onClick = onSidebarClick
+            )
+        }
     }
 }

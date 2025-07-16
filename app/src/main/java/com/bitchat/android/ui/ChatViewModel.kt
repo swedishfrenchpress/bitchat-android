@@ -385,6 +385,14 @@ class ChatViewModel(
     fun hideSidebar() {
         state.setShowSidebar(false)
     }
+
+    fun showWallet() {
+        state.setShowWallet(true)
+    }
+
+    fun hideWallet() {
+        state.setShowWallet(false)
+    }
     
     /**
      * Handle Android back navigation

@@ -27,6 +27,16 @@ import com.bitchat.android.ui.ChatViewModel
 import com.bitchat.android.ui.theme.BitchatTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.bitchat.android.ui.WalletScreen
+import com.google.accompanist.navigation.animation.AnimatedNavHost
+import com.google.accompanist.navigation.animation.composable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.ExperimentalAnimationApi
 
 class MainActivity : ComponentActivity() {
     
@@ -107,6 +117,7 @@ class MainActivity : ComponentActivity() {
         checkOnboardingStatus()
     }
     
+    @OptIn(ExperimentalAnimationApi::class)
     @Composable
     private fun OnboardingFlowScreen() {
         when (onboardingState) {
@@ -161,25 +172,39 @@ class MainActivity : ComponentActivity() {
             }
             
             OnboardingState.COMPLETE -> {
-                // Set up back navigation handling for the chat screen
+                val navController = rememberNavController()
                 val backCallback = object : OnBackPressedCallback(true) {
                     override fun handleOnBackPressed() {
-                        // Let ChatViewModel handle navigation state
-                        val handled = chatViewModel.handleBackPressed()
-                        if (!handled) {
-                            // If ChatViewModel doesn't handle it, disable this callback 
-                            // and let the system handle it (which will exit the app)
+                        if (!navController.popBackStack()) {
                             this.isEnabled = false
                             onBackPressedDispatcher.onBackPressed()
                             this.isEnabled = true
                         }
                     }
                 }
-                
-                // Add the callback - this will be automatically removed when the activity is destroyed
-                onBackPressedDispatcher.addCallback(this, backCallback)
-                
-                ChatScreen(viewModel = chatViewModel)
+                onBackPressedDispatcher.addCallback(this@MainActivity, backCallback)
+                AnimatedNavHost(
+                    navController = navController,
+                    startDestination = "chat"
+                ) {
+                    composable("chat") {
+                        ChatScreen(
+                            viewModel = chatViewModel,
+                            onWalletClick = { navController.navigate("wallet") }
+                        )
+                    }
+                    composable(
+                        "wallet",
+                        enterTransition = { slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) },
+                        exitTransition = { slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) },
+                        popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300)) },
+                        popExitTransition = { slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) }
+                    ) {
+                        WalletScreen(
+                            onClose = { navController.popBackStack() }
+                        )
+                    }
+                }
             }
             
             OnboardingState.ERROR -> {

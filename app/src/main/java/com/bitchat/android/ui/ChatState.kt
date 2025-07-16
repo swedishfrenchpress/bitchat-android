@@ -72,6 +72,10 @@ class ChatState {
     private val _showSidebar = MutableLiveData(false)
     val showSidebar: LiveData<Boolean> = _showSidebar
     
+    // Wallet overlay state
+    private val _showWallet = MutableLiveData(false)
+    val showWallet: LiveData<Boolean> = _showWallet
+    
     // Command autocomplete
     private val _showCommandSuggestions = MutableLiveData(false)
     val showCommandSuggestions: LiveData<Boolean> = _showCommandSuggestions
@@ -183,6 +187,10 @@ class ChatState {
     
     fun setShowSidebar(show: Boolean) {
         _showSidebar.value = show
+    }
+
+    fun setShowWallet(show: Boolean) {
+        _showWallet.value = show
     }
     
     fun setShowCommandSuggestions(show: Boolean) {
