@@ -24,8 +24,8 @@ import androidx.compose.ui.unit.sp
 import com.bitchat.android.parsing.CashuTokenParser
 import com.bitchat.android.wallet.ui.WalletUtils
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
-import com.bitchat.android.ui.walletcomponents.BitchatButton
-import com.bitchat.android.ui.walletcomponents.BitchatButtonStyle
+import com.bitchat.android.wallet.ui.BitchatButton
+import com.bitchat.android.wallet.ui.BitchatButtonStyle
 
 /**
  * Ecash (Cashu) token send dialog content

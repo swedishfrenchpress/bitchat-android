@@ -17,8 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
-import com.bitchat.android.ui.walletcomponents.BitchatButton
-import com.bitchat.android.ui.walletcomponents.BitchatButtonStyle
+import com.bitchat.android.wallet.ui.BitchatButton
+import com.bitchat.android.wallet.ui.BitchatButtonStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

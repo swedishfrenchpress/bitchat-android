@@ -1,4 +1,4 @@
-package com.bitchat.android.ui
+package com.bitchat.android.wallet.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,9 +28,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bitchat.android.ui.theme.BitchatTheme
-import com.bitchat.android.ui.walletcomponents.MintDropDownSelector
-import com.bitchat.android.ui.walletcomponents.BitchatButton
-import com.bitchat.android.ui.walletcomponents.BitchatButtonStyle
 import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.util.*

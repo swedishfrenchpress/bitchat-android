@@ -23,11 +23,11 @@ import com.bitchat.android.wallet.data.TransactionType
 import com.bitchat.android.wallet.data.TransactionStatus
 import com.bitchat.android.wallet.service.CashuService
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
-import com.bitchat.android.ui.walletcomponents.TotalBalance
-import com.bitchat.android.ui.walletcomponents.TopUpButton
-import com.bitchat.android.ui.walletcomponents.WithdrawButton
-import com.bitchat.android.ui.walletcomponents.TransactionItem
-import com.bitchat.android.ui.walletcomponents.TransactionStatus as UITransactionStatus
+import com.bitchat.android.wallet.ui.TotalBalance
+import com.bitchat.android.wallet.ui.TopUpButton
+import com.bitchat.android.wallet.ui.WithdrawButton
+import com.bitchat.android.wallet.ui.TransactionItem
+import com.bitchat.android.wallet.ui.TransactionStatus as UITransactionStatus
 import java.text.SimpleDateFormat
 import java.util.*
 

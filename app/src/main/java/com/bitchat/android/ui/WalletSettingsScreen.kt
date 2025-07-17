@@ -10,7 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
-import com.bitchat.android.ui.walletcomponents.MintListItem
+import com.bitchat.android.wallet.ui.MintListItem
+import com.bitchat.android.wallet.ui.SeedPhraseBottomSheet
 
 data class MintInfo(
     val id: String,

@@ -25,10 +25,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.bitchat.android.wallet.data.Mint
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
-import com.bitchat.android.ui.walletcomponents.MintListItem
-import com.bitchat.android.ui.walletcomponents.MintUrlInput
-import com.bitchat.android.ui.walletcomponents.BitchatButton
-import com.bitchat.android.ui.walletcomponents.BitchatButtonStyle
+import com.bitchat.android.wallet.ui.MintListItem
+import com.bitchat.android.wallet.ui.MintUrlInput
+import com.bitchat.android.wallet.ui.BitchatButton
+import com.bitchat.android.wallet.ui.BitchatButtonStyle
 import java.text.SimpleDateFormat
 import java.util.*
 

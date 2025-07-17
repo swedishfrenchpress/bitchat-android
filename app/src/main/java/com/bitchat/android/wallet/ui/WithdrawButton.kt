@@ -1,4 +1,4 @@
-package com.bitchat.android.ui.walletcomponents
+package com.bitchat.android.wallet.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

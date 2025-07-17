@@ -1,4 +1,4 @@
-package com.bitchat.android.ui
+package com.bitchat.android.wallet.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,8 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.bitchat.android.ui.walletcomponents.BitchatButton
-import com.bitchat.android.ui.walletcomponents.BitchatButtonStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

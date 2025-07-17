@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.sp
 import com.bitchat.android.wallet.data.WalletTransaction
 import com.bitchat.android.wallet.data.TransactionType
 import com.bitchat.android.wallet.data.TransactionStatus
-import com.bitchat.android.ui.walletcomponents.TransactionItem
-import com.bitchat.android.ui.walletcomponents.TransactionStatus as UITransactionStatus
+import com.bitchat.android.wallet.ui.TransactionItem
+import com.bitchat.android.wallet.ui.TransactionStatus as UITransactionStatus
 import java.text.SimpleDateFormat
 import java.util.*
 

@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bitchat.android.wallet.data.MintQuote
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
-import com.bitchat.android.ui.walletcomponents.BitchatButton
-import com.bitchat.android.ui.walletcomponents.BitchatButtonStyle
+import com.bitchat.android.wallet.ui.BitchatButton
+import com.bitchat.android.wallet.ui.BitchatButtonStyle
 
 /**
  * Lightning invoice receive dialog content

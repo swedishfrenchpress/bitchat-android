@@ -1,4 +1,4 @@
-package com.bitchat.android.ui.walletcomponents
+package com.bitchat.android.wallet.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -6,8 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -23,15 +22,15 @@ import androidx.compose.ui.unit.dp
 import com.bitchat.android.ui.theme.BitchatTheme
 
 @Composable
-fun MintRatingItem(
+fun MintListItem(
     mintName: String,
     mintUrl: String,
-    rating: Int,
+    balance: String,
+    onDelete: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    selected: Boolean = false,
-    onRemove: (() -> Unit)? = null
+    selected: Boolean = false
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val borderColor = if (selected) colorScheme.primary else Color.Transparent
@@ -43,11 +42,11 @@ fun MintRatingItem(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .heightIn(min = 56.dp)
             .background(color = backgroundColor, shape = shape)
             .border(width = borderWidth, color = borderColor, shape = shape)
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 16.dp),
+            .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -76,36 +75,25 @@ fun MintRatingItem(
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
-            // Star and rating (and X if selected)
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+            // Balance
+            Text(
+                text = balance,
+                style = if (selected) MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.bodyMedium,
+                color = colorScheme.primary.copy(alpha = textAlpha),
+                modifier = Modifier.padding(end = 12.dp)
+            )
+            // Trash can icon
+            IconButton(
+                onClick = onDelete,
+                enabled = enabled,
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = "Mint rating",
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = "Delete mint",
                     tint = colorScheme.primary.copy(alpha = textAlpha),
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = rating.toString(),
-                    style = if (selected) MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.bodyMedium,
-                    color = colorScheme.primary.copy(alpha = textAlpha)
-                )
-                if (selected && onRemove != null) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(
-                        onClick = onRemove,
-                        modifier = Modifier.size(18.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "Remove selected mint",
-                            tint = colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
             }
         }
     }
@@ -113,22 +101,24 @@ fun MintRatingItem(
 
 @Preview(showBackground = true)
 @Composable
-fun MintRatingItemPreview() {
+fun MintListItemPreview() {
     BitchatTheme {
         Column {
-            MintRatingItem(
-                mintName = "Cashu Mint",
+            MintListItem(
+                mintName = "My Mint",
                 mintUrl = "https://mint.example.com",
-                rating = 5,
+                balance = "0.1234 BTC",
+                onDelete = {},
                 onClick = {},
                 enabled = true,
                 selected = false
             )
             Spacer(modifier = Modifier.height(16.dp))
-            MintRatingItem(
-                mintName = "Cashu Mint",
+            MintListItem(
+                mintName = "My Mint",
                 mintUrl = "https://mint.example.com",
-                rating = 5,
+                balance = "0.1234 BTC",
+                onDelete = {},
                 onClick = {},
                 enabled = true,
                 selected = true
@@ -139,26 +129,44 @@ fun MintRatingItemPreview() {
 
 @Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun MintRatingItemDarkPreview() {
+fun MintListItemDarkPreview() {
     BitchatTheme {
         Column {
-            MintRatingItem(
-                mintName = "Cashu Mint",
+            MintListItem(
+                mintName = "My Mint",
                 mintUrl = "https://mint.example.com",
-                rating = 5,
+                balance = "0.1234 BTC",
+                onDelete = {},
                 onClick = {},
                 enabled = true,
                 selected = false
             )
             Spacer(modifier = Modifier.height(16.dp))
-            MintRatingItem(
-                mintName = "Cashu Mint",
+            MintListItem(
+                mintName = "My Mint",
                 mintUrl = "https://mint.example.com",
-                rating = 5,
+                balance = "0.1234 BTC",
+                onDelete = {},
                 onClick = {},
                 enabled = true,
                 selected = true
             )
         }
+    }
+}
+
+@Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun MintListItemLightPreview() {
+    BitchatTheme {
+        MintListItem(
+            mintName = "My Mint",
+            mintUrl = "https://mint.example.com",
+            balance = "0.1234 BTC",
+            onDelete = {},
+            onClick = {},
+            enabled = true,
+            selected = false
+        )
     }
 } 
