@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.bitchat.android.ui.walletcomponents.MintUrlInput
@@ -22,6 +23,11 @@ import com.bitchat.android.ui.BitchatButton
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.unit.sp
+import com.bitchat.android.ui.TotalBalance
+import com.bitchat.android.ui.TopUpButton
+import com.bitchat.android.ui.WithdrawButton
 
 data class MintData(val name: String, val url: String, val rating: Int)
 
@@ -33,6 +39,7 @@ fun WalletScreen(onClose: () -> Unit) {
     var isLoading by remember { mutableStateOf(false) }
     var foundMints by remember { mutableStateOf(listOf<MintData>()) }
     var selectedMint by remember { mutableStateOf<MintData?>(null) }
+    var showMainWallet by remember { mutableStateOf(false) }
 
     // Dummy data for found mints
     val dummyMints = listOf(
@@ -51,186 +58,358 @@ fun WalletScreen(onClose: () -> Unit) {
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = colorScheme.background // Set background to pure black in dark mode
+        color = colorScheme.background
     ) {
+        AnimatedContent(
+            targetState = showMainWallet,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + 
+                slideInHorizontally(
+                    initialOffsetX = { it },
+                    animationSpec = tween(300, easing = FastOutSlowInEasing)
+                ) togetherWith
+                fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)) + 
+                slideOutHorizontally(
+                    targetOffsetX = { -it },
+                    animationSpec = tween(200, easing = FastOutSlowInEasing)
+                )
+            },
+            label = "wallet_screen_transition"
+        ) { showMain ->
+            if (showMain) {
+                MainWalletContent(
+                    onClose = onClose,
+                    selectedMint = selectedMint!!,
+                    onBack = { showMainWallet = false }
+                )
+            } else {
+                MintSelectionContent(
+                    colorScheme = colorScheme,
+                    typography = typography,
+                    url = url,
+                    onUrlChange = { url = it },
+                    isLoading = isLoading,
+                    onStartLoading = {
+                        isLoading = true
+                        foundMints = listOf()
+                    },
+                    foundMints = foundMints,
+                    selectedMint = selectedMint,
+                    onMintSelected = { mint ->
+                        foundMints = foundMints.filter { it != mint }
+                        selectedMint = mint
+                    },
+                    onMintRemoved = {
+                        foundMints = listOf(selectedMint!!) + foundMints
+                        selectedMint = null
+                    },
+                    onNext = { showMainWallet = true },
+                    onClose = onClose
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MainWalletContent(
+    onClose: () -> Unit,
+    selectedMint: MintData,
+    onBack: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val typography = MaterialTheme.typography
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.Start
+    ) {
+        // Navigation row: same as before
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(36.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Back arrow on the left
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier
+                    .padding(start = 0.dp)
+                    .size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    modifier = Modifier.size(16.dp),
+                    tint = colorScheme.primary
+                )
+            }
+            // Title: 'bitcoin wallet' in lower case
+            Text(
+                text = "bitcoin wallet",
+                style = typography.headlineSmall,
+                color = colorScheme.primary,
+                modifier = Modifier
+                    .padding(start = 0.dp)
+                    .align(Alignment.CenterVertically)
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            // Settings icon on the right
+            IconButton(
+                onClick = { /* TODO: Settings action */ },
+                modifier = Modifier
+                    .padding(end = 0.dp)
+                    .size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "Settings",
+                    modifier = Modifier.size(16.dp),
+                    tint = colorScheme.primary
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // TOTAL BALANCE label
+        Text(
+            text = "TOTAL BALANCE",
+            style = typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = colorScheme.onSurface.copy(alpha = 0.7f),
+            modifier = Modifier.padding(horizontal = 12.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Total Balance component
+        TotalBalance(
+            bitcoinAmount = "0​₿",
+            dollarAmount = "$0",
+            modifier = Modifier.padding(horizontal = 12.dp)
+        )
+
+        // Spacer to push actions to bottom
+        Spacer(modifier = Modifier.weight(1f))
+
+        // ACTIONS section at bottom for thumb zone
         Column(
             modifier = Modifier
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.Start
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp)
+                .padding(bottom = 32.dp)
         ) {
-            // Navigation row: match ChatHeader style
+            // ACTIONS label
+            Text(
+                text = "ACTIONS",
+                style = typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Top Up and Withdraw buttons
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(36.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Back arrow on the left
-                IconButton(
-                    onClick = onClose,
-                    modifier = Modifier
-                        .padding(start = 0.dp)
-                        .size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        modifier = Modifier.size(16.dp),
-                        tint = colorScheme.primary
-                    )
-                }
-                // Title: 'bitcoin wallet' in lower case, styled and positioned like 'bitchat*'
-                Text(
-                    text = "bitcoin wallet",
-                    style = typography.headlineSmall,
-                    color = colorScheme.primary,
-                    modifier = Modifier
-                        .padding(start = 0.dp)
-                        .align(Alignment.CenterVertically)
+                TopUpButton(
+                    onClick = { /* TODO: Top up action */ },
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                // Settings icon on the right
-                IconButton(
-                    onClick = { /* TODO: Settings action */ },
+                WithdrawButton(
+                    onClick = { /* TODO: Withdraw action */ },
+                    enabled = false, // Disabled since balance is 0
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MintSelectionContent(
+    colorScheme: ColorScheme,
+    typography: Typography,
+    url: String,
+    onUrlChange: (String) -> Unit,
+    isLoading: Boolean,
+    onStartLoading: () -> Unit,
+    foundMints: List<MintData>,
+    selectedMint: MintData?,
+    onMintSelected: (MintData) -> Unit,
+    onMintRemoved: () -> Unit,
+    onNext: () -> Unit,
+    onClose: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.Start
+    ) {
+        // Navigation row: same as before
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(36.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Back arrow on the left
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier
+                    .padding(start = 0.dp)
+                    .size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    modifier = Modifier.size(16.dp),
+                    tint = colorScheme.primary
+                )
+            }
+            // Title: 'bitcoin wallet' in lower case
+            Text(
+                text = "bitcoin wallet",
+                style = typography.headlineSmall,
+                color = colorScheme.primary,
+                modifier = Modifier
+                    .padding(start = 0.dp)
+                    .align(Alignment.CenterVertically)
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            // Settings icon on the right
+            IconButton(
+                onClick = { /* TODO: Settings action */ },
+                modifier = Modifier
+                    .padding(end = 0.dp)
+                    .size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "Settings",
+                    modifier = Modifier.size(16.dp),
+                    tint = colorScheme.primary
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Top area: animated transition between MintUrlInput and selected MintRatingItem
+        AnimatedContent(
+            targetState = selectedMint,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)) togetherWith
+                fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+            },
+            modifier = Modifier.padding(horizontal = 12.dp),
+            label = "top_input_transition"
+        ) { selectedMintState ->
+            if (selectedMintState == null) {
+                MintUrlInput(
+                    url = url,
+                    onUrlChange = onUrlChange,
+                    onAddClick = onStartLoading
+                )
+            } else {
+                MintRatingItem(
+                    mintName = selectedMintState.name,
+                    mintUrl = selectedMintState.url,
+                    rating = selectedMintState.rating,
+                    onClick = {},
+                    selected = true,
+                    onRemove = onMintRemoved
+                )
+            }
+        }
+
+        // Loading spinner with smooth fade
+        AnimatedVisibility(
+            visible = isLoading,
+            enter = fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)),
+            exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+        ) {
+            Column {
+                Spacer(modifier = Modifier.height(32.dp))
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    LoadingSpinner()
+                }
+            }
+        }
+
+        // Found mints list with staggered animations
+        AnimatedVisibility(
+            visible = foundMints.isNotEmpty() && selectedMint == null && !isLoading,
+            enter = fadeIn(animationSpec = tween(250, delayMillis = 50, easing = FastOutSlowInEasing)),
+            exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Spacer(modifier = Modifier.height(32.dp))
+                foundMints.forEachIndexed { index, mint ->
+                    AnimatedListItem(
+                        delayMillis = index * 40,
+                        content = {
+                            MintRatingItem(
+                                mintName = mint.name,
+                                mintUrl = mint.url,
+                                rating = mint.rating,
+                                onClick = { onMintSelected(mint) },
+                                selected = false,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        // Show 'Finds Mints' with smooth fade
+        AnimatedVisibility(
+            visible = !isLoading && selectedMint == null,
+            enter = fadeIn(animationSpec = tween(250, delayMillis = 100, easing = FastOutSlowInEasing)),
+            exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+        ) {
+            Column {
+                Spacer(modifier = Modifier.height(32.dp))
+                Text(
+                    text = "Finds Mints",
+                    style = typography.bodySmall,
+                    color = colorScheme.onSurface.copy(alpha = 0.75f),
                     modifier = Modifier
-                        .padding(end = 0.dp)
-                        .size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Settings,
-                        contentDescription = "Settings",
-                        modifier = Modifier.size(16.dp),
-                        tint = colorScheme.primary
-                    )
-                }
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .clickable(enabled = !isLoading && selectedMint == null) {
+                            onStartLoading()
+                        },
+                    textAlign = TextAlign.Center
+                )
             }
-            Spacer(modifier = Modifier.height(16.dp))
+        }
 
-            // Top area: animated transition between MintUrlInput and selected MintRatingItem
-            AnimatedContent(
-                targetState = selectedMint,
-                transitionSpec = {
-                    fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)) togetherWith
-                    fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
-                },
-                modifier = Modifier.padding(horizontal = 12.dp),
-                label = "top_input_transition"
-            ) { selectedMintState ->
-                if (selectedMintState == null) {
-                    MintUrlInput(
-                        url = url,
-                        onUrlChange = { url = it },
-                        onAddClick = {
-                            isLoading = true
-                            foundMints = listOf()
-                        }
-                    )
-                } else {
-                    MintRatingItem(
-                        mintName = selectedMintState.name,
-                        mintUrl = selectedMintState.url,
-                        rating = selectedMintState.rating,
-                        onClick = {},
-                        selected = true,
-                        onRemove = {
-                            foundMints = listOf(selectedMint!!) + foundMints
-                            selectedMint = null
-                        }
-                    )
-                }
-            }
-
-            // Loading spinner with smooth fade
-            AnimatedVisibility(
-                visible = isLoading,
-                enter = fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)),
-                exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
-            ) {
-                Column {
-                    Spacer(modifier = Modifier.height(32.dp))
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = colorScheme.primary)
-                    }
-                }
-            }
-
-            // Found mints list with staggered animations
-            AnimatedVisibility(
-                visible = foundMints.isNotEmpty() && selectedMint == null && !isLoading,
-                enter = fadeIn(animationSpec = tween(250, delayMillis = 50, easing = FastOutSlowInEasing)),
-                exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Spacer(modifier = Modifier.height(32.dp))
-                    foundMints.forEachIndexed { index, mint ->
-                        AnimatedListItem(
-                            delayMillis = index * 40,
-                            content = {
-                                MintRatingItem(
-                                    mintName = mint.name,
-                                    mintUrl = mint.url,
-                                    rating = mint.rating,
-                                    onClick = {
-                                        foundMints = foundMints.filter { it != mint }
-                                        selectedMint = mint
-                                    },
-                                    selected = false,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 4.dp)
-                                )
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Show 'Finds Mints' with smooth fade
-            AnimatedVisibility(
-                visible = !isLoading && selectedMint == null,
-                enter = fadeIn(animationSpec = tween(250, delayMillis = 100, easing = FastOutSlowInEasing)),
-                exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
-            ) {
-                Column {
-                    Spacer(modifier = Modifier.height(32.dp))
-                    Text(
-                        text = "Finds Mints",
-                        style = typography.bodySmall,
-                        color = colorScheme.onSurface.copy(alpha = 0.75f),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp)
-                            .align(Alignment.CenterHorizontally)
-                            .clickable(enabled = !isLoading && selectedMint == null) {
-                                isLoading = true
-                                foundMints = listOf()
-                            },
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
-            // Show 'Next' button with smooth slide up
-            AnimatedVisibility(
-                visible = selectedMint != null,
-                enter = fadeIn(animationSpec = tween(200, delayMillis = 100, easing = FastOutSlowInEasing)) + 
-                slideInVertically(
-                    initialOffsetY = { it / 6 },
-                    animationSpec = tween(250, delayMillis = 100, easing = FastOutSlowInEasing)
-                ),
-                exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
-            ) {
-                Column {
-                    Spacer(modifier = Modifier.height(32.dp))
-                    BitchatButton(
-                        text = "Next",
-                        onClick = { /* TODO: Next action */ },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp)
-                    )
-                }
+        // Show 'Next' button with smooth slide up
+        AnimatedVisibility(
+            visible = selectedMint != null,
+            enter = fadeIn(animationSpec = tween(200, delayMillis = 100, easing = FastOutSlowInEasing)) + 
+            slideInVertically(
+                initialOffsetY = { it / 6 },
+                animationSpec = tween(250, delayMillis = 100, easing = FastOutSlowInEasing)
+            ),
+            exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+        ) {
+            Column {
+                Spacer(modifier = Modifier.height(32.dp))
+                BitchatButton(
+                    text = "Next",
+                    onClick = onNext,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                )
             }
         }
     }
@@ -258,5 +437,34 @@ private fun AnimatedListItem(
         exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
     ) {
         content()
+    }
+} 
+
+@Composable
+private fun LoadingSpinner() {
+    val infiniteTransition = rememberInfiniteTransition(label = "loading_spinner")
+    val rotationAngle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation"
+    )
+    
+    val colorScheme = MaterialTheme.colorScheme
+    
+    Box(
+        modifier = Modifier.size(30.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier
+                .fillMaxSize()
+                .rotate(rotationAngle),
+            color = colorScheme.primary,
+            strokeWidth = 1.5.dp
+        )
     }
 } 
