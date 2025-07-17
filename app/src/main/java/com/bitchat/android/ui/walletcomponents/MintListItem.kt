@@ -42,6 +42,7 @@ fun MintListItem(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .heightIn(min = 56.dp)
             .background(color = backgroundColor, shape = shape)
             .border(width = borderWidth, color = borderColor, shape = shape)
             .clickable(enabled = enabled, onClick = onClick)

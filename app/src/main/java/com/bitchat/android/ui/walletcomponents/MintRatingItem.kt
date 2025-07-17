@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,7 +30,8 @@ fun MintRatingItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    selected: Boolean = false
+    selected: Boolean = false,
+    onRemove: (() -> Unit)? = null
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val borderColor = if (selected) colorScheme.primary else Color.Transparent
@@ -40,10 +43,11 @@ fun MintRatingItem(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .height(56.dp)
             .background(color = backgroundColor, shape = shape)
             .border(width = borderWidth, color = borderColor, shape = shape)
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(16.dp),
+            .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -72,7 +76,7 @@ fun MintRatingItem(
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
-            // Star and rating
+            // Star and rating (and X if selected)
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -88,6 +92,20 @@ fun MintRatingItem(
                     style = if (selected) MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.bodyMedium,
                     color = colorScheme.primary.copy(alpha = textAlpha)
                 )
+                if (selected && onRemove != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = onRemove,
+                        modifier = Modifier.size(18.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Remove selected mint",
+                            tint = colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
         }
     }

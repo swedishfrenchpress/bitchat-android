@@ -18,6 +18,8 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import com.bitchat.android.ui.walletcomponents.MintRatingItem
 import androidx.compose.foundation.clickable
+import com.bitchat.android.ui.BitchatButton
+import androidx.compose.material.icons.filled.Close
 
 data class MintData(val name: String, val url: String, val rating: Int)
 
@@ -115,13 +117,15 @@ fun WalletScreen(onClose: () -> Unit) {
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
             } else {
+                // Selected MintRatingItem with X icon inside the rating row
                 MintRatingItem(
                     mintName = selectedMint!!.name,
                     mintUrl = selectedMint!!.url,
                     rating = selectedMint!!.rating,
                     onClick = {},
                     selected = true,
-                    modifier = Modifier.padding(horizontal = 12.dp)
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    onRemove = { selectedMint = null }
                 )
             }
 
@@ -151,21 +155,37 @@ fun WalletScreen(onClose: () -> Unit) {
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(32.dp))
-            Text(
-                text = "Finds Mints",
-                style = typography.bodySmall,
-                color = colorScheme.onSurface.copy(alpha = 0.75f),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
-                    .align(Alignment.CenterHorizontally)
-                    .clickable(enabled = !isLoading && selectedMint == null) {
-                        isLoading = true
-                        foundMints = listOf()
-                    },
-                textAlign = TextAlign.Center
-            )
+
+            // Show 'Finds Mints' only if not loading and no mint is selected
+            if (!isLoading && selectedMint == null) {
+                Spacer(modifier = Modifier.height(32.dp))
+                Text(
+                    text = "Finds Mints",
+                    style = typography.bodySmall,
+                    color = colorScheme.onSurface.copy(alpha = 0.75f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .clickable(enabled = !isLoading && selectedMint == null) {
+                            isLoading = true
+                            foundMints = listOf()
+                        },
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            // Show 'Next' button if a mint is selected
+            if (selectedMint != null) {
+                Spacer(modifier = Modifier.height(32.dp))
+                BitchatButton(
+                    text = "Next",
+                    onClick = { /* TODO: Next action */ },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                )
+            }
         }
     }
 } 

@@ -36,6 +36,7 @@ fun MintUrlInput(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .height(56.dp)
             .background(
                 color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(4.dp)
@@ -45,7 +46,7 @@ fun MintUrlInput(
                 color = MaterialTheme.colorScheme.primary,
                 shape = RoundedCornerShape(4.dp)
             )
-            .padding(16.dp),
+            .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -62,8 +63,7 @@ fun MintUrlInput(
                 decorationBox = { innerTextField ->
                     Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .padding(vertical = 4.dp),
+                            .weight(1f),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         if (url.isEmpty()) {
@@ -82,12 +82,13 @@ fun MintUrlInput(
             IconButton(
                 onClick = onAddClick,
                 enabled = enabled,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(18.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
                     contentDescription = "Add mint URL",
-                    tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
