@@ -46,7 +46,6 @@ fun TopUpScreen(
     var selectedMint by remember { mutableStateOf("Antiflat Fiat") }
     var selectedMintUrl by remember { mutableStateOf("https://antiflat.cash") }
     var amountSats by remember { mutableStateOf("") }
-    var isUsdMode by remember { mutableStateOf(false) }
     var generatedInvoice by remember { mutableStateOf<String?>(null) }
     var showQrCode by remember { mutableStateOf(false) }
     
@@ -54,29 +53,25 @@ fun TopUpScreen(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     
-    // Constants for conversion (mock rates)
-    val satsToBtc = 100_000_000.0
-    val btcToUsdRate = 67000.0
-    
     // Staggered focus: Let screen fade in first, then show keyboard
     LaunchedEffect(Unit) {
         delay(500) // Wait for screen fade to complete
         focusRequester.requestFocus()
     }
     
-    // Calculate equivalent amounts
+    // Simple conversion: 1 sat = $0.001 USD (100M sats = $100K USD)
     val satsAmount = amountSats.toLongOrNull() ?: 0L
-    val btcAmount = satsAmount / satsToBtc
-    val usdAmount = btcAmount * btcToUsdRate
+    val usdAmount = satsAmount * 0.001
     
-    // Format currency values
-    val formattedBtc = if (satsAmount > 0) {
-        String.format("%.8f", btcAmount).trimEnd('0').trimEnd('.')
+    // Format the sats display with spaces (10000 -> "10 000")
+    val formattedSats = if (satsAmount > 0) {
+        NumberFormat.getNumberInstance(Locale.US).format(satsAmount)
     } else "0"
     
+    // Format USD display
     val formattedUsd = if (usdAmount > 0) {
-        NumberFormat.getCurrencyInstance(Locale.US).format(usdAmount)
-    } else "$0"
+        String.format("%.2f USD", usdAmount)
+    } else "0.00 USD"
 
     Column(
         modifier = modifier
@@ -149,46 +144,18 @@ fun TopUpScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Main amount display
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (isUsdMode) {
-                        Text(
-                            text = formattedUsd,
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
-                            )
-                        )
-                    } else {
-                        Text(
-                            text = "${formattedBtc}​₿",
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
-                            )
-                        )
-                    }
-                    
-                    // Swap button
-                    IconButton(
-                        onClick = { isUsdMode = !isUsdMode },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.SwapVert,
-                            contentDescription = "Swap currency",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-                
-                // Secondary amount display
+                // Main amount display - sats with bitcoin symbol
                 Text(
-                    text = if (isUsdMode) "${formattedBtc}​₿" else formattedUsd,
+                    text = "${formattedSats}​₿",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
+                    )
+                )
+                
+                // USD equivalent display
+                Text(
+                    text = formattedUsd,
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodyLarge
                 )
