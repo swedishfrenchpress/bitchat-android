@@ -29,6 +29,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bitchat.android.ui.theme.BitchatTheme
 import com.bitchat.android.ui.walletcomponents.MintDropDownSelector
+import com.bitchat.android.ui.walletcomponents.BitchatButton
+import com.bitchat.android.ui.walletcomponents.BitchatButtonStyle
 import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.util.*

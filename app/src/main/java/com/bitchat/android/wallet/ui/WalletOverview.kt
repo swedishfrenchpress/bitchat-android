@@ -23,6 +23,11 @@ import com.bitchat.android.wallet.data.TransactionType
 import com.bitchat.android.wallet.data.TransactionStatus
 import com.bitchat.android.wallet.service.CashuService
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
+import com.bitchat.android.ui.walletcomponents.TotalBalance
+import com.bitchat.android.ui.walletcomponents.TopUpButton
+import com.bitchat.android.ui.walletcomponents.WithdrawButton
+import com.bitchat.android.ui.walletcomponents.TransactionItem
+import com.bitchat.android.ui.walletcomponents.TransactionStatus as UITransactionStatus
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -44,7 +49,7 @@ fun WalletOverview(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
         // Back to Chat button
@@ -57,45 +62,71 @@ fun WalletOverview(
             TextButton(
                 onClick = onBackToChat,
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = Color(0xFF00C851)
+                    contentColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Icon(
                     imageVector = Icons.Filled.ArrowBack,
                     contentDescription = "Back to Chat",
                     modifier = Modifier.size(16.dp),
-                    tint = Color(0xFF00C851)
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = "Chat",
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 14.sp,
-                    color = Color(0xFF00C851)
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
         
-        // Balance Card
-        BalanceCard(
-            balance = balance,
-            isLoading = isLoading,
-            onSendClick = { viewModel.showSendDialog() },
-            onReceiveClick = { viewModel.showReceiveDialog() }
+        // Balance Section
+        Text(
+            text = "TOTAL BALANCE",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            modifier = Modifier.padding(bottom = 8.dp)
         )
         
-        Spacer(modifier = Modifier.height(24.dp))
+        TotalBalance(
+            bitcoinAmount = formatBitcoinAmount(balance),
+            dollarAmount = formatDollarAmount(balance),
+            modifier = Modifier.padding(bottom = 32.dp)
+        )
+        
+        // Action Buttons
+        Text(
+            text = "ACTIONS",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            TopUpButton(
+                onClick = { viewModel.showReceiveDialog() },
+                modifier = Modifier.weight(1f),
+                enabled = !isLoading
+            )
+            WithdrawButton(
+                onClick = { viewModel.showSendDialog() },
+                modifier = Modifier.weight(1f),
+                enabled = !isLoading && balance > 0
+            )
+        }
         
         // Recent Transactions
         Text(
-            text = "Recent Transactions",
-            color = Color(0xFF00C851),
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace
+            text = "RECENT TRANSACTIONS",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            modifier = Modifier.padding(bottom = 12.dp)
         )
-        
-        Spacer(modifier = Modifier.height(12.dp))
         
         if (transactions.isEmpty()) {
             EmptyTransactionsCard()
@@ -114,241 +145,19 @@ fun WalletOverview(
     }
 }
 
-private fun extractMintName(url: String): String {
-    return try {
-        val host = url.substringAfter("://").substringBefore("/")
-        host.substringBefore(".").replaceFirstChar { it.uppercase() }
-    } catch (e: Exception) {
-        "Cashu Mint"
-    }
-}
-
-@Composable
-private fun BalanceCard(
-    balance: Long,
-    isLoading: Boolean,
-    onSendClick: () -> Unit,
-    onReceiveClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Balance",
-                color = Color.Gray,
-                fontSize = 14.sp,
-                fontFamily = FontFamily.Monospace
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            if (isLoading) {
-                CircularProgressIndicator(
-                    color = Color(0xFF00C851),
-                    modifier = Modifier.size(32.dp)
-                )
-            } else {
-                Text(
-                    text = formatSats(balance),
-                    color = Color.White,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Send button
-                Button(
-                    onClick = onSendClick,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF00C851)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Send,
-                        contentDescription = "Send",
-                        tint = Color.Black,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Send",
-                        color = Color.Black,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-                
-                // Receive button
-                Button(
-                    onClick = onReceiveClick,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp, 
-                        Color(0xFF00C851)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowDown,
-                        contentDescription = "Receive",
-                        tint = Color(0xFF00C851),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Receive",
-                        color = Color(0xFF00C851),
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-            }
-        }
-    }
-}
-
 @Composable
 private fun TransactionsList(transactions: List<WalletTransaction>) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(transactions) { transaction ->
-            TransactionItem(transaction = transaction)
-        }
-    }
-}
-
-@Composable
-private fun TransactionItem(transaction: WalletTransaction) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Transaction type icon
-            Icon(
-                imageVector = when (transaction.type) {
-                    TransactionType.CASHU_SEND -> Icons.Filled.Send
-                    TransactionType.CASHU_RECEIVE -> Icons.Filled.KeyboardArrowDown
-                    TransactionType.LIGHTNING_SEND -> Icons.Filled.FlashOn
-                    TransactionType.LIGHTNING_RECEIVE -> Icons.Filled.FlashOn
-                    TransactionType.MINT -> Icons.Filled.Add
-                    TransactionType.MELT -> Icons.Filled.Remove
-                },
-                contentDescription = transaction.type.name,
-                tint = when (transaction.type) {
-                    TransactionType.CASHU_SEND, TransactionType.LIGHTNING_SEND, TransactionType.MELT -> Color.Red
-                    TransactionType.CASHU_RECEIVE, TransactionType.LIGHTNING_RECEIVE, TransactionType.MINT -> Color(0xFF00C851)
-                },
-                modifier = Modifier.size(20.dp)
+            TransactionItem(
+                label = transaction.description ?: getDefaultDescription(transaction.type),
+                date = formatTimestamp(transaction.timestamp),
+                amount = formatTransactionAmount(transaction),
+                status = mapTransactionStatus(transaction.status),
+                enabled = true
             )
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            // Transaction details
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = transaction.description ?: getDefaultDescription(transaction.type),
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily.Monospace
-                )
-                Text(
-                    text = formatTimestamp(transaction.timestamp),
-                    color = Color.Gray,
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace
-                )
-            }
-            
-            // Amount with fee if applicable
-            Column(
-                horizontalAlignment = Alignment.End
-            ) {
-                val isIncoming = transaction.type in listOf(
-                    TransactionType.CASHU_RECEIVE,
-                    TransactionType.LIGHTNING_RECEIVE,
-                    TransactionType.MINT
-                )
-                
-                Text(
-                    text = "${if (isIncoming) "+" else "-"}${formatSats(transaction.amount.toLong())}",
-                    color = if (isIncoming) Color(0xFF00C851) else Color.Red,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
-                
-                transaction.fee?.let { fee ->
-                    if (fee.toLong() > 0) {
-                        Text(
-                            text = "fee: ${formatSats(fee.toLong())}",
-                            color = Color.Gray,
-                            fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.width(8.dp))
-            
-            // Status indicator
-            when (transaction.status) {
-                TransactionStatus.PENDING -> {
-                    CircularProgressIndicator(
-                        color = Color.Yellow,
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
-                }
-                TransactionStatus.CONFIRMED -> {
-                    Icon(
-                        imageVector = Icons.Filled.Check,
-                        contentDescription = "Confirmed",
-                        tint = Color(0xFF00C851),
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-                TransactionStatus.FAILED -> {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = "Failed",
-                        tint = Color.Red,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-                TransactionStatus.EXPIRED -> {
-                    Icon(
-                        imageVector = Icons.Filled.Schedule,
-                        contentDescription = "Expired",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
         }
     }
 }
@@ -358,7 +167,7 @@ private fun EmptyTransactionsCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Box(
             modifier = Modifier
@@ -372,22 +181,20 @@ private fun EmptyTransactionsCard() {
                 Icon(
                     imageVector = Icons.Filled.History,
                     contentDescription = "No transactions",
-                    tint = Color.Gray,
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     modifier = Modifier.size(48.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "No transactions yet",
-                    color = Color.Gray,
-                    fontSize = 16.sp,
-                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center
                 )
                 Text(
                     text = "Start by sending or receiving some sats!",
-                    color = Color.Gray,
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center
                 )
             }
@@ -403,7 +210,7 @@ private fun ErrorCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0x30FF0000))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -412,7 +219,7 @@ private fun ErrorCard(
             Icon(
                 imageVector = Icons.Filled.Warning,
                 contentDescription = "Error",
-                tint = Color.Red,
+                tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(20.dp)
             )
             
@@ -420,9 +227,8 @@ private fun ErrorCard(
             
             Text(
                 text = message,
-                color = Color.Red,
-                fontSize = 14.sp,
-                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f)
             )
             
@@ -430,7 +236,7 @@ private fun ErrorCard(
                 Icon(
                     imageVector = Icons.Filled.Close,
                     contentDescription = "Close",
-                    tint = Color.Red,
+                    tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -438,15 +244,46 @@ private fun ErrorCard(
     }
 }
 
-// Utility functions
+// Formatting functions for new components
 
-private fun formatSats(sats: Long): String {
+private fun formatBitcoinAmount(sats: Long): String {
     return when {
-        sats >= 100_000_000 -> String.format("%.8f BTC", sats / 100_000_000.0)
-        sats >= 1000 -> String.format("%,d ₿", sats)
-        else -> "$sats ₿"
+        sats >= 100_000_000 -> String.format("%.8f​₿", sats / 100_000_000.0)
+        sats >= 1000 -> String.format("%,d​₿", sats)
+        else -> "$sats​₿"
     }
 }
+
+private fun formatDollarAmount(sats: Long): String {
+    // Simple conversion: 1 sat = $0.001 USD (approximation)
+    val usdAmount = sats * 0.001
+    return if (usdAmount > 0) String.format("$%.2f", usdAmount) else "$0.00"
+}
+
+private fun formatTransactionAmount(transaction: WalletTransaction): String {
+    val isIncoming = transaction.type in listOf(
+        TransactionType.CASHU_RECEIVE,
+        TransactionType.LIGHTNING_RECEIVE,
+        TransactionType.MINT
+    )
+    val sign = if (isIncoming) "+" else "-"
+    val amount = when {
+        transaction.amount.toLong() >= 1000 -> String.format("%,d ₿", transaction.amount.toLong())
+        else -> "${transaction.amount.toLong()} ₿"
+    }
+    return "$sign$amount"
+}
+
+private fun mapTransactionStatus(status: TransactionStatus): UITransactionStatus {
+    return when (status) {
+        TransactionStatus.PENDING -> UITransactionStatus.Pending
+        TransactionStatus.CONFIRMED -> UITransactionStatus.Complete
+        TransactionStatus.FAILED -> UITransactionStatus.Complete // Treating failed as complete for UI
+        TransactionStatus.EXPIRED -> UITransactionStatus.Pending
+    }
+}
+
+// Utility functions
 
 private fun formatTimestamp(timestamp: Date): String {
     val now = Date()
@@ -471,3 +308,4 @@ private fun getDefaultDescription(type: TransactionType): String {
         TransactionType.MELT -> "Ecash melted"
     }
 }
+

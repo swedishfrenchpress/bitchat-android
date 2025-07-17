@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.sp
 import com.bitchat.android.parsing.CashuTokenParser
 import com.bitchat.android.wallet.ui.WalletUtils
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
+import com.bitchat.android.ui.walletcomponents.BitchatButton
+import com.bitchat.android.ui.walletcomponents.BitchatButtonStyle
 
 /**
  * Ecash (Cashu) token send dialog content
@@ -56,7 +58,7 @@ fun SendEcashDialog(
                     .fillMaxWidth()
                     .padding(bottom = 32.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(
                     modifier = Modifier
@@ -64,110 +66,121 @@ fun SendEcashDialog(
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Success icon
                     Icon(
-                        imageVector = Icons.Filled.Toll,
-                        contentDescription = "Token",
-                        tint = Color(0xFF00C851),
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = "Success",
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(48.dp)
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
-                        text = "CASHU TOKEN",
-                        color = Color(0xFF00C851),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        letterSpacing = 1.sp
+                        text = "Token Created Successfully",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        textAlign = TextAlign.Center
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    // Token amount and mint info
+                    // Amount display
                     parsedToken?.let { token ->
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = WalletUtils.formatSats(token.amount),
-                                color = Color.White,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
-                            )
-                            
+                        Text(
+                            text = "${token.amount.toLong()}​₿",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        if (!token.memo.isNullOrEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
-                            
                             Text(
-                                text = "From: ${token.mintUrl}",
-                                color = Color(0xFF888888),
-                                fontSize = 12.sp,
-                                fontFamily = FontFamily.Monospace,
+                                text = "\"${token.memo}\"",
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                style = MaterialTheme.typography.bodyMedium,
                                 textAlign = TextAlign.Center
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Text(
+                            text = "From: ${token.mintUrl}",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+            
+            // Token display (collapsible)
+            var showFullToken by remember { mutableStateOf(false) }
+            
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Cashu Token",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        
+                        IconButton(
+                            onClick = { showFullToken = !showFullToken }
+                        ) {
+                            Icon(
+                                imageVector = if (showFullToken) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                contentDescription = if (showFullToken) "Hide" else "Show",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    // Token display (truncated)
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A))
-                    ) {
+                    if (showFullToken) {
+                        Spacer(modifier = Modifier.height(8.dp))
                         SelectionContainer {
                             Text(
-                                text = if (generatedToken.length > 50) {
-                                    "${generatedToken.take(50)}..."
-                                } else {
-                                    generatedToken
-                                },
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontFamily = FontFamily.Monospace,
-                                modifier = Modifier.padding(16.dp),
-                                textAlign = TextAlign.Center
+                                text = generatedToken,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
+                    } else {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${generatedToken.take(50)}...",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             }
             
             // Copy button
-            Button(
+            BitchatButton(
+                text = "Copy Token",
                 onClick = {
                     clipboardManager.setText(AnnotatedString(generatedToken))
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00C851)
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ContentCopy,
-                        contentDescription = "Copy",
-                        tint = Color.Black,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "COPY TOKEN",
-                        color = Color.Black,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        letterSpacing = 1.sp
-                    )
-                }
-            }
+                style = BitchatButtonStyle.Primary,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     } else {
         // Show input form
@@ -187,20 +200,20 @@ fun SendEcashDialog(
                 label = {
                     Text(
                         text = "Amount (₿)",
-                        fontFamily = FontFamily.Monospace
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF00C851),
-                    focusedLabelColor = Color(0xFF00C851),
-                    unfocusedBorderColor = Color(0xFF2A2A2A),
-                    unfocusedLabelColor = Color.Gray,
-                    unfocusedTextColor = Color.White,
-                    focusedTextColor = Color.White,
-                    disabledBorderColor = Color.Gray,
-                    disabledLabelColor = Color.Gray,
-                    disabledTextColor = Color.Gray
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -217,19 +230,19 @@ fun SendEcashDialog(
                 label = {
                     Text(
                         text = "Memo (optional)",
-                        fontFamily = FontFamily.Monospace
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF00C851),
-                    focusedLabelColor = Color(0xFF00C851),
-                    unfocusedBorderColor = Color(0xFF2A2A2A),
-                    unfocusedLabelColor = Color.Gray,
-                    unfocusedTextColor = Color.White,
-                    focusedTextColor = Color.White,
-                    disabledBorderColor = Color.Gray,
-                    disabledLabelColor = Color.Gray,
-                    disabledTextColor = Color.Gray
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -238,63 +251,17 @@ fun SendEcashDialog(
             )
             
             // Create token button
-            Button(
+            BitchatButton(
+                text = if (isLoading) "Creating..." else "Create Token",
                 onClick = {
                     amount.toLongOrNull()?.let { amountSats ->
                         viewModel.createCashuToken(amountSats, memo.ifEmpty { null })
                     }
                 },
                 enabled = !isLoading && amount.toLongOrNull()?.let { it > 0 && it <= maxAmount } == true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isLoading) Color(0xFF2A2A2A) else Color(0xFF00C851),
-                    disabledContainerColor = Color(0xFF2A2A2A)
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                if (isLoading) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "CREATING TOKEN...",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            letterSpacing = 1.sp
-                        )
-                    }
-                } else {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Toll,
-                            contentDescription = "Create Token",
-                            tint = Color.Black,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "CREATE TOKEN",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            letterSpacing = 1.sp
-                        )
-                    }
-                }
-            }
+                style = BitchatButtonStyle.Primary,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 } 

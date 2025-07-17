@@ -25,6 +25,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.bitchat.android.wallet.data.Mint
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
+import com.bitchat.android.ui.walletcomponents.MintListItem
+import com.bitchat.android.ui.walletcomponents.MintUrlInput
+import com.bitchat.android.ui.walletcomponents.BitchatButton
+import com.bitchat.android.ui.walletcomponents.BitchatButtonStyle
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -45,56 +49,35 @@ fun MintsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
-        // Header with Add button
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Mints",
-                color = Color(0xFF00C851),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace
-            )
-            
-            Button(
-                onClick = { viewModel.showAddMintDialog() },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00C851)
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Add Mint",
-                    tint = Color.Black
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Add",
-                    color = Color.Black,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
+        // Header Section
+        Text(
+            text = "MINTS",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
         
         if (mints.isEmpty()) {
             EmptyMintsCard(onAddClick = { viewModel.showAddMintDialog() })
         } else {
+            // Add mint URL input at the top
+            MintUrlInput(
+                url = "",
+                onUrlChange = { /* Handle URL change */ },
+                onAddClick = { viewModel.showAddMintDialog() },
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
             MintsList(
                 mints = mints,
                 activeMint = activeMint,
                 onMintSelect = { viewModel.setActiveMint(it) },
-                onMintEdit = { mint, newNickname ->
-                    viewModel.updateMintNickname(mint, newNickname)
+                onMintDelete = { mintUrl ->
+                    // TODO: Implement mint deletion functionality
+                    // viewModel.removeMint(mintUrl) // Method doesn't exist yet
                 }
             )
         }
@@ -123,125 +106,22 @@ private fun MintsList(
     mints: List<Mint>,
     activeMint: String?,
     onMintSelect: (String) -> Unit,
-    onMintEdit: (String, String) -> Unit
+    onMintDelete: (String) -> Unit
 ) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(mints) { mint ->
-            MintItem(
-                mint = mint,
-                isActive = mint.url == activeMint,
-                onSelect = { onMintSelect(mint.url) },
-                onEdit = { newNickname -> onMintEdit(mint.url, newNickname) }
+            MintListItem(
+                mintName = mint.nickname,
+                mintUrl = mint.url,
+                balance = "0​₿", // TODO: Get actual balance for this mint
+                selected = mint.url == activeMint,
+                onDelete = { onMintDelete(mint.url) },
+                onClick = { onMintSelect(mint.url) },
+                enabled = true
             )
         }
-    }
-}
-
-@Composable
-private fun MintItem(
-    mint: Mint,
-    isActive: Boolean,
-    onSelect: () -> Unit,
-    onEdit: (String) -> Unit
-) {
-    var showEditDialog by remember { mutableStateOf(false) }
-    
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onSelect() },
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isActive) Color(0xFF00C851).copy(alpha = 0.1f) else Color(0xFF1A1A1A)
-        ),
-        border = if (isActive) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00C851)) else null
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Mint icon
-            Icon(
-                imageVector = Icons.Filled.AccountBalance,
-                contentDescription = "Mint",
-                tint = if (isActive) Color(0xFF00C851) else Color.Gray,
-                modifier = Modifier.size(24.dp)
-            )
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            // Mint info
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = mint.nickname,
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
-                
-                Text(
-                    text = mint.url,
-                    color = Color.Gray,
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                
-                mint.info?.let { info ->
-                    Text(
-                        text = info.description ?: info.name,
-                        color = Color.Gray,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                
-                Text(
-                    text = "Added ${formatDate(mint.dateAdded)}",
-                    color = Color.Gray,
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace
-                )
-            }
-            
-            // Edit button
-            IconButton(onClick = { showEditDialog = true }) {
-                Icon(
-                    imageVector = Icons.Filled.Edit,
-                    contentDescription = "Edit",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-            
-            // Active indicator
-            if (isActive) {
-                Icon(
-                    imageVector = Icons.Filled.CheckCircle,
-                    contentDescription = "Active",
-                    tint = Color(0xFF00C851),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-    }
-    
-    // Edit dialog
-    if (showEditDialog) {
-        EditMintDialog(
-            currentNickname = mint.nickname,
-            onSave = { 
-                onEdit(it)
-                showEditDialog = false
-            },
-            onDismiss = { showEditDialog = false }
-        )
     }
 }
 
@@ -250,7 +130,7 @@ private fun EmptyMintsCard(onAddClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Box(
             modifier = Modifier
@@ -264,37 +144,26 @@ private fun EmptyMintsCard(onAddClick: () -> Unit) {
                 Icon(
                     imageVector = Icons.Filled.AccountBalance,
                     contentDescription = "No mints",
-                    tint = Color.Gray,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(48.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "No mints added yet",
-                    color = Color.Gray,
-                    fontSize = 16.sp,
-                    fontFamily = FontFamily.Monospace
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
                     text = "Add a mint to start using ecash",
-                    color = Color.Gray,
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(
+                BitchatButton(
+                    text = "Add first mint",
                     onClick = onAddClick,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF00C851)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = "Add first mint",
-                        color = Color.Black,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
+                    style = BitchatButtonStyle.Primary
+                )
             }
         }
     }
@@ -318,7 +187,7 @@ private fun AddMintDialog(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp)
@@ -331,17 +200,15 @@ private fun AddMintDialog(
                 ) {
                     Text(
                         text = "Add Mint",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                     )
                     
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = "Close",
-                            tint = Color.Gray
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -355,21 +222,21 @@ private fun AddMintDialog(
                     label = {
                         Text(
                             text = "Mint URL",
-                            fontFamily = FontFamily.Monospace
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     },
                     placeholder = {
                         Text(
                             text = "https://mint.example.com",
-                            fontFamily = FontFamily.Monospace,
-                            color = Color.Gray
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF00C851),
-                        focusedLabelColor = Color(0xFF00C851),
-                        unfocusedTextColor = Color.White,
-                        focusedTextColor = Color.White
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -383,14 +250,14 @@ private fun AddMintDialog(
                     label = {
                         Text(
                             text = "Nickname (optional)",
-                            fontFamily = FontFamily.Monospace
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF00C851),
-                        focusedLabelColor = Color(0xFF00C851),
-                        unfocusedTextColor = Color.White,
-                        focusedTextColor = Color.White
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -398,39 +265,17 @@ private fun AddMintDialog(
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 // Add button
-                Button(
+                BitchatButton(
+                    text = if (isLoading) "Adding..." else "Add Mint",
                     onClick = {
                         if (mintUrl.isNotEmpty()) {
                             viewModel.addMint(mintUrl, nickname)
                         }
                     },
                     enabled = !isLoading && mintUrl.isNotEmpty(),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF00C851)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            color = Color.Black,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "Add",
-                            tint = Color.Black
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Add Mint",
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-                }
+                    style = BitchatButtonStyle.Primary,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
@@ -450,17 +295,15 @@ private fun EditMintDialog(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp)
             ) {
                 Text(
                     text = "Edit Mint Nickname",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -471,14 +314,14 @@ private fun EditMintDialog(
                     label = {
                         Text(
                             text = "Nickname",
-                            fontFamily = FontFamily.Monospace
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF00C851),
-                        focusedLabelColor = Color(0xFF00C851),
-                        unfocusedTextColor = Color.White,
-                        focusedTextColor = Color.White
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -489,42 +332,21 @@ private fun EditMintDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Cancel button
-                    Button(
+                    BitchatButton(
+                        text = "Cancel",
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp, 
-                            Color.Gray
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = "Cancel",
-                            color = Color.Gray,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
+                        style = BitchatButtonStyle.Secondary,
+                        modifier = Modifier.weight(1f)
+                    )
                     
                     // Save button
-                    Button(
+                    BitchatButton(
+                        text = "Save",
                         onClick = { onSave(nickname) },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00C851)
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        enabled = nickname.isNotEmpty()
-                    ) {
-                        Text(
-                            text = "Save",
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
+                        style = BitchatButtonStyle.Primary,
+                        enabled = nickname.isNotEmpty(),
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }
@@ -539,7 +361,7 @@ private fun ErrorCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0x30FF0000))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -548,7 +370,7 @@ private fun ErrorCard(
             Icon(
                 imageVector = Icons.Filled.Warning,
                 contentDescription = "Error",
-                tint = Color.Red,
+                tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(20.dp)
             )
             
@@ -556,9 +378,8 @@ private fun ErrorCard(
             
             Text(
                 text = message,
-                color = Color.Red,
-                fontSize = 14.sp,
-                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f)
             )
             
@@ -566,7 +387,7 @@ private fun ErrorCard(
                 Icon(
                     imageVector = Icons.Filled.Close,
                     contentDescription = "Close",
-                    tint = Color.Red,
+                    tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(16.dp)
                 )
             }

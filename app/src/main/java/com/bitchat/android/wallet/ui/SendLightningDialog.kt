@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bitchat.android.wallet.data.MeltQuote
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
+import com.bitchat.android.ui.walletcomponents.BitchatButton
+import com.bitchat.android.ui.walletcomponents.BitchatButtonStyle
 
 /**
  * Lightning payment send dialog content
@@ -43,7 +45,7 @@ fun SendLightningDialog(
                     .fillMaxWidth()
                     .padding(bottom = 32.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(
                     modifier = Modifier
@@ -51,144 +53,62 @@ fun SendLightningDialog(
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Lightning icon
                     Icon(
-                        imageVector = Icons.Filled.FlashOn,
+                        imageVector = Icons.Filled.Bolt,
                         contentDescription = "Lightning",
-                        tint = Color(0xFFFFB000),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(48.dp)
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
-                        text = "LIGHTNING PAYMENT QUOTE",
-                        color = Color(0xFFFFB000),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        letterSpacing = 1.sp
+                        text = "Payment Quote",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                     )
                     
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     
-                    // Quote details
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A))
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Amount:",
-                                    color = Color.Gray,
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 14.sp
-                                )
-                                Text(
-                                    text = WalletUtils.formatSats(currentMeltQuote.amount.toLong()),
-                                    color = Color.White,
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            
-                            if (currentMeltQuote.feeReserve.toLong() > 0) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "Fee:",
-                                        color = Color.Gray,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontSize = 14.sp
-                                    )
-                                    Text(
-                                        text = WalletUtils.formatSats(currentMeltQuote.feeReserve.toLong()),
-                                        color = Color.White,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                
-                                Spacer(modifier = Modifier.height(8.dp))
-                                HorizontalDivider(color = Color.Gray)
-                                Spacer(modifier = Modifier.height(8.dp))
-                                
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "Total:",
-                                        color = Color.Gray,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = WalletUtils.formatSats(currentMeltQuote.amount.toLong() + currentMeltQuote.feeReserve.toLong()),
-                                        color = Color.White,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
+                    // Amount
+                    Text(
+                        text = "${currentMeltQuote.amount.toLong()}​₿",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    
+                    // Fee if applicable
+                    if (currentMeltQuote.feeReserve.toLong() > 0) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Fee: ${currentMeltQuote.feeReserve.toLong()}​₿",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Quote expiry info
+                    Text(
+                        text = "Quote expires in 5 minutes",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
             
             // Pay button
-            Button(
+            BitchatButton(
+                text = if (isLoading) "Processing..." else "Pay Invoice",
                 onClick = {
                     viewModel.payLightningInvoice(currentMeltQuote.id)
                 },
                 enabled = !isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00C851),
-                    disabledContainerColor = Color(0xFF2A2A2A)
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        color = Color.Black,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.FlashOn,
-                            contentDescription = "Pay Invoice",
-                            tint = Color.Black,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "PAY INVOICE",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            letterSpacing = 1.sp
-                        )
-                    }
-                }
-            }
+                style = BitchatButtonStyle.Primary,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     } else {
         // Show invoice input
@@ -202,23 +122,23 @@ fun SendLightningDialog(
                 label = {
                     Text(
                         text = "Lightning Invoice",
-                        fontFamily = FontFamily.Monospace
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 },
                 placeholder = {
                     Text(
                         text = "lnbc...",
-                        fontFamily = FontFamily.Monospace,
-                        color = Color.Gray
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF00C851),
-                    focusedLabelColor = Color(0xFF00C851),
-                    unfocusedBorderColor = Color(0xFF2A2A2A),
-                    unfocusedLabelColor = Color.Gray,
-                    unfocusedTextColor = Color.White,
-                    focusedTextColor = Color.White
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -235,14 +155,15 @@ fun SendLightningDialog(
                         Icon(
                             imageVector = Icons.Filled.QrCode,
                             contentDescription = "Scan QR",
-                            tint = Color(0xFF00C851)
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
             )
             
             // Paste button
-            Button(
+            BitchatButton(
+                text = "Paste from Clipboard",
                 onClick = {
                     clipboardManager.getText()?.text?.let { clipText ->
                         if (clipText.startsWith("lnbc") || clipText.startsWith("lnbtb")) {
@@ -250,84 +171,24 @@ fun SendLightningDialog(
                         }
                     }
                 },
+                style = BitchatButtonStyle.Secondary,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(bottom = 16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent
-                ),
-                border = BorderStroke(
-                    2.dp, 
-                    Color(0xFF00C851)
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ContentPaste,
-                        contentDescription = "Paste",
-                        tint = Color(0xFF00C851),
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "PASTE FROM CLIPBOARD",
-                        color = Color(0xFF00C851),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        letterSpacing = 1.sp
-                    )
-                }
-            }
+                    .padding(bottom = 16.dp)
+            )
             
             // Get quote button
-            Button(
+            BitchatButton(
+                text = if (isLoading) "Getting Quote..." else "Get Quote",
                 onClick = {
                     if (invoice.isNotEmpty()) {
                         viewModel.createMeltQuote(invoice)
                     }
                 },
                 enabled = !isLoading && invoice.isNotEmpty(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00C851),
-                    disabledContainerColor = Color(0xFF2A2A2A)
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        color = Color.Black,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Assessment,
-                            contentDescription = "Get Quote",
-                            tint = Color.Black,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "GET QUOTE",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            letterSpacing = 1.sp
-                        )
-                    }
-                }
-            }
+                style = BitchatButtonStyle.Primary,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 } 

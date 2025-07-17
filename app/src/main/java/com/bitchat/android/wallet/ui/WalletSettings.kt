@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
+import com.bitchat.android.ui.walletcomponents.BitchatButton
+import com.bitchat.android.ui.walletcomponents.BitchatButtonStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,20 +27,19 @@ fun WalletSettings(
     onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val colorScheme = MaterialTheme.colorScheme
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
             // Wallet Info Section
             item {
-                SettingsSection(title = "Wallet Information") {
+                SettingsSection(title = "WALLET INFORMATION") {
                     SettingsCard {
                         Column(
                             modifier = Modifier
@@ -59,7 +60,7 @@ fun WalletSettings(
             
             // Security Section
             item {
-                SettingsSection(title = "Security") {
+                SettingsSection(title = "SECURITY") {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         SettingsItem(
                             icon = Icons.Filled.FileDownload,
@@ -80,7 +81,7 @@ fun WalletSettings(
                             title = "Clear Wallet Data",
                             description = "Remove all wallet data (irreversible)",
                             onClick = { showClearDataDialog = true },
-                            textColor = Color(0xFFFF5722)
+                            textColor = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -88,7 +89,7 @@ fun WalletSettings(
             
             // Network Section
             item {
-                SettingsSection(title = "Network") {
+                SettingsSection(title = "NETWORK") {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         SettingsItem(
                             icon = Icons.Filled.Public,
@@ -109,7 +110,7 @@ fun WalletSettings(
             
             // Development Section
             item {
-                SettingsSection(title = "Development") {
+                SettingsSection(title = "DEVELOPMENT") {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         SettingsItem(
                             icon = Icons.Filled.BugReport,
@@ -130,7 +131,7 @@ fun WalletSettings(
             
             // About Section
             item {
-                SettingsSection(title = "About") {
+                SettingsSection(title = "ABOUT") {
                     SettingsCard {
                         Column(
                             modifier = Modifier
@@ -139,24 +140,20 @@ fun WalletSettings(
                         ) {
                             Text(
                                 text = "bitchat Cashu Wallet",
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "A privacy-focused Cashu ecash wallet integrated with bitchat mesh networking.",
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 12.sp,
-                                color = Color.White.copy(alpha = 0.7f)
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = "Built with the Cashu Development Kit (CDK)",
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 10.sp,
-                                color = Color.White.copy(alpha = 0.5f)
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                             )
                         }
                     }
@@ -171,8 +168,7 @@ fun WalletSettings(
             title = {
                 Text(
                     text = "Clear Wallet Data?",
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                 )
             },
             text = {
@@ -183,32 +179,25 @@ fun WalletSettings(
                            "• Wallet balance\n" +
                            "• Settings\n\n" +
                            "This action cannot be undone!",
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp
+                    style = MaterialTheme.typography.bodySmall
                 )
             },
             confirmButton = {
-                TextButton(
+                BitchatButton(
+                    text = "Clear Data",
                     onClick = {
                         viewModel.clearAllWalletData()
                         showClearDataDialog = false
-                    }
-                ) {
-                    Text(
-                        text = "Clear Data",
-                        fontFamily = FontFamily.Monospace,
-                        color = Color(0xFFFF5722),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                    },
+                    style = BitchatButtonStyle.Primary
+                )
             },
             dismissButton = {
-                TextButton(onClick = { showClearDataDialog = false }) {
-                    Text(
-                        text = "Cancel",
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
+                BitchatButton(
+                    text = "Cancel",
+                    onClick = { showClearDataDialog = false },
+                    style = BitchatButtonStyle.Secondary
+                )
             }
         )
     }
@@ -220,40 +209,32 @@ fun WalletSettings(
             title = {
                 Text(
                     text = "Export Wallet Data",
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                 )
             },
             text = {
                 Text(
                     text = "This will export your transaction history and mint information to a JSON file. " +
                            "This does NOT include your private keys or wallet secrets.",
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp
+                    style = MaterialTheme.typography.bodySmall
                 )
             },
             confirmButton = {
-                TextButton(
+                BitchatButton(
+                    text = "Export",
                     onClick = {
                         viewModel.exportWalletData()
                         showExportDialog = false
-                    }
-                ) {
-                    Text(
-                        text = "Export",
-                        fontFamily = FontFamily.Monospace,
-                        color = Color(0xFF4CAF50),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                    },
+                    style = BitchatButtonStyle.Primary
+                )
             },
             dismissButton = {
-                TextButton(onClick = { showExportDialog = false }) {
-                    Text(
-                        text = "Cancel",
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
+                BitchatButton(
+                    text = "Cancel",
+                    onClick = { showExportDialog = false },
+                    style = BitchatButtonStyle.Secondary
+                )
             }
         )
     }
@@ -267,10 +248,8 @@ private fun SettingsSection(
     Column {
         Text(
             text = title,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF00C851),
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             modifier = Modifier.padding(bottom = 8.dp)
         )
         content()
@@ -285,9 +264,9 @@ private fun SettingsCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1A1A1A)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
-        border = BorderStroke(1.dp, Color(0xFF2A2A2A))
+        border = BorderStroke(0.25.dp, MaterialTheme.colorScheme.primary)
     ) {
         content()
     }
@@ -299,7 +278,7 @@ private fun SettingsItem(
     title: String,
     description: String,
     onClick: () -> Unit,
-    textColor: Color = Color.White
+    textColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     SettingsCard {
         Row(
@@ -319,15 +298,12 @@ private fun SettingsItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                     color = textColor
                 )
                 Text(
                     text = description,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = textColor.copy(alpha = 0.7f)
                 )
             }
@@ -352,16 +328,13 @@ private fun InfoRow(
     ) {
         Text(
             text = "$label:",
-            fontFamily = FontFamily.Monospace,
-            fontSize = 12.sp,
-            color = Color.White.copy(alpha = 0.7f)
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
         Text(
             text = value,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color.White
+            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

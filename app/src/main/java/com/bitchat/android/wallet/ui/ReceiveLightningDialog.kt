@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bitchat.android.wallet.data.MintQuote
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
+import com.bitchat.android.ui.walletcomponents.BitchatButton
+import com.bitchat.android.ui.walletcomponents.BitchatButtonStyle
 
 /**
  * Lightning invoice receive dialog content
@@ -37,18 +39,18 @@ fun ReceiveLightningDialog(
     val clipboardManager = LocalClipboardManager.current
     
     if (currentMintQuote != null) {
-        // Show Lightning invoice QR code and details
+        // Show generated invoice and QR code
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Invoice header
+            // Invoice info card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                    .padding(bottom = 32.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(
                     modifier = Modifier
@@ -56,119 +58,81 @@ fun ReceiveLightningDialog(
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Lightning icon
                     Icon(
-                        imageVector = Icons.Filled.FlashOn,
+                        imageVector = Icons.Filled.Bolt,
                         contentDescription = "Lightning",
-                        tint = Color(0xFFFFB000),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(48.dp)
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
-                        text = "LIGHTNING INVOICE",
-                        color = Color(0xFFFFB000),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        letterSpacing = 1.sp
-                    )
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    // Amount
-                    Text(
-                        text = WalletUtils.formatSats(currentMintQuote.amount.toLong()),
-                        color = Color.White,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
+                        text = "Lightning Invoice",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    // Status
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(12.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(if (currentMintQuote.paid) Color(0xFF00C851) else Color(0xFFFFB000))
-                        )
-                        
-                        Spacer(modifier = Modifier.width(8.dp))
-                        
-                        Text(
-                            text = if (currentMintQuote.paid) "PAID" else "WAITING FOR PAYMENT",
-                            color = if (currentMintQuote.paid) Color(0xFF00C851) else Color(0xFFFFB000),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            letterSpacing = 1.sp
-                        )
-                    }
+                    // Amount
+                    Text(
+                        text = "${currentMintQuote.amount.toLong()}​₿",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = "Invoice expires in 15 minutes",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
             
-            // QR Code 
+            // QR Code placeholder
             Card(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .padding(bottom = 24.dp),
+                    .size(200.dp)
+                    .padding(bottom = 32.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    QRCodeCanvas(
-                        text = currentMintQuote.request,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.QrCode,
+                            contentDescription = "QR Code",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(120.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "QR Code",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
             
             // Copy invoice button
-            Button(
+            BitchatButton(
+                text = "Copy Invoice",
                 onClick = {
                     clipboardManager.setText(AnnotatedString(currentMintQuote.request))
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent
-                ),
-                border = BorderStroke(
-                    2.dp, 
-                    Color(0xFFFFB000)
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ContentCopy,
-                        contentDescription = "Copy",
-                        tint = Color(0xFFFFB000),
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "COPY INVOICE",
-                        color = Color(0xFFFFB000),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        letterSpacing = 1.sp
-                    )
-                }
-            }
+                style = BitchatButtonStyle.Primary,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     } else {
         // Show amount input
@@ -182,17 +146,17 @@ fun ReceiveLightningDialog(
                 label = {
                     Text(
                         text = "Amount (₿)",
-                        fontFamily = FontFamily.Monospace
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF00C851),
-                    focusedLabelColor = Color(0xFF00C851),
-                    unfocusedBorderColor = Color(0xFF2A2A2A),
-                    unfocusedLabelColor = Color.Gray,
-                    unfocusedTextColor = Color.White,
-                    focusedTextColor = Color.White
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -207,16 +171,16 @@ fun ReceiveLightningDialog(
                 label = {
                     Text(
                         text = "Description (optional)",
-                        fontFamily = FontFamily.Monospace
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF00C851),
-                    focusedLabelColor = Color(0xFF00C851),
-                    unfocusedBorderColor = Color(0xFF2A2A2A),
-                    unfocusedLabelColor = Color.Gray,
-                    unfocusedTextColor = Color.White,
-                    focusedTextColor = Color.White
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -225,49 +189,17 @@ fun ReceiveLightningDialog(
             )
             
             // Create invoice button
-            Button(
+            BitchatButton(
+                text = if (isLoading) "Creating..." else "Create Invoice",
                 onClick = {
                     amount.toLongOrNull()?.let { amountSats ->
                         viewModel.createMintQuote(amountSats, description.ifEmpty { null })
                     }
                 },
                 enabled = !isLoading && amount.toLongOrNull()?.let { it > 0 } == true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00C851),
-                    disabledContainerColor = Color(0xFF2A2A2A)
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        color = Color.Black,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.FlashOn,
-                            contentDescription = "Create Invoice",
-                            tint = Color.Black,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "CREATE INVOICE",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            letterSpacing = 1.sp
-                        )
-                    }
-                }
-            }
+                style = BitchatButtonStyle.Primary,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

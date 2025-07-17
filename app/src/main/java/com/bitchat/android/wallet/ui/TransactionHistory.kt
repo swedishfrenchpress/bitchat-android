@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import com.bitchat.android.wallet.data.WalletTransaction
 import com.bitchat.android.wallet.data.TransactionType
 import com.bitchat.android.wallet.data.TransactionStatus
+import com.bitchat.android.ui.walletcomponents.TransactionItem
+import com.bitchat.android.ui.walletcomponents.TransactionStatus as UITransactionStatus
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -32,35 +34,19 @@ fun TransactionHistory(
     modifier: Modifier = Modifier,
     onTransactionClick: (WalletTransaction) -> Unit = {}
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(colorScheme.surface)
+            .background(MaterialTheme.colorScheme.background)
+            .padding(16.dp)
     ) {
         // Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.History,
-                contentDescription = "Transaction History",
-                tint = Color(0xFF00C851),
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Transaction History",
-                fontFamily = FontFamily.Monospace,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = colorScheme.onSurface
-            )
-        }
+        Text(
+            text = "TRANSACTION HISTORY",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
         
         if (transactions.isEmpty()) {
             // Empty state
@@ -74,23 +60,21 @@ fun TransactionHistory(
                     Icon(
                         imageVector = Icons.Filled.Receipt,
                         contentDescription = null,
-                        tint = colorScheme.onSurface.copy(alpha = 0.3f),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                         modifier = Modifier.size(48.dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "No transactions yet",
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 14.sp,
-                        color = colorScheme.onSurface.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Your transaction history will appear here",
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 12.sp,
-                        color = colorScheme.onSurface.copy(alpha = 0.4f),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -99,13 +83,15 @@ fun TransactionHistory(
             // Transaction list
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(transactions) { transaction ->
                     TransactionItem(
-                        transaction = transaction,
-                        onClick = { onTransactionClick(transaction) }
+                        label = transaction.description ?: getDefaultDescription(transaction.type),
+                        date = formatDateTime(transaction.timestamp),
+                        amount = formatTransactionAmount(transaction),
+                        status = mapTransactionStatus(transaction.status),
+                        enabled = true
                     )
                 }
                 
@@ -118,205 +104,16 @@ fun TransactionHistory(
     }
 }
 
-@Composable
-private fun TransactionItem(
-    transaction: WalletTransaction,
-    onClick: () -> Unit
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    val clipboardManager = LocalClipboardManager.current
-    
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = colorScheme.surface,
-            contentColor = colorScheme.onSurface
-        ),
-        border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.3f))
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Header row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Transaction type and icon
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = when (transaction.type) {
-                            TransactionType.CASHU_SEND -> Icons.Filled.Send
-                            TransactionType.CASHU_RECEIVE -> Icons.Filled.CallReceived
-                            TransactionType.LIGHTNING_SEND, TransactionType.MELT -> Icons.Filled.Bolt
-                            TransactionType.LIGHTNING_RECEIVE, TransactionType.MINT -> Icons.Filled.QrCode
-                        },
-                        contentDescription = null,
-                        tint = when (transaction.type) {
-                            TransactionType.CASHU_SEND, TransactionType.LIGHTNING_SEND, TransactionType.MELT -> Color(0xFFFF5722)
-                            TransactionType.CASHU_RECEIVE, TransactionType.LIGHTNING_RECEIVE, TransactionType.MINT -> Color(0xFF4CAF50)
-                        },
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = when (transaction.type) {
-                            TransactionType.CASHU_SEND -> "Send eCash"
-                            TransactionType.CASHU_RECEIVE -> "Receive eCash"  
-                            TransactionType.LIGHTNING_SEND, TransactionType.MELT -> "Pay Invoice"
-                            TransactionType.LIGHTNING_RECEIVE, TransactionType.MINT -> "Create Invoice"
-                        },
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = colorScheme.onSurface
-                    )
-                }
-                
-                // Status indicator
-                TransactionStatusChip(transaction.status)
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Amount row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = formatDateTime(transaction.timestamp),
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp,
-                    color = colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-                
-                Text(
-                    text = formatAmount(transaction.amount.toLong(), transaction.type),
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = when (transaction.type) {
-                        TransactionType.CASHU_SEND, TransactionType.LIGHTNING_SEND, TransactionType.MELT -> 
-                            Color(0xFFFF5722)
-                        TransactionType.CASHU_RECEIVE, TransactionType.LIGHTNING_RECEIVE, TransactionType.MINT -> 
-                            Color(0xFF4CAF50)
-                    }
-                )
-            }
-            
-            // Memo if present
-            transaction.description?.let { description ->
-                if (description.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "\"$description\"",
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 12.sp,
-                        color = colorScheme.onSurface.copy(alpha = 0.8f),
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-            
-            // Additional details row
-            transaction.token?.let { details ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = when (transaction.type) {
-                            TransactionType.CASHU_SEND, TransactionType.CASHU_RECEIVE -> "Token ID"
-                            TransactionType.LIGHTNING_SEND, TransactionType.LIGHTNING_RECEIVE, 
-                            TransactionType.MINT, TransactionType.MELT -> "Quote ID"
-                        },
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 10.sp,
-                        color = colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
-                    
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = details.take(8) + "...${details.takeLast(4)}",
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 10.sp,
-                            color = colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        
-                        IconButton(
-                            onClick = {
-                                clipboardManager.setText(AnnotatedString(details))
-                            },
-                            modifier = Modifier.size(20.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.ContentCopy,
-                                contentDescription = "Copy Details",
-                                tint = colorScheme.onSurface.copy(alpha = 0.5f),
-                                modifier = Modifier.size(12.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+// Helper functions
 
-@Composable
-private fun TransactionStatusChip(status: TransactionStatus) {
-    val colorScheme = MaterialTheme.colorScheme
-    val (backgroundColor, textColor, text) = when (status) {
-        TransactionStatus.PENDING -> Triple(
-            Color(0xFFFFC107).copy(alpha = 0.2f),
-            Color(0xFFFFC107),
-            "PENDING"
-        )
-        TransactionStatus.CONFIRMED -> Triple(
-            Color(0xFF4CAF50).copy(alpha = 0.2f),
-            Color(0xFF4CAF50),
-            "SUCCESS"
-        )
-        TransactionStatus.FAILED -> Triple(
-            Color(0xFFFF5722).copy(alpha = 0.2f),
-            Color(0xFFFF5722),
-            "FAILED"
-        )
-        TransactionStatus.EXPIRED -> Triple(
-            colorScheme.onSurface.copy(alpha = 0.2f),
-            colorScheme.onSurface.copy(alpha = 0.6f),
-            "EXPIRED"
-        )
-    }
-    
-    Box(
-        modifier = Modifier
-            .background(
-                color = backgroundColor,
-                shape = MaterialTheme.shapes.small
-            )
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-    ) {
-        Text(
-            text = text,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            color = textColor
-        )
+private fun getDefaultDescription(type: TransactionType): String {
+    return when (type) {
+        TransactionType.CASHU_SEND -> "Sent eCash"
+        TransactionType.CASHU_RECEIVE -> "Received eCash"
+        TransactionType.LIGHTNING_SEND -> "Lightning Payment"
+        TransactionType.LIGHTNING_RECEIVE -> "Lightning Received"
+        TransactionType.MINT -> "Ecash Minted"
+        TransactionType.MELT -> "Ecash Melted"
     }
 }
 
@@ -332,15 +129,29 @@ private fun formatDateTime(date: Date): String {
         diffMinutes < 60 -> "${diffMinutes}m ago"
         diffHours < 24 -> "${diffHours}h ago"
         diffDays < 7 -> "${diffDays}d ago"
-        else -> SimpleDateFormat("MM/dd/yy", Locale.getDefault()).format(date)
+        else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(date)
     }
 }
 
-private fun formatAmount(amount: Long, type: TransactionType): String {
-    val prefix = when (type) {
-        TransactionType.CASHU_SEND, TransactionType.LIGHTNING_SEND, TransactionType.MELT -> "-"
-        TransactionType.CASHU_RECEIVE, TransactionType.LIGHTNING_RECEIVE, TransactionType.MINT -> "+"
+private fun formatTransactionAmount(transaction: WalletTransaction): String {
+    val isIncoming = transaction.type in listOf(
+        TransactionType.CASHU_RECEIVE,
+        TransactionType.LIGHTNING_RECEIVE,
+        TransactionType.MINT
+    )
+    val sign = if (isIncoming) "+" else "-"
+    val amount = when {
+        transaction.amount.toLong() >= 1000 -> String.format("%,d ₿", transaction.amount.toLong())
+        else -> "${transaction.amount.toLong()} ₿"
     }
-    
-    return "$prefix$amount sat"
+    return "$sign$amount"
+}
+
+private fun mapTransactionStatus(status: TransactionStatus): UITransactionStatus {
+    return when (status) {
+        TransactionStatus.PENDING -> UITransactionStatus.Pending
+        TransactionStatus.CONFIRMED -> UITransactionStatus.Complete
+        TransactionStatus.FAILED -> UITransactionStatus.Complete // Treating failed as complete for UI
+        TransactionStatus.EXPIRED -> UITransactionStatus.Pending
+    }
 }
