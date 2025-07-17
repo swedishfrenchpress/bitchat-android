@@ -20,6 +20,8 @@ import com.bitchat.android.ui.walletcomponents.MintRatingItem
 import androidx.compose.foundation.clickable
 import com.bitchat.android.ui.BitchatButton
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 
 data class MintData(val name: String, val url: String, val rating: Int)
 
@@ -105,87 +107,156 @@ fun WalletScreen(onClose: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Top area: either MintUrlInput or selected MintRatingItem
-            if (selectedMint == null) {
-                MintUrlInput(
-                    url = url,
-                    onUrlChange = { url = it },
-                    onAddClick = {
-                        isLoading = true
-                        foundMints = listOf()
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
-            } else {
-                // Selected MintRatingItem with X icon inside the rating row
-                MintRatingItem(
-                    mintName = selectedMint!!.name,
-                    mintUrl = selectedMint!!.url,
-                    rating = selectedMint!!.rating,
-                    onClick = {},
-                    selected = true,
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    onRemove = { selectedMint = null }
-                )
+            // Top area: animated transition between MintUrlInput and selected MintRatingItem
+            AnimatedContent(
+                targetState = selectedMint,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)) togetherWith
+                    fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+                },
+                modifier = Modifier.padding(horizontal = 12.dp),
+                label = "top_input_transition"
+            ) { selectedMintState ->
+                if (selectedMintState == null) {
+                    MintUrlInput(
+                        url = url,
+                        onUrlChange = { url = it },
+                        onAddClick = {
+                            isLoading = true
+                            foundMints = listOf()
+                        }
+                    )
+                } else {
+                    MintRatingItem(
+                        mintName = selectedMintState.name,
+                        mintUrl = selectedMintState.url,
+                        rating = selectedMintState.rating,
+                        onClick = {},
+                        selected = true,
+                        onRemove = {
+                            foundMints = listOf(selectedMint!!) + foundMints
+                            selectedMint = null
+                        }
+                    )
+                }
             }
 
-            // Loading spinner or found mints
-            if (isLoading) {
-                Spacer(modifier = Modifier.height(32.dp))
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = colorScheme.primary)
+            // Loading spinner with smooth fade
+            AnimatedVisibility(
+                visible = isLoading,
+                enter = fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)),
+                exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = colorScheme.primary)
+                    }
                 }
-            } else if (foundMints.isNotEmpty() && selectedMint == null) {
-                Spacer(modifier = Modifier.height(32.dp))
+            }
+
+            // Found mints list with staggered animations
+            AnimatedVisibility(
+                visible = foundMints.isNotEmpty() && selectedMint == null && !isLoading,
+                enter = fadeIn(animationSpec = tween(250, delayMillis = 50, easing = FastOutSlowInEasing)),
+                exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+            ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    foundMints.forEach { mint ->
-                        MintRatingItem(
-                            mintName = mint.name,
-                            mintUrl = mint.url,
-                            rating = mint.rating,
-                            onClick = {
-                                foundMints = foundMints.filter { it != mint }
-                                selectedMint = mint
-                            },
-                            selected = false,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                    Spacer(modifier = Modifier.height(32.dp))
+                    foundMints.forEachIndexed { index, mint ->
+                        AnimatedListItem(
+                            delayMillis = index * 40,
+                            content = {
+                                MintRatingItem(
+                                    mintName = mint.name,
+                                    mintUrl = mint.url,
+                                    rating = mint.rating,
+                                    onClick = {
+                                        foundMints = foundMints.filter { it != mint }
+                                        selectedMint = mint
+                                    },
+                                    selected = false,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                                )
+                            }
                         )
                     }
                 }
             }
 
-            // Show 'Finds Mints' only if not loading and no mint is selected
-            if (!isLoading && selectedMint == null) {
-                Spacer(modifier = Modifier.height(32.dp))
-                Text(
-                    text = "Finds Mints",
-                    style = typography.bodySmall,
-                    color = colorScheme.onSurface.copy(alpha = 0.75f),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp)
-                        .align(Alignment.CenterHorizontally)
-                        .clickable(enabled = !isLoading && selectedMint == null) {
-                            isLoading = true
-                            foundMints = listOf()
-                        },
-                    textAlign = TextAlign.Center
-                )
+            // Show 'Finds Mints' with smooth fade
+            AnimatedVisibility(
+                visible = !isLoading && selectedMint == null,
+                enter = fadeIn(animationSpec = tween(250, delayMillis = 100, easing = FastOutSlowInEasing)),
+                exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Text(
+                        text = "Finds Mints",
+                        style = typography.bodySmall,
+                        color = colorScheme.onSurface.copy(alpha = 0.75f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp)
+                            .align(Alignment.CenterHorizontally)
+                            .clickable(enabled = !isLoading && selectedMint == null) {
+                                isLoading = true
+                                foundMints = listOf()
+                            },
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
 
-            // Show 'Next' button if a mint is selected
-            if (selectedMint != null) {
-                Spacer(modifier = Modifier.height(32.dp))
-                BitchatButton(
-                    text = "Next",
-                    onClick = { /* TODO: Next action */ },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp)
-                )
+            // Show 'Next' button with smooth slide up
+            AnimatedVisibility(
+                visible = selectedMint != null,
+                enter = fadeIn(animationSpec = tween(200, delayMillis = 100, easing = FastOutSlowInEasing)) + 
+                slideInVertically(
+                    initialOffsetY = { it / 6 },
+                    animationSpec = tween(250, delayMillis = 100, easing = FastOutSlowInEasing)
+                ),
+                exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(32.dp))
+                    BitchatButton(
+                        text = "Next",
+                        onClick = { /* TODO: Next action */ },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp)
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun AnimatedListItem(
+    delayMillis: Int = 0,
+    content: @Composable () -> Unit
+) {
+    var visible by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(Unit) {
+        delay(delayMillis.toLong())
+        visible = true
+    }
+    
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)) + 
+        slideInVertically(
+            initialOffsetY = { it / 8 },
+            animationSpec = tween(250, easing = FastOutSlowInEasing)
+        ),
+        exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+    ) {
+        content()
     }
 } 
