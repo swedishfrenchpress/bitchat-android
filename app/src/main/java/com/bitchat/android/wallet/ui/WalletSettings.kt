@@ -20,6 +20,7 @@ import com.bitchat.android.wallet.ui.BitchatButtonStyle
 import com.bitchat.android.wallet.ui.MintListItem
 import com.bitchat.android.wallet.ui.SeedPhraseBottomSheet
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WalletSettings(
     viewModel: WalletViewModel = viewModel(),
@@ -170,7 +171,7 @@ fun WalletSettings(
             )
         }
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         
         // ADVANCED section
         Text(
@@ -249,82 +250,202 @@ fun WalletSettings(
         onDismiss = { showSeedPhrase = false }
     )
     
-    // Clear Data Confirmation Dialog
+    // Clear Data Confirmation Bottom Sheet
     if (showClearDataDialog) {
-        AlertDialog(
+        ModalBottomSheet(
             onDismissRequest = { showClearDataDialog = false },
-            title = {
+            containerColor = colorScheme.background,
+            contentColor = colorScheme.onBackground
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                // Header with close button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Clear Wallet Data?",
+                        style = typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        color = colorScheme.onSurface
+                    )
+                    
+                    IconButton(
+                        onClick = { showClearDataDialog = false }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Close",
+                            tint = colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Warning content
                 Text(
-                    text = "Clear Wallet Data?",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    text = "This will permanently delete all wallet data including:",
+                    style = typography.bodyMedium,
+                    color = colorScheme.onSurface,
+                    modifier = Modifier.fillMaxWidth()
                 )
-            },
-            text = {
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // List of items to be deleted
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "• Transaction history",
+                        style = typography.bodySmall,
+                        color = colorScheme.onSurface.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = "• Saved mints",
+                        style = typography.bodySmall,
+                        color = colorScheme.onSurface.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = "• Wallet balance",
+                        style = typography.bodySmall,
+                        color = colorScheme.onSurface.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = "• Settings",
+                        style = typography.bodySmall,
+                        color = colorScheme.onSurface.copy(alpha = 0.8f)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
                 Text(
-                    text = "This will permanently delete all wallet data including:\n\n" +
-                           "• Transaction history\n" +
-                           "• Saved mints\n" +
-                           "• Wallet balance\n" +
-                           "• Settings\n\n" +
-                           "This action cannot be undone!",
-                    style = MaterialTheme.typography.bodySmall
+                    text = "This action cannot be undone!",
+                    style = typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = colorScheme.error,
+                    modifier = Modifier.fillMaxWidth()
                 )
-            },
-            confirmButton = {
-                BitchatButton(
-                    text = "Clear Data",
-                    onClick = {
-                        viewModel.clearAllWalletData()
-                        showClearDataDialog = false
-                    },
-                    style = BitchatButtonStyle.Primary
-                )
-            },
-            dismissButton = {
-                BitchatButton(
-                    text = "Cancel",
-                    onClick = { showClearDataDialog = false },
-                    style = BitchatButtonStyle.Secondary
-                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Action buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    BitchatButton(
+                        text = "Cancel",
+                        onClick = { showClearDataDialog = false },
+                        style = BitchatButtonStyle.Secondary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    BitchatButton(
+                        text = "Clear Data",
+                        onClick = {
+                            viewModel.clearAllWalletData()
+                            showClearDataDialog = false
+                        },
+                        style = BitchatButtonStyle.Primary,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
-        )
+        }
     }
     
-    // Export Data Dialog
+    // Export Data Bottom Sheet
     if (showExportDialog) {
-        AlertDialog(
+        ModalBottomSheet(
             onDismissRequest = { showExportDialog = false },
-            title = {
+            containerColor = colorScheme.background,
+            contentColor = colorScheme.onBackground
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                // Header with close button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Export Wallet Data",
+                        style = typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        color = colorScheme.onSurface
+                    )
+                    
+                    IconButton(
+                        onClick = { showExportDialog = false }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Close",
+                            tint = colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Description
                 Text(
-                    text = "Export Wallet Data",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    text = "This will export your transaction history and mint information to a JSON file.",
+                    style = typography.bodyMedium,
+                    color = colorScheme.onSurface,
+                    modifier = Modifier.fillMaxWidth()
                 )
-            },
-            text = {
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Security note
                 Text(
-                    text = "This will export your transaction history and mint information to a JSON file. " +
-                           "This does NOT include your private keys or wallet secrets.",
-                    style = MaterialTheme.typography.bodySmall
+                    text = "This does NOT include your private keys or wallet secrets.",
+                    style = typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = colorScheme.primary,
+                    modifier = Modifier.fillMaxWidth()
                 )
-            },
-            confirmButton = {
-                BitchatButton(
-                    text = "Export",
-                    onClick = {
-                        viewModel.exportWalletData()
-                        showExportDialog = false
-                    },
-                    style = BitchatButtonStyle.Primary
-                )
-            },
-            dismissButton = {
-                BitchatButton(
-                    text = "Cancel",
-                    onClick = { showExportDialog = false },
-                    style = BitchatButtonStyle.Secondary
-                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Action buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    BitchatButton(
+                        text = "Cancel",
+                        onClick = { showExportDialog = false },
+                        style = BitchatButtonStyle.Secondary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    BitchatButton(
+                        text = "Export",
+                        onClick = {
+                            viewModel.exportWalletData()
+                            showExportDialog = false
+                        },
+                        style = BitchatButtonStyle.Primary,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
-        )
+        }
     }
 }
 
