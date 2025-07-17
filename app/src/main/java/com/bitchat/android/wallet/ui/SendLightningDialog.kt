@@ -1,6 +1,8 @@
 package com.bitchat.android.wallet.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,6 +24,7 @@ import com.bitchat.android.wallet.ui.BitchatButtonStyle
 
 /**
  * Lightning payment send dialog content
+ * Following TopUpScreen.kt UI design patterns
  */
 @Composable
 fun SendLightningDialog(
@@ -34,12 +37,77 @@ fun SendLightningDialog(
     val clipboardManager = LocalClipboardManager.current
     
     if (currentMeltQuote != null) {
-        // Show quote and pay button
+        // Show quote and pay button (following TopUpScreen pattern)
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Quote info card
+            // Amount section header (following TopUpScreen pattern)
+            Text(
+                text = "AMOUNT",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            // Amount display box (following TopUpScreen pattern)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .border(
+                        width = 0.25.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Main amount display - following TopUpScreen pattern
+                    Text(
+                        text = "${currentMeltQuote.amount.toLong()}​₿",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
+                        )
+                    )
+                    
+                    // USD equivalent (simple conversion like TopUpScreen)
+                    val usdAmount = currentMeltQuote.amount.toLong() * 0.001
+                    Text(
+                        text = String.format("%.2f USD", usdAmount),
+                        color = MaterialTheme.colorScheme.secondary,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    
+                    // Fee if applicable
+                    if (currentMeltQuote.feeReserve.toLong() > 0) {
+                        Text(
+                            text = "Fee: ${currentMeltQuote.feeReserve.toLong()}​₿",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // Status section
+            Text(
+                text = "STATUS",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            // Status card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -47,55 +115,33 @@ fun SendLightningDialog(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Lightning icon
                     Icon(
                         imageVector = Icons.Filled.Bolt,
                         contentDescription = "Lightning",
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(32.dp)
                     )
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
                     
-                    Text(
-                        text = "Payment Quote",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Amount
-                    Text(
-                        text = "${currentMeltQuote.amount.toLong()}​₿",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                    
-                    // Fee if applicable
-                    if (currentMeltQuote.feeReserve.toLong() > 0) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                    Column {
                         Text(
-                            text = "Fee: ${currentMeltQuote.feeReserve.toLong()}​₿",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            style = MaterialTheme.typography.bodyMedium
+                            text = "Payment Quote Ready",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = "Quote expires in 5 minutes",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Quote expiry info
-                    Text(
-                        text = "Quote expires in 5 minutes",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        style = MaterialTheme.typography.bodySmall
-                    )
                 }
             }
             
@@ -111,10 +157,18 @@ fun SendLightningDialog(
             )
         }
     } else {
-        // Show invoice input
+        // Show invoice input (following TopUpScreen pattern)
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
+            // Invoice section header
+            Text(
+                text = "LIGHTNING INVOICE",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
             // Invoice input field
             OutlinedTextField(
                 value = invoice,
@@ -142,7 +196,7 @@ fun SendLightningDialog(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                    .padding(bottom = 32.dp),
                 minLines = 3,
                 maxLines = 4,
                 shape = RoundedCornerShape(16.dp),
@@ -159,6 +213,14 @@ fun SendLightningDialog(
                         )
                     }
                 }
+            )
+            
+            // Actions section header
+            Text(
+                text = "ACTIONS",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
             )
             
             // Paste button

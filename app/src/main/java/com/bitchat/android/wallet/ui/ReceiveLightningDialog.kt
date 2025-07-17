@@ -2,6 +2,7 @@ package com.bitchat.android.wallet.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bitchat.android.wallet.data.MintQuote
@@ -27,6 +29,7 @@ import com.bitchat.android.wallet.ui.BitchatButtonStyle
 
 /**
  * Lightning invoice receive dialog content
+ * Following TopUpScreen.kt UI design patterns
  */
 @Composable
 fun ReceiveLightningDialog(
@@ -41,10 +44,66 @@ fun ReceiveLightningDialog(
     if (currentMintQuote != null) {
         // Show generated invoice and QR code
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Invoice info card
+            // Amount section header (following TopUpScreen pattern)
+            Text(
+                text = "AMOUNT",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            // Amount display box (following TopUpScreen pattern)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .border(
+                        width = 0.25.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Main amount display - following TopUpScreen pattern
+                    Text(
+                        text = "${currentMintQuote.amount.toLong()}​₿",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
+                        )
+                    )
+                    
+                    // USD equivalent (simple conversion like TopUpScreen)
+                    val usdAmount = currentMintQuote.amount.toLong() * 0.001
+                    Text(
+                        text = String.format("%.2f USD", usdAmount),
+                        color = MaterialTheme.colorScheme.secondary,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // Status section
+            Text(
+                text = "STATUS",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            // Status card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -52,57 +111,61 @@ fun ReceiveLightningDialog(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Lightning icon
                     Icon(
                         imageVector = Icons.Filled.Bolt,
                         contentDescription = "Lightning",
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(32.dp)
                     )
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
                     
-                    Text(
-                        text = "Lightning Invoice",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Amount
-                    Text(
-                        text = "${currentMintQuote.amount.toLong()}​₿",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Text(
-                        text = "Invoice expires in 15 minutes",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Column {
+                        Text(
+                            text = "Lightning Invoice Created",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = "Invoice expires in 15 minutes",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
             
-            // QR Code placeholder
-            Card(
-                modifier = Modifier
-                    .size(200.dp)
-                    .padding(bottom = 32.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            // QR Code section (following TopUpScreen pattern)
+            Text(
+                text = "LIGHTNING INVOICE",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
+            // Centered QR code (following TopUpScreen layout)
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
             ) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .size(200.dp)
+                        .background(
+                            color = Color.White,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = RoundedCornerShape(8.dp)
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -111,18 +174,20 @@ fun ReceiveLightningDialog(
                         Icon(
                             imageVector = Icons.Filled.QrCode,
                             contentDescription = "QR Code",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = Color.Black,
                             modifier = Modifier.size(120.dp)
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "QR Code",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall
+                            text = "QR CODE",
+                            color = Color.Black,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
             }
+            
+            Spacer(modifier = Modifier.height(32.dp))
             
             // Copy invoice button
             BitchatButton(
@@ -135,11 +200,19 @@ fun ReceiveLightningDialog(
             )
         }
     } else {
-        // Show amount input
+        // Show amount input (following TopUpScreen pattern)
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Amount input
+            // Amount section header
+            Text(
+                text = "AMOUNT",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            // Amount input field
             OutlinedTextField(
                 value = amount,
                 onValueChange = { amount = it },
@@ -160,11 +233,19 @@ fun ReceiveLightningDialog(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = 32.dp),
                 shape = RoundedCornerShape(16.dp)
             )
             
-            // Description input
+            // Description section header
+            Text(
+                text = "DESCRIPTION",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            // Description input field
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
