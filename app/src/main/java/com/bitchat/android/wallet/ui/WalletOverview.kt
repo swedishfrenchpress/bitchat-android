@@ -117,7 +117,24 @@ fun WalletOverview(
             modifier = Modifier.padding(bottom = 32.dp)
         )
         
-        // Action Buttons
+        // Recent Transactions (only show if there are transactions)
+        if (transactions.isNotEmpty()) {
+            Text(
+                text = "RECENT TRANSACTIONS",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            
+            TransactionsList(transactions = transactions)
+            
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+        
+        // Spacer to push action buttons to bottom
+        Spacer(modifier = Modifier.weight(1f))
+        
+        // Action Buttons (in thumb zone at bottom)
         Text(
             text = "ACTIONS",
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
@@ -126,9 +143,7 @@ fun WalletOverview(
         )
         
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             TopUpButton(
@@ -141,20 +156,6 @@ fun WalletOverview(
                 modifier = Modifier.weight(1f),
                 enabled = !isLoading && balance > 0
             )
-        }
-        
-        // Recent Transactions
-        Text(
-            text = "RECENT TRANSACTIONS",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-        
-        if (transactions.isEmpty()) {
-            EmptyTransactionsCard()
-        } else {
-            TransactionsList(transactions = transactions)
         }
         
         // Error message
@@ -185,45 +186,7 @@ private fun TransactionsList(transactions: List<WalletTransaction>) {
     }
 }
 
-@Composable
-private fun EmptyTransactionsCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.History,
-                    contentDescription = "No transactions",
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.size(48.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "No transactions yet",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = "Start by sending or receiving some sats!",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-}
+
 
 @Composable
 private fun ErrorCard(
