@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bitchat.android.ui.theme.BitchatTheme
 import com.bitchat.android.ui.walletcomponents.MintDropDownSelector
+import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.util.*
 
@@ -57,8 +58,9 @@ fun TopUpScreen(
     val satsToBtc = 100_000_000.0
     val btcToUsdRate = 67000.0
     
-    // Auto-focus on screen load
+    // Staggered focus: Let screen fade in first, then show keyboard
     LaunchedEffect(Unit) {
+        delay(500) // Wait for screen fade to complete
         focusRequester.requestFocus()
     }
     

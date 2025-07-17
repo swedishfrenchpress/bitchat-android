@@ -71,9 +71,9 @@ fun WalletScreen(onClose: () -> Unit) {
             transitionSpec = {
                 when (targetState) {
                     "topup" -> {
-                        // Entering top up: simple fade in (stock animation)
-                        fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) togetherWith
-                        fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing))
+                        // Entering top up: pure fade only (no slide)
+                        fadeIn(animationSpec = tween(150, easing = FastOutSlowInEasing)) togetherWith
+                        fadeOut(animationSpec = tween(100, easing = FastOutSlowInEasing))
                     }
                     "settings" -> {
                         // Entering settings: smooth slide in from right with fade
