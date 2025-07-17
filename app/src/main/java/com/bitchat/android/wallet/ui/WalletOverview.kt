@@ -1,9 +1,8 @@
 package com.bitchat.android.wallet.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -39,6 +38,7 @@ fun WalletOverview(
     viewModel: WalletViewModel,
     onBackToChat: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
+    onTransactionHistoryClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val balance by viewModel.balance.observeAsState(0L)
@@ -117,16 +117,36 @@ fun WalletOverview(
             modifier = Modifier.padding(bottom = 32.dp)
         )
         
-        // Recent Transactions (only show if there are transactions)
+        // Recent Transaction (show single most recent transaction)
         if (transactions.isNotEmpty()) {
             Text(
-                text = "RECENT TRANSACTIONS",
+                text = "RECENT TRANSACTION",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 modifier = Modifier.padding(bottom = 12.dp)
             )
             
-            TransactionsList(transactions = transactions)
+            // Show only the most recent transaction
+            TransactionItem(
+                label = transactions.first().description ?: getDefaultDescription(transactions.first().type),
+                date = formatTimestamp(transactions.first().timestamp),
+                amount = formatTransactionAmount(transactions.first()),
+                status = mapTransactionStatus(transactions.first().status),
+                enabled = true
+            )
+            
+            // Show "Transaction History" link if there are multiple transactions
+            if (transactions.size > 1) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Transaction History",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .clickable { onTransactionHistoryClick() }
+                        .padding(vertical = 8.dp)
+                )
+            }
             
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -169,22 +189,7 @@ fun WalletOverview(
     }
 }
 
-@Composable
-private fun TransactionsList(transactions: List<WalletTransaction>) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(transactions) { transaction ->
-            TransactionItem(
-                label = transaction.description ?: getDefaultDescription(transaction.type),
-                date = formatTimestamp(transaction.timestamp),
-                amount = formatTransactionAmount(transaction),
-                status = mapTransactionStatus(transaction.status),
-                enabled = true
-            )
-        }
-    }
-}
+
 
 
 
