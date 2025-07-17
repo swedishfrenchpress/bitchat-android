@@ -98,6 +98,7 @@ fun WalletScreen(
                     0 -> WalletOverview(
                         viewModel = walletViewModel,
                         onBackToChat = onBackToChat,
+                        onSettingsClick = { selectedTab = 3 },
                         modifier = Modifier.weight(1f)
                     )
                     1 -> TransactionHistory(

@@ -38,6 +38,7 @@ import java.util.*
 fun WalletOverview(
     viewModel: WalletViewModel,
     onBackToChat: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val balance by viewModel.balance.observeAsState(0L)
@@ -52,30 +53,60 @@ fun WalletOverview(
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
-        // Back to Chat button
-        Row(
+        // Wallet Header Navigation
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.Start
+                .padding(bottom = 16.dp)
         ) {
-            TextButton(
+            // Back button - positioned all the way to the left with minimal margin
+            Button(
                 onClick = onBackToChat,
-                colors = ButtonDefaults.textButtonColors(
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.primary
-                )
+                ),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .offset(x = (-8).dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "back",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            
+            // Title - perfectly centered
+            Text(
+                text = "Wallet",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.align(Alignment.Center)
+            )
+            
+            // Settings button - positioned on the right
+            IconButton(
+                onClick = onSettingsClick,
+                modifier = Modifier.align(Alignment.CenterEnd)
             ) {
                 Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "Back to Chat",
-                    modifier = Modifier.size(16.dp),
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "Wallet Settings",
+                    modifier = Modifier.size(18.dp),
                     tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Chat",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
