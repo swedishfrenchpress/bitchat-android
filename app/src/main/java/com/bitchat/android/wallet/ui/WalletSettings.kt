@@ -2,164 +2,252 @@ package com.bitchat.android.wallet.ui
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import com.bitchat.android.wallet.ui.BitchatButton
 import com.bitchat.android.wallet.ui.BitchatButtonStyle
+import com.bitchat.android.wallet.ui.MintListItem
+import com.bitchat.android.wallet.ui.SeedPhraseBottomSheet
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WalletSettings(
     viewModel: WalletViewModel = viewModel(),
     onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+    val typography = MaterialTheme.typography
+    
+    // State for dialogs
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
+    var showSeedPhrase by remember { mutableStateOf(false) }
     
-    LazyColumn(
+    // Observe real wallet data
+    val mints by viewModel.mints.observeAsState(emptyList())
+    val activeMint by viewModel.activeMint.observeAsState()
+    val transactions by viewModel.transactions.observeAsState(emptyList())
+    
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .background(MaterialTheme.colorScheme.background)
+            .padding(16.dp)
     ) {
-            // Wallet Info Section
-            item {
-                SettingsSection(title = "WALLET INFORMATION") {
-                    SettingsCard {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        ) {
-                            InfoRow("Wallet Version", "0.1.0-beta")
-                            Spacer(modifier = Modifier.height(8.dp))
-                            InfoRow("Protocol Version", "Cashu v1")
-                            Spacer(modifier = Modifier.height(8.dp))
-                            InfoRow("Active Mints", "${viewModel.mints.value?.size ?: 0}")
-                            Spacer(modifier = Modifier.height(8.dp))
-                            InfoRow("Total Transactions", "${viewModel.transactions.value?.size ?: 0}")
-                        }
-                    }
+        // Header Navigation (ChatHeader style)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp)
+        ) {
+            // Back button - positioned all the way to the left with minimal margin
+            Button(
+                onClick = onBackClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = colorScheme.primary
+                ),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .offset(x = (-8).dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        modifier = Modifier.size(16.dp),
+                        tint = colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "back",
+                        style = typography.bodyMedium,
+                        color = colorScheme.primary
+                    )
                 }
             }
             
-            // Security Section
-            item {
-                SettingsSection(title = "SECURITY") {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SettingsItem(
-                            icon = Icons.Filled.FileDownload,
-                            title = "Export Wallet Data",
-                            description = "Export transaction history and mint info",
-                            onClick = { showExportDialog = true }
-                        )
-                        
-                        SettingsItem(
-                            icon = Icons.Filled.Security,
-                            title = "View Seed Phrase",
-                            description = "Display wallet recovery information",
-                            onClick = { /* TODO: Implement seed phrase display */ }
-                        )
-                        
-                        SettingsItem(
-                            icon = Icons.Filled.Warning,
-                            title = "Clear Wallet Data",
-                            description = "Remove all wallet data (irreversible)",
-                            onClick = { showClearDataDialog = true },
-                            textColor = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            }
-            
-            // Network Section
-            item {
-                SettingsSection(title = "NETWORK") {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SettingsItem(
-                            icon = Icons.Filled.Public,
-                            title = "Network Statistics",
-                            description = "View network connectivity information",
-                            onClick = { /* TODO: Show network stats */ }
-                        )
-                        
-                        SettingsItem(
-                            icon = Icons.Filled.Refresh,
-                            title = "Sync All Mints",
-                            description = "Refresh mint information and keysets",
-                            onClick = { viewModel.syncAllMints() }
+            // Title - perfectly centered
+            Text(
+                text = "wallet settings",
+                style = typography.titleMedium,
+                color = colorScheme.onSurface,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+        
+        // MINTS section
+        Text(
+            text = "MINTS",
+            style = typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = colorScheme.onSurface.copy(alpha = 0.7f),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        
+        // Real mint list from viewModel
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(bottom = 32.dp)
+        ) {
+            if (mints.isEmpty()) {
+                // Empty state
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = colorScheme.surface)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No mints configured",
+                            color = colorScheme.onSurface.copy(alpha = 0.6f),
+                            style = typography.bodyMedium
                         )
                     }
                 }
-            }
-            
-            // Development Section
-            item {
-                SettingsSection(title = "DEVELOPMENT") {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SettingsItem(
-                            icon = Icons.Filled.BugReport,
-                            title = "Debug Mode",
-                            description = "Enable detailed logging and debug features",
-                            onClick = { /* TODO: Toggle debug mode */ }
-                        )
-                        
-                        SettingsItem(
-                            icon = Icons.Filled.Code,
-                            title = "Developer Tools",
-                            description = "Advanced tools for testing and debugging",
-                            onClick = { /* TODO: Open dev tools */ }
-                        )
-                    }
-                }
-            }
-            
-            // About Section
-            item {
-                SettingsSection(title = "ABOUT") {
-                    SettingsCard {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        ) {
-                            Text(
-                                text = "bitchat Cashu Wallet",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "A privacy-focused Cashu ecash wallet integrated with bitchat mesh networking.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "Built with the Cashu Development Kit (CDK)",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                            )
-                        }
-                    }
+            } else {
+                mints.forEach { mint ->
+                    MintListItem(
+                        mintName = mint.info?.name ?: mint.nickname,
+                        mintUrl = mint.url,
+                        balance = "— ₿", // Individual mint balances not tracked currently
+                        selected = activeMint == mint.url,
+                        onDelete = {
+                            if (mints.size > 1 && activeMint != mint.url) {
+                                // viewModel.removeMint(mint.url) // Uncomment when implemented
+                            }
+                        },
+                        onClick = {
+                            viewModel.setActiveMint(mint.url)
+                        },
+                        enabled = true
+                    )
                 }
             }
         }
+        
+        // BACK UP section
+        Text(
+            text = "BACK UP",
+            style = typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = colorScheme.onSurface.copy(alpha = 0.7f),
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        
+        // View Seed Phrase option
+        Column(
+            modifier = Modifier
+                .clickable { showSeedPhrase = true }
+                .padding(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "View Seed Phrase",
+                style = typography.bodyMedium,
+                color = colorScheme.primary
+            )
+            Text(
+                text = "Display wallet recovery information",
+                style = typography.bodySmall,
+                color = colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // ADVANCED section
+        Text(
+            text = "ADVANCED",
+            style = typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = colorScheme.onSurface.copy(alpha = 0.7f),
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        
+        // Advanced options
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Export wallet data
+            Column(
+                modifier = Modifier
+                    .clickable { showExportDialog = true }
+                    .padding(vertical = 8.dp)
+            ) {
+                Text(
+                    text = "Export Wallet Data",
+                    style = typography.bodyMedium,
+                    color = colorScheme.primary
+                )
+                Text(
+                    text = "Export transaction history and mint info",
+                    style = typography.bodySmall,
+                    color = colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+            
+            // Sync all mints
+            Column(
+                modifier = Modifier
+                    .clickable { viewModel.syncAllMints() }
+                    .padding(vertical = 8.dp)
+            ) {
+                Text(
+                    text = "Sync All Mints",
+                    style = typography.bodyMedium,
+                    color = colorScheme.primary
+                )
+                Text(
+                    text = "Refresh mint information and keysets",
+                    style = typography.bodySmall,
+                    color = colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+            
+            // Clear wallet data
+            Column(
+                modifier = Modifier
+                    .clickable { showClearDataDialog = true }
+                    .padding(vertical = 8.dp)
+            ) {
+                Text(
+                    text = "Clear Wallet Data",
+                    style = typography.bodyMedium,
+                    color = colorScheme.error
+                )
+                Text(
+                    text = "Remove all wallet data (irreversible)",
+                    style = typography.bodySmall,
+                    color = colorScheme.error.copy(alpha = 0.7f)
+                )
+            }
+        }
+        
+        // Spacer to push content up
+        Spacer(modifier = Modifier.weight(1f))
+    }
+    
+    // Seed phrase bottom sheet
+    SeedPhraseBottomSheet(
+        isVisible = showSeedPhrase,
+        onDismiss = { showSeedPhrase = false }
+    )
     
     // Clear Data Confirmation Dialog
     if (showClearDataDialog) {
@@ -240,101 +328,6 @@ fun WalletSettings(
     }
 }
 
-@Composable
-private fun SettingsSection(
-    title: String,
-    content: @Composable () -> Unit
-) {
-    Column {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        content()
-    }
-}
 
-@Composable
-private fun SettingsCard(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        border = BorderStroke(0.25.dp, MaterialTheme.colorScheme.primary)
-    ) {
-        content()
-    }
-}
 
-@Composable
-private fun SettingsItem(
-    icon: ImageVector,
-    title: String,
-    description: String,
-    onClick: () -> Unit,
-    textColor: Color = MaterialTheme.colorScheme.onSurface
-) {
-    SettingsCard {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onClick() }
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = textColor,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                    color = textColor
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = textColor.copy(alpha = 0.7f)
-                )
-            }
-            Icon(
-                imageVector = Icons.Filled.ChevronRight,
-                contentDescription = null,
-                tint = textColor.copy(alpha = 0.5f),
-                modifier = Modifier.size(16.dp)
-            )
-        }
-    }
-}
 
-@Composable
-private fun InfoRow(
-    label: String,
-    value: String
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = "$label:",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}

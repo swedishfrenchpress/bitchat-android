@@ -20,7 +20,7 @@ import com.bitchat.android.wallet.viewmodel.WalletViewModel
 // Import the SuccessAnimation component (same package, no need for full path)
 
 /**
- * Main wallet screen with bottom navigation
+ * Main wallet screen showing wallet overview
  */
 @Composable
 fun WalletScreen(
@@ -28,9 +28,9 @@ fun WalletScreen(
     onBackToChat: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
     var showReceiveView by remember { mutableStateOf(false) }
     var showSendView by remember { mutableStateOf(false) }
+    var showSettingsView by remember { mutableStateOf(false) }
     val showSendDialog by walletViewModel.showSendDialog.observeAsState(false)
     val showReceiveDialog by walletViewModel.showReceiveDialog.observeAsState(false)
     val showSuccessAnimation by walletViewModel.showSuccessAnimation.observeAsState(false)
@@ -41,6 +41,11 @@ fun WalletScreen(
     // Back handler for the wallet
     fun handleBackPress(): Boolean {
         return when {
+            // Close settings view
+            showSettingsView -> {
+                showSettingsView = false
+                true
+            }
             // Close receive view
             showReceiveView -> {
                 showReceiveView = false
@@ -58,12 +63,7 @@ fun WalletScreen(
                 walletViewModel.hideSendDialog()
                 true
             }
-            // If we're not in the wallet tab, go back to wallet tab
-            selectedTab != 0 -> {
-                selectedTab = 0
-                true
-            }
-            // If we're in the wallet tab, go back to chat
+            // Go back to chat
             else -> {
                 onBackToChat()
                 true
@@ -91,42 +91,21 @@ fun WalletScreen(
                     walletViewModel.hideSendDialog()
                 }
             )
+        } else if (showSettingsView) {
+            // Settings screen
+            WalletSettings(
+                viewModel = walletViewModel,
+                onBackClick = { showSettingsView = false },
+                modifier = Modifier.fillMaxSize()
+            )
         } else {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Content
-                when (selectedTab) {
-                    0 -> WalletOverview(
-                        viewModel = walletViewModel,
-                        onBackToChat = onBackToChat,
-                        onSettingsClick = { selectedTab = 3 },
-                        modifier = Modifier.weight(1f)
-                    )
-                    1 -> TransactionHistory(
-                        transactions = walletViewModel.getAllTransactions().observeAsState(initial = emptyList()).value,
-                        modifier = Modifier.weight(1f),
-                        onTransactionClick = { transaction ->
-                            // For lightning receive transactions, open the receive view with the quote
-                            if (transaction.type == com.bitchat.android.wallet.data.TransactionType.LIGHTNING_RECEIVE && 
-                                transaction.quote != null) {
-                                walletViewModel.setCurrentMintQuote(transaction.quote!!)
-                                showReceiveView = true
-                            }
-                        }
-                    )
-                    2 -> MintsScreen(viewModel = walletViewModel, modifier = Modifier.weight(1f))
-                    3 -> WalletSettings(
-                        viewModel = walletViewModel,
-                        onBackClick = { /* No back action needed in tab navigation */ },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                
-                // Bottom Navigation
-                WalletBottomNavigation(
-                    selectedTab = selectedTab,
-                    onTabSelected = { selectedTab = it }
-                )
-            }
+            // Main wallet overview
+            WalletOverview(
+                viewModel = walletViewModel,
+                onBackToChat = onBackToChat,
+                onSettingsClick = { showSettingsView = true },
+                modifier = Modifier.fillMaxSize()
+            )
         }
         
         // Success animation overlay
@@ -175,117 +154,4 @@ fun WalletScreen(
     walletViewModel.setBackHandler { handleBackPress() }
 }
 
-@Composable
-private fun WalletBottomNavigation(
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit
-) {
-    NavigationBar(
-        containerColor = Color(0xFF1A1A1A),
-        tonalElevation = 8.dp
-    ) {
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    imageVector = Icons.Filled.AccountBalanceWallet,
-                    contentDescription = "Wallet",
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            label = {
-                Text(
-                    text = "Wallet",
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp
-                )
-            },
-            selected = selectedTab == 0,
-            onClick = { onTabSelected(0) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF00C851),
-                selectedTextColor = Color(0xFF00C851),
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray,
-                indicatorColor = Color(0xFF00C851).copy(alpha = 0.2f)
-            )
-        )
-        
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    imageVector = Icons.Filled.History,
-                    contentDescription = "History",
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            label = {
-                Text(
-                    text = "History",
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp
-                )
-            },
-            selected = selectedTab == 1,
-            onClick = { onTabSelected(1) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF00C851),
-                selectedTextColor = Color(0xFF00C851),
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray,
-                indicatorColor = Color(0xFF00C851).copy(alpha = 0.2f)
-            )
-        )
-        
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    imageVector = Icons.Filled.AccountBalance,
-                    contentDescription = "Mints",
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            label = {
-                Text(
-                    text = "Mints",
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp
-                )
-            },
-            selected = selectedTab == 2,
-            onClick = { onTabSelected(2) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF00C851),
-                selectedTextColor = Color(0xFF00C851),
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray,
-                indicatorColor = Color(0xFF00C851).copy(alpha = 0.2f)
-            )
-        )
-        
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    imageVector = Icons.Filled.Settings,
-                    contentDescription = "Settings",
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            label = {
-                Text(
-                    text = "Settings",
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp
-                )
-            },
-            selected = selectedTab == 3,
-            onClick = { onTabSelected(3) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF00C851),
-                selectedTextColor = Color(0xFF00C851),
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray,
-                indicatorColor = Color(0xFF00C851).copy(alpha = 0.2f)
-            )
-        )
-    }
-}
+
