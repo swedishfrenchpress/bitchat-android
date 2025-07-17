@@ -64,14 +64,15 @@ fun WalletScreen(onClose: () -> Unit) {
         AnimatedContent(
             targetState = showSettings,
             transitionSpec = {
-                slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(300, easing = FastOutSlowInEasing)
-                ) + fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) togetherWith
-                slideOutHorizontally(
-                    targetOffsetX = { -it },
-                    animationSpec = tween(300, easing = FastOutSlowInEasing)
-                ) + fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing))
+                if (targetState) {
+                    // Entering settings: slide in from right
+                    slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) togetherWith
+                    slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300))
+                } else {
+                    // Exiting settings: slide in from left (main screen) and slide out to right (settings)
+                    slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300)) togetherWith
+                    slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300))
+                }
             },
             label = "settings_transition"
         ) { showSettingsScreen ->
