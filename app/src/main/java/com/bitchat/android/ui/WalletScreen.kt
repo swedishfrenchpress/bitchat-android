@@ -82,6 +82,17 @@ fun WalletScreen(onClose: () -> Unit) {
                 onAddClick = {},
                 modifier = Modifier.padding(horizontal = 12.dp) // Add this!
             )
+            Spacer(modifier = Modifier.height(32.dp))
+            Text(
+                text = "Finds Mints",
+                style = typography.bodySmall,
+                color = colorScheme.onSurface.copy(alpha = 0.50f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .align(Alignment.CenterHorizontally),
+                textAlign = TextAlign.Center
+            )
         }
     }
 } 
