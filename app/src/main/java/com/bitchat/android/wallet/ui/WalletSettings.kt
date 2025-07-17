@@ -75,20 +75,12 @@ fun WalletSettings(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "back",
-                        style = typography.bodyMedium,
-                        color = colorScheme.primary
+                        text = "Settings",
+                        style = typography.titleMedium,
+                        color = colorScheme.onSurface
                     )
                 }
             }
-            
-            // Title - perfectly centered
-            Text(
-                text = "wallet settings",
-                style = typography.titleMedium,
-                color = colorScheme.onSurface,
-                modifier = Modifier.align(Alignment.Center)
-            )
         }
         
         // MINTS section

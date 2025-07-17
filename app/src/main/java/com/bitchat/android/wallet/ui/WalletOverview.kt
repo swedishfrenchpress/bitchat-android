@@ -53,7 +53,7 @@ fun WalletOverview(
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
-        // Wallet Header Navigation
+        // Wallet Header Navigation (ChatHeader style)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -82,20 +82,12 @@ fun WalletOverview(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "back",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        text = "Wallet",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
-            
-            // Title - perfectly centered
-            Text(
-                text = "Wallet",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.align(Alignment.Center)
-            )
             
             // Settings button - positioned on the right
             IconButton(
