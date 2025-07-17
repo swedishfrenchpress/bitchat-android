@@ -135,16 +135,18 @@ fun WalletOverview(
                 enabled = true
             )
             
-            // Show "Transaction History" link if there are multiple transactions
+            // Show "All Transactions" link if there are multiple transactions
             if (transactions.size > 1) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Transaction History",
+                    text = "All Transactions",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
                     modifier = Modifier
+                        .fillMaxWidth()
                         .clickable { onTransactionHistoryClick() }
-                        .padding(vertical = 8.dp)
+                        .padding(vertical = 8.dp),
+                    textAlign = TextAlign.Center
                 )
             }
             

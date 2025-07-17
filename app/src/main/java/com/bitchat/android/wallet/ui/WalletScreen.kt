@@ -31,6 +31,7 @@ fun WalletScreen(
     var showReceiveView by remember { mutableStateOf(false) }
     var showSendView by remember { mutableStateOf(false) }
     var showSettingsView by remember { mutableStateOf(false) }
+    var showTransactionHistoryView by remember { mutableStateOf(false) }
     val showSendDialog by walletViewModel.showSendDialog.observeAsState(false)
     val showReceiveDialog by walletViewModel.showReceiveDialog.observeAsState(false)
     val showSuccessAnimation by walletViewModel.showSuccessAnimation.observeAsState(false)
@@ -41,6 +42,11 @@ fun WalletScreen(
     // Back handler for the wallet
     fun handleBackPress(): Boolean {
         return when {
+            // Close transaction history view
+            showTransactionHistoryView -> {
+                showTransactionHistoryView = false
+                true
+            }
             // Close settings view
             showSettingsView -> {
                 showSettingsView = false
@@ -98,12 +104,20 @@ fun WalletScreen(
                 onBackClick = { showSettingsView = false },
                 modifier = Modifier.fillMaxSize()
             )
+        } else if (showTransactionHistoryView) {
+            // Transaction history screen
+            TransactionHistoryScreen(
+                viewModel = walletViewModel,
+                onBackClick = { showTransactionHistoryView = false },
+                modifier = Modifier.fillMaxSize()
+            )
         } else {
             // Main wallet overview
             WalletOverview(
                 viewModel = walletViewModel,
                 onBackToChat = onBackToChat,
                 onSettingsClick = { showSettingsView = true },
+                onTransactionHistoryClick = { showTransactionHistoryView = true },
                 modifier = Modifier.fillMaxSize()
             )
         }
