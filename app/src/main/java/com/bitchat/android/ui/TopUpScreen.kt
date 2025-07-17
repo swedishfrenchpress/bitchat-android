@@ -276,46 +276,54 @@ private fun TopUpHeader(
     onSettingsClick: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val typography = MaterialTheme.typography
     
-    Box(modifier = Modifier.fillMaxWidth()) {
-        // Back button with "top up" text - matching ChatHeader pattern
-        Button(
+    // Navigation row: exactly matching WalletScreen pattern
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(36.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Back arrow on the left - exactly matching WalletScreen
+        IconButton(
             onClick = onBackClick,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent,
-                contentColor = colorScheme.primary
-            ),
-            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
             modifier = Modifier
-                .align(Alignment.CenterStart)
-                .offset(x = (-8).dp)
+                .padding(start = 0.dp)
+                .size(36.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    modifier = Modifier.size(16.dp),
-                    tint = colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "top up",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = colorScheme.primary
-                )
-            }
+            Icon(
+                imageVector = Icons.Filled.ArrowBack,
+                contentDescription = "Back",
+                modifier = Modifier.size(16.dp),
+                tint = colorScheme.primary
+            )
         }
         
-        // Settings icon on the right
+        // Title: 'top up' in lower case - exactly matching WalletScreen pattern
+        Text(
+            text = "top up",
+            style = typography.headlineSmall,
+            color = colorScheme.primary,
+            modifier = Modifier
+                .padding(start = 0.dp)
+                .align(Alignment.CenterVertically)
+        )
+        
+        Spacer(modifier = Modifier.weight(1f))
+        
+        // Settings icon on the right - exactly matching WalletScreen
         IconButton(
             onClick = onSettingsClick,
-            modifier = Modifier.align(Alignment.CenterEnd)
+            modifier = Modifier
+                .padding(end = 0.dp)
+                .size(36.dp)
         ) {
             Icon(
                 imageVector = Icons.Filled.Settings,
                 contentDescription = "Settings",
+                modifier = Modifier.size(16.dp),
                 tint = colorScheme.primary
             )
         }
