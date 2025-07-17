@@ -28,6 +28,16 @@ import com.bitchat.android.ui.MainAppScreen
 import com.bitchat.android.ui.theme.BitchatTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.bitchat.android.ui.WalletScreen
+import com.google.accompanist.navigation.animation.AnimatedNavHost
+import com.google.accompanist.navigation.animation.composable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.ExperimentalAnimationApi
 
 class MainActivity : ComponentActivity() {
     
@@ -108,6 +118,7 @@ class MainActivity : ComponentActivity() {
         checkOnboardingStatus()
     }
     
+    @OptIn(ExperimentalAnimationApi::class)
     @Composable
     private fun OnboardingFlowScreen() {
         when (onboardingState) {
