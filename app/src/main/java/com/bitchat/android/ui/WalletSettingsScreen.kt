@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.clickable
 import com.bitchat.android.ui.walletcomponents.MintListItem
 
 data class MintInfo(
@@ -28,6 +29,7 @@ fun WalletSettingsScreen(
     
     // Sample mint data - 3 mints with one selected
     var selectedMintId by remember { mutableStateOf("mint1") }
+    var showSeedPhrase by remember { mutableStateOf(false) }
     val mints = remember {
         listOf(
             MintInfo("mint1", "Cashu Mint 1", "https://mint1.example.com", "0.00234​₿"),
@@ -129,7 +131,10 @@ fun WalletSettingsScreen(
         
         // Back up options
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp),
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .clickable { showSeedPhrase = true }
+                .padding(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // View Seed Phrase option
@@ -150,4 +155,10 @@ fun WalletSettingsScreen(
         // Spacer to push content up
         Spacer(modifier = Modifier.weight(1f))
     }
+    
+    // Seed phrase bottom sheet
+    SeedPhraseBottomSheet(
+        isVisible = showSeedPhrase,
+        onDismiss = { showSeedPhrase = false }
+    )
 } 
