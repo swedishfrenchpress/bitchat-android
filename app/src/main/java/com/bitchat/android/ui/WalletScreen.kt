@@ -40,6 +40,7 @@ fun WalletScreen(onClose: () -> Unit) {
     var foundMints by remember { mutableStateOf(listOf<MintData>()) }
     var selectedMint by remember { mutableStateOf<MintData?>(null) }
     var showMainWallet by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
 
     // Dummy data for found mints
     val dummyMints = listOf(
@@ -61,51 +62,74 @@ fun WalletScreen(onClose: () -> Unit) {
         color = colorScheme.background
     ) {
         AnimatedContent(
-            targetState = showMainWallet,
+            targetState = showSettings,
             transitionSpec = {
-                fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + 
                 slideInHorizontally(
                     initialOffsetX = { it },
                     animationSpec = tween(300, easing = FastOutSlowInEasing)
-                ) togetherWith
-                fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)) + 
+                ) + fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) togetherWith
                 slideOutHorizontally(
                     targetOffsetX = { -it },
-                    animationSpec = tween(200, easing = FastOutSlowInEasing)
-                )
+                    animationSpec = tween(300, easing = FastOutSlowInEasing)
+                ) + fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing))
             },
-            label = "wallet_screen_transition"
-        ) { showMain ->
-            if (showMain) {
-                MainWalletContent(
-                    onClose = onClose,
-                    selectedMint = selectedMint!!,
-                    onBack = { showMainWallet = false }
+            label = "settings_transition"
+        ) { showSettingsScreen ->
+            if (showSettingsScreen) {
+                WalletSettingsScreen(
+                    onClose = { showSettings = false }
                 )
             } else {
-                MintSelectionContent(
-                    colorScheme = colorScheme,
-                    typography = typography,
-                    url = url,
-                    onUrlChange = { url = it },
-                    isLoading = isLoading,
-                    onStartLoading = {
-                        isLoading = true
-                        foundMints = listOf()
+                AnimatedContent(
+                    targetState = showMainWallet,
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + 
+                        slideInHorizontally(
+                            initialOffsetX = { it },
+                            animationSpec = tween(300, easing = FastOutSlowInEasing)
+                        ) togetherWith
+                        fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)) + 
+                        slideOutHorizontally(
+                            targetOffsetX = { -it },
+                            animationSpec = tween(200, easing = FastOutSlowInEasing)
+                        )
                     },
-                    foundMints = foundMints,
-                    selectedMint = selectedMint,
-                    onMintSelected = { mint ->
-                        foundMints = foundMints.filter { it != mint }
-                        selectedMint = mint
-                    },
-                    onMintRemoved = {
-                        foundMints = listOf(selectedMint!!) + foundMints
-                        selectedMint = null
-                    },
-                    onNext = { showMainWallet = true },
-                    onClose = onClose
-                )
+                    label = "wallet_screen_transition"
+                ) { showMain ->
+                    if (showMain) {
+                        MainWalletContent(
+                            onClose = onClose,
+                            selectedMint = selectedMint!!,
+                            onBack = { showMainWallet = false },
+                            onSettings = { showSettings = true }
+                        )
+                    } else {
+                                        MintSelectionContent(
+                            colorScheme = colorScheme,
+                            typography = typography,
+                            url = url,
+                            onUrlChange = { url = it },
+                            isLoading = isLoading,
+                            onStartLoading = {
+                                isLoading = true
+                                foundMints = listOf()
+                            },
+                            foundMints = foundMints,
+                            selectedMint = selectedMint,
+                            onMintSelected = { mint ->
+                                foundMints = foundMints.filter { it != mint }
+                                selectedMint = mint
+                            },
+                            onMintRemoved = {
+                                foundMints = listOf(selectedMint!!) + foundMints
+                                selectedMint = null
+                            },
+                            onNext = { showMainWallet = true },
+                            onClose = onClose,
+                            onSettings = { showSettings = true }
+                        )
+                    }
+                }
             }
         }
     }
@@ -115,7 +139,8 @@ fun WalletScreen(onClose: () -> Unit) {
 private fun MainWalletContent(
     onClose: () -> Unit,
     selectedMint: MintData,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSettings: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val typography = MaterialTheme.typography
@@ -158,7 +183,7 @@ private fun MainWalletContent(
             Spacer(modifier = Modifier.weight(1f))
             // Settings icon on the right
             IconButton(
-                onClick = { /* TODO: Settings action */ },
+                onClick = onSettings,
                 modifier = Modifier
                     .padding(end = 0.dp)
                     .size(36.dp)
@@ -242,7 +267,8 @@ private fun MintSelectionContent(
     onMintSelected: (MintData) -> Unit,
     onMintRemoved: () -> Unit,
     onNext: () -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onSettings: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -282,7 +308,7 @@ private fun MintSelectionContent(
             Spacer(modifier = Modifier.weight(1f))
             // Settings icon on the right
             IconButton(
-                onClick = { /* TODO: Settings action */ },
+                onClick = onSettings,
                 modifier = Modifier
                     .padding(end = 0.dp)
                     .size(36.dp)
