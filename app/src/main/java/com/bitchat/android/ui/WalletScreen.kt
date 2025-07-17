@@ -41,6 +41,7 @@ fun WalletScreen(onClose: () -> Unit) {
     var selectedMint by remember { mutableStateOf<MintData?>(null) }
     var showMainWallet by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var showTopUp by remember { mutableStateOf(false) }
 
     // Dummy data for found mints
     val dummyMints = listOf(
@@ -62,73 +63,125 @@ fun WalletScreen(onClose: () -> Unit) {
         color = colorScheme.background
     ) {
         AnimatedContent(
-            targetState = showSettings,
-            transitionSpec = {
-                if (targetState) {
-                    // Entering settings: slide in from right
-                    slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) togetherWith
-                    slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300))
-                } else {
-                    // Exiting settings: slide in from left (main screen) and slide out to right (settings)
-                    slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300)) togetherWith
-                    slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300))
-                }
+            targetState = when {
+                showTopUp -> "topup"
+                showSettings -> "settings"
+                else -> "main"
             },
-            label = "settings_transition"
-        ) { showSettingsScreen ->
-            if (showSettingsScreen) {
-                WalletSettingsScreen(
-                    onClose = { showSettings = false }
-                )
-            } else {
-                AnimatedContent(
-                    targetState = showMainWallet,
-                    transitionSpec = {
+            transitionSpec = {
+                when (targetState) {
+                    "topup" -> {
+                        // Entering top up: simple fade in (stock animation)
+                        fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) togetherWith
+                        fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing))
+                    }
+                    "settings" -> {
+                        // Entering settings: smooth slide in from right with fade
                         fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + 
                         slideInHorizontally(
-                            initialOffsetX = { it },
+                            initialOffsetX = { it }, 
                             animationSpec = tween(300, easing = FastOutSlowInEasing)
                         ) togetherWith
                         fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)) + 
                         slideOutHorizontally(
-                            targetOffsetX = { -it },
+                            targetOffsetX = { -it }, 
                             animationSpec = tween(200, easing = FastOutSlowInEasing)
                         )
-                    },
-                    label = "wallet_screen_transition"
-                ) { showMain ->
-                    if (showMain) {
-                        MainWalletContent(
-                            onClose = onClose,
-                            selectedMint = selectedMint!!,
-                            onBack = { showMainWallet = false },
-                            onSettings = { showSettings = true }
-                        )
-                    } else {
-                                        MintSelectionContent(
-                            colorScheme = colorScheme,
-                            typography = typography,
-                            url = url,
-                            onUrlChange = { url = it },
-                            isLoading = isLoading,
-                            onStartLoading = {
-                                isLoading = true
-                                foundMints = listOf()
-                            },
-                            foundMints = foundMints,
-                            selectedMint = selectedMint,
-                            onMintSelected = { mint ->
-                                foundMints = foundMints.filter { it != mint }
-                                selectedMint = mint
-                            },
-                            onMintRemoved = {
-                                foundMints = listOf(selectedMint!!) + foundMints
-                                selectedMint = null
-                            },
-                            onNext = { showMainWallet = true },
-                            onClose = onClose,
-                            onSettings = { showSettings = true }
-                        )
+                    }
+                    else -> {
+                        // Returning to main: check if coming from topup for different animation
+                        if (initialState == "topup") {
+                            // Exiting top up: slide out to right (consistent with other exits)
+                            fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) togetherWith
+                            fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)) + 
+                            slideOutHorizontally(
+                                targetOffsetX = { it }, 
+                                animationSpec = tween(200, easing = FastOutSlowInEasing)
+                            )
+                        } else {
+                            // Other transitions: slide in from left with fade
+                            fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + 
+                            slideInHorizontally(
+                                initialOffsetX = { -it }, 
+                                animationSpec = tween(300, easing = FastOutSlowInEasing)
+                            ) togetherWith
+                            fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)) + 
+                            slideOutHorizontally(
+                                targetOffsetX = { it }, 
+                                animationSpec = tween(200, easing = FastOutSlowInEasing)
+                            )
+                        }
+                    }
+                }
+            },
+            label = "screen_transition"
+        ) { currentScreen ->
+            when (currentScreen) {
+                "topup" -> {
+                    TopUpScreen(
+                        onBackClick = { showTopUp = false },
+                        onSettingsClick = { 
+                            showTopUp = false
+                            showSettings = true 
+                        }
+                    )
+                }
+                "settings" -> {
+                    WalletSettingsScreen(
+                        onClose = { showSettings = false }
+                    )
+                }
+                else -> {
+                    AnimatedContent(
+                        targetState = showMainWallet,
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + 
+                            slideInHorizontally(
+                                initialOffsetX = { it },
+                                animationSpec = tween(300, easing = FastOutSlowInEasing)
+                            ) togetherWith
+                            fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)) + 
+                            slideOutHorizontally(
+                                targetOffsetX = { -it },
+                                animationSpec = tween(200, easing = FastOutSlowInEasing)
+                            )
+                        },
+                        label = "wallet_screen_transition"
+                    ) { showMain ->
+                        if (showMain) {
+                            MainWalletContent(
+                                onClose = onClose,
+                                selectedMint = selectedMint!!,
+                                onBack = { showMainWallet = false },
+                                onSettings = { showSettings = true },
+                                onTopUp = { showTopUp = true }
+                            )
+                        } else {
+                            MintSelectionContent(
+                                colorScheme = colorScheme,
+                                typography = typography,
+                                url = url,
+                                onUrlChange = { url = it },
+                                isLoading = isLoading,
+                                onStartLoading = {
+                                    isLoading = true
+                                    foundMints = listOf()
+                                },
+                                foundMints = foundMints,
+                                selectedMint = selectedMint,
+                                onMintSelected = { mint ->
+                                    foundMints = foundMints.filter { it != mint }
+                                    selectedMint = mint
+                                },
+                                onMintRemoved = {
+                                    foundMints = listOf(selectedMint!!) + foundMints
+                                    selectedMint = null
+                                },
+                                onNext = { showMainWallet = true },
+                                onClose = onClose,
+                                onSettings = { showSettings = true }
+                            )
+                        }
                     }
                 }
             }
@@ -137,41 +190,42 @@ fun WalletScreen(onClose: () -> Unit) {
 }
 
 @Composable
-private fun MainWalletContent(
+fun MainWalletContent(
     onClose: () -> Unit,
     selectedMint: MintData,
     onBack: () -> Unit,
-    onSettings: () -> Unit
+    onSettings: () -> Unit,
+    onTopUp: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val typography = MaterialTheme.typography
 
-    Column(
+        Column(
         modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.Start
-    ) {
-        // Navigation row: same as before
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(36.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            horizontalAlignment = Alignment.Start
         ) {
-            // Back arrow on the left
-            IconButton(
-                onClick = onClose,
+        // Navigation row: same as before
+            Row(
                 modifier = Modifier
-                    .padding(start = 0.dp)
-                    .size(36.dp)
+                    .fillMaxWidth()
+                    .height(36.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    modifier = Modifier.size(16.dp),
-                    tint = colorScheme.primary
-                )
-            }
+                // Back arrow on the left
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier
+                        .padding(start = 0.dp)
+                        .size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        modifier = Modifier.size(16.dp),
+                        tint = colorScheme.primary
+                    )
+                }
             // Title: 'bitcoin wallet' in lower case
             Text(
                 text = "bitcoin wallet",
@@ -242,7 +296,7 @@ private fun MainWalletContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 TopUpButton(
-                    onClick = { /* TODO: Top up action */ },
+                    onClick = onTopUp,
                     modifier = Modifier.weight(1f)
                 )
                 WithdrawButton(
@@ -256,7 +310,7 @@ private fun MainWalletContent(
 }
 
 @Composable
-private fun MintSelectionContent(
+fun MintSelectionContent(
     colorScheme: ColorScheme,
     typography: Typography,
     url: String,
@@ -298,31 +352,31 @@ private fun MintSelectionContent(
                 )
             }
             // Title: 'bitcoin wallet' in lower case
-            Text(
-                text = "bitcoin wallet",
-                style = typography.headlineSmall,
-                color = colorScheme.primary,
-                modifier = Modifier
-                    .padding(start = 0.dp)
-                    .align(Alignment.CenterVertically)
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            // Settings icon on the right
-            IconButton(
-                onClick = onSettings,
-                modifier = Modifier
-                    .padding(end = 0.dp)
-                    .size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Settings,
-                    contentDescription = "Settings",
-                    modifier = Modifier.size(16.dp),
-                    tint = colorScheme.primary
+                Text(
+                    text = "bitcoin wallet",
+                    style = typography.headlineSmall,
+                    color = colorScheme.primary,
+                    modifier = Modifier
+                        .padding(start = 0.dp)
+                        .align(Alignment.CenterVertically)
                 )
+                Spacer(modifier = Modifier.weight(1f))
+                // Settings icon on the right
+                IconButton(
+                onClick = onSettings,
+                    modifier = Modifier
+                        .padding(end = 0.dp)
+                        .size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Settings",
+                        modifier = Modifier.size(16.dp),
+                        tint = colorScheme.primary
+                    )
+                }
             }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
         // Top area: animated transition between MintUrlInput and selected MintRatingItem
         AnimatedContent(
@@ -335,8 +389,8 @@ private fun MintSelectionContent(
             label = "top_input_transition"
         ) { selectedMintState ->
             if (selectedMintState == null) {
-                MintUrlInput(
-                    url = url,
+            MintUrlInput(
+                url = url,
                     onUrlChange = onUrlChange,
                     onAddClick = onStartLoading
                 )
@@ -387,8 +441,8 @@ private fun MintSelectionContent(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 12.dp, vertical = 4.dp)
-                            )
-                        }
+            )
+        }
                     )
                 }
             }
@@ -443,7 +497,7 @@ private fun MintSelectionContent(
 }
 
 @Composable
-private fun AnimatedListItem(
+fun AnimatedListItem(
     delayMillis: Int = 0,
     content: @Composable () -> Unit
 ) {
@@ -468,7 +522,7 @@ private fun AnimatedListItem(
 } 
 
 @Composable
-private fun LoadingSpinner() {
+fun LoadingSpinner() {
     val infiniteTransition = rememberInfiniteTransition(label = "loading_spinner")
     val rotationAngle by infiniteTransition.animateFloat(
         initialValue = 0f,
