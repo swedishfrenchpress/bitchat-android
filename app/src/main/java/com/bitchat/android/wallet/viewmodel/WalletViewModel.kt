@@ -387,6 +387,13 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     /**
+     * Get balance for a specific mint
+     */
+    fun getMintBalance(mintUrl: String, onSuccess: (Long) -> Unit, onError: (String) -> Unit) {
+        mintManager.getMintBalance(mintUrl, onSuccess, onError)
+    }
+
+    /**
      * Sync all mints - refresh mint information and keysets
      */
     fun syncAllMints() = mintManager.syncAllMints()

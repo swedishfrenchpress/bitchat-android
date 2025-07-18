@@ -127,7 +127,7 @@ fun WalletSettings(
                     MintListItem(
                         mintName = mint.info?.name ?: mint.nickname,
                         mintUrl = mint.url,
-                        balance = if (activeMint == mint.url) "${balance} ₿" else "— ₿", // Show balance for active mint
+                        balance = if (activeMint == mint.url) "${balance} ₿" else "— ₿", // Note: CDK limitation - only active mint shows balance
                         selected = activeMint == mint.url,
                         onDelete = {
                             if (mints.size > 1 && activeMint != mint.url) {

@@ -289,6 +289,23 @@ class MintManager(
     fun getCurrentMints(): List<Mint> = _mints.value ?: emptyList()
     
     /**
+     * Get balance for a specific mint
+     */
+    fun getMintBalance(mintUrl: String, onSuccess: (Long) -> Unit, onError: (String) -> Unit) {
+        coroutineScope.launch {
+            try {
+                cashuService.getBalanceForMint(mintUrl).onSuccess { balance ->
+                    onSuccess(balance)
+                }.onFailure { error ->
+                    onError("Failed to get balance: ${error.message}")
+                }
+            } catch (e: Exception) {
+                onError("Error getting balance: ${e.message}")
+            }
+        }
+    }
+    
+    /**
      * Remove/hide a mint (CDK doesn't support hideMint, so we remove from local storage)
      */
     fun removeMint(mintUrl: String, onSuccess: () -> Unit) {

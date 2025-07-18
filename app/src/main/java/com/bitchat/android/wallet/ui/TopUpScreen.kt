@@ -49,6 +49,7 @@ fun TopUpScreen(
     viewModel: WalletViewModel,
     onBackClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onTokenReceived: () -> Unit = {}, // Callback to return to Wallet Overview after receiving token
     modifier: Modifier = Modifier
 ) {
     var selectedMethod by remember { mutableStateOf(TopUpMethod.LIGHTNING) }
@@ -234,7 +235,11 @@ fun TopUpScreen(
                     isLoading = isLoading,
                     clipboardManager = clipboardManager,
                     onTokenInputChange = { viewModel.setTokenInput(it) },
-                    onReceiveToken = { viewModel.receiveCashuToken(it) },
+                    onReceiveToken = { 
+                        viewModel.receiveCashuToken(it)
+                        // Return to Wallet Overview after receiving token
+                        onTokenReceived()
+                    },
                     onPasteFromClipboard = {
                         clipboardManager.getText()?.text?.let { clipText ->
                             if (clipText.startsWith("cashu")) {
@@ -571,127 +576,15 @@ private fun CashuContent(
     onReceiveToken: (String) -> Unit,
     onPasteFromClipboard: () -> Unit
 ) {
-    if (decodedToken != null) {
-        // Show token details and receive button
-        CashuTokenView(
-            token = decodedToken,
-            isLoading = isLoading,
-            onReceiveToken = onReceiveToken
-        )
-    } else {
-        // Show token input
-        Column {
-            Text(
-                text = "ECASH TOKEN",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            
-            // Ecash token input box - matching TotalBalance styling
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = RoundedCornerShape(4.dp)
-                    )
-                    .border(
-                        width = 0.25.dp,
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(4.dp)
-                    )
-                    .padding(16.dp)
-            ) {
-                Column {
-                    OutlinedTextField(
-                        value = tokenInput,
-                        onValueChange = { if (!isLoading) onTokenInputChange(it) },
-                        enabled = !isLoading,
-                        label = { Text("Ecash Token", style = MaterialTheme.typography.bodySmall) },
-                        placeholder = { Text("cashuA...", style = MaterialTheme.typography.bodyMedium) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 3,
-                        maxLines = 5,
-                        shape = RoundedCornerShape(4.dp),
-                        textStyle = MaterialTheme.typography.bodyMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Camera and QR scan button row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(
-                            onClick = { /* TODO: Camera scan */ },
-                            enabled = !isLoading
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.CameraAlt,
-                                contentDescription = "Scan with Camera",
-                                tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        
-                        IconButton(
-                            onClick = { /* TODO: QR scan */ },
-                            enabled = !isLoading
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.QrCode,
-                                contentDescription = "Scan QR Code",
-                                tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Spacer to push button to bottom
-            Spacer(modifier = Modifier.weight(1f))
-            
-            // Paste button
-            BitchatButton(
-                text = "Paste from Clipboard",
-                onClick = onPasteFromClipboard,
-                enabled = !isLoading,
-                style = BitchatButtonStyle.Primary,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
-}
-
-@Composable
-private fun CashuTokenView(
-    token: com.bitchat.android.wallet.data.CashuToken,
-    isLoading: Boolean,
-    onReceiveToken: (String) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        // Amount display
+    Column {
         Text(
-            text = "AMOUNT",
+            text = "ECASH TOKEN",
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             modifier = Modifier.padding(bottom = 8.dp)
         )
         
+        // Simplified Ecash token input box - single box with camera icon
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -704,98 +597,139 @@ private fun CashuTokenView(
                     color = MaterialTheme.colorScheme.primary,
                     shape = RoundedCornerShape(4.dp)
                 )
-                .padding(24.dp),
-            contentAlignment = Alignment.Center
+                .padding(16.dp)
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "${token.amount.toLong()}​₿",
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
-                    )
+                OutlinedTextField(
+                    value = tokenInput,
+                    onValueChange = { if (!isLoading) onTokenInputChange(it) },
+                    enabled = !isLoading,
+                    label = { Text("Ecash Token", style = MaterialTheme.typography.bodySmall) },
+                    placeholder = { 
+                        Text(
+                            "cashuA...", 
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                        ) 
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    ),
+                    modifier = Modifier.weight(1f),
+                    minLines = 3,
+                    maxLines = 5,
+                    shape = RoundedCornerShape(4.dp),
+                    textStyle = MaterialTheme.typography.bodyMedium
                 )
                 
-                val usdAmount = token.amount.toLong() * 0.001
-                Text(
-                    text = String.format("%.2f USD", usdAmount),
-                    color = MaterialTheme.colorScheme.secondary,
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                // Camera icon on the right side
+                IconButton(
+                    onClick = { /* TODO: Camera scan */ },
+                    enabled = !isLoading
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CameraAlt,
+                        contentDescription = "Scan with Camera",
+                        tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+        }
+        
+        // Show token details below input if token is decoded
+        if (decodedToken != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Token details card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Toll,
+                            contentDescription = "Token",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Token Details",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Amount: ${decodedToken.amount.toLong()} ₿",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "From: ${decodedToken.mint}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                    
+                    if (!decodedToken.memo.isNullOrEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Memo: ${decodedToken.memo}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
             }
         }
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Token details
-        Text(
-            text = "TOKEN DETAILS",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Toll,
-                        contentDescription = "Token",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "Cashu Token Ready",
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "From: ${token.mint}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-                
-                if (!token.memo.isNullOrEmpty()) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Memo: ${token.memo}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                }
-            }
-        }
-        
         // Spacer to push button to bottom
         Spacer(modifier = Modifier.weight(1f))
         
-        // Receive button
-        BitchatButton(
-            text = if (isLoading) "Receiving..." else "Receive Token",
-            onClick = { onReceiveToken(token.token) },
-            enabled = !isLoading,
-            style = BitchatButtonStyle.Primary,
-            modifier = Modifier.fillMaxWidth()
-        )
+        // Action buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            BitchatButton(
+                text = "Paste from Clipboard",
+                onClick = onPasteFromClipboard,
+                enabled = !isLoading,
+                style = BitchatButtonStyle.Secondary,
+                modifier = Modifier.weight(1f)
+            )
+            
+            if (decodedToken != null) {
+                BitchatButton(
+                    text = if (isLoading) "Receiving..." else "Receive Token",
+                    onClick = { onReceiveToken(decodedToken.token) },
+                    enabled = !isLoading,
+                    style = BitchatButtonStyle.Primary,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
     }
 }
+
+
 
 @Composable
 private fun ErrorCard(

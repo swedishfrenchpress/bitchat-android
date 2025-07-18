@@ -320,6 +320,36 @@ class CashuService {
     }
     
     /**
+     * Get balance for a specific mint (requires switching to that mint first)
+     */
+    suspend fun getBalanceForMint(mintUrl: String): Result<Long> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Initialize wallet with the specific mint
+                initializeWallet(mintUrl).getOrThrow()
+                
+                if (!isCdkAvailable || wallet == null) {
+                    return@withContext Result.failure(Exception("CDK not available"))
+                }
+                
+                // Get balance for this mint
+                val ffiAmount = wallet!!.balance()
+                val balanceValue = ffiAmount.value.toLong()
+                
+                Log.d(TAG, "Balance for mint $mintUrl: $balanceValue sats")
+                Result.success(balanceValue)
+                
+            } catch (e: FfiException) {
+                Log.e(TAG, "CDK FFI error getting balance for mint $mintUrl: ${e.message}")
+                Result.failure(e)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get balance for mint $mintUrl", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    /**
      * Create a Cashu token for the specified amount
      */
     suspend fun createToken(amount: Long, memo: String? = null): Result<String> {

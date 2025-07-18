@@ -96,6 +96,7 @@ fun WalletScreen(
                     showTopUpScreen = false
                     showSettingsView = true 
                 },
+                onTokenReceived = { showTopUpScreen = false }, // Return to Wallet Overview after receiving token
                 modifier = Modifier.fillMaxSize()
             )
         } else if (showReceiveView) {

@@ -1,5 +1,7 @@
 package com.bitchat.android.wallet.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -8,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bitchat.android.ui.theme.BitchatTheme
@@ -25,40 +28,44 @@ fun MintUrlInput(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+    // Box with green background matching TotalBalance styling
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(4.dp)
+            )
+            .border(
+                width = 0.25.dp,
+                color = MaterialTheme.colorScheme.primary,
+                shape = RoundedCornerShape(4.dp)
+            )
+            .padding(16.dp)
     ) {
         OutlinedTextField(
             value = url,
             onValueChange = onUrlChange,
             enabled = enabled,
             singleLine = true,
-            label = { Text("Mint URL") },
-            placeholder = { Text("https://mint.example.com") },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(4.dp)
+            label = { Text("Mint URL", style = MaterialTheme.typography.bodySmall) },
+            placeholder = { 
+                Text(
+                    "https://mint.example.com", 
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                ) 
+            },
+                                colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    ),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(4.dp),
+            textStyle = MaterialTheme.typography.bodyMedium
         )
-        
-        IconButton(
-            onClick = onAddClick,
-            enabled = enabled && url.isNotBlank(),
-            modifier = Modifier.size(48.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Add,
-                contentDescription = "Add mint URL",
-                tint = if (enabled && url.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                modifier = Modifier.size(24.dp)
-            )
-        }
     }
 }
 
