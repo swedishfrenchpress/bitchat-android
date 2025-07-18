@@ -287,4 +287,43 @@ class MintManager(
      * Get current mints list
      */
     fun getCurrentMints(): List<Mint> = _mints.value ?: emptyList()
+    
+    /**
+     * Remove/hide a mint (CDK doesn't support hideMint, so we remove from local storage)
+     */
+    fun removeMint(mintUrl: String, onSuccess: () -> Unit) {
+        coroutineScope.launch {
+            try {
+                uiStateManager.setLoading(true)
+                
+                // Remove from local storage (CDK doesn't support hideMint method)
+                repository.getMints().onSuccess { currentMints ->
+                    val updatedMints = currentMints.filter { it.url != mintUrl }
+                    
+                    // Save updated mint list
+                    repository.clearMints().onSuccess {
+                        // Re-save remaining mints
+                        for (mint in updatedMints) {
+                            repository.saveMint(mint)
+                        }
+                        _mints.value = updatedMints
+                        
+                        // If we removed the active mint, set a new one
+                        if (_activeMint.value == mintUrl && updatedMints.isNotEmpty()) {
+                            setActiveMint(updatedMints.first().url) {
+                                onSuccess()
+                            }
+                        } else {
+                            onSuccess()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error removing mint", e)
+                _errorMessage.value = "Failed to remove mint: ${e.message}"
+            } finally {
+                uiStateManager.setLoading(false)
+            }
+        }
+    }
 } 

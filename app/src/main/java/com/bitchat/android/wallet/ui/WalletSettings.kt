@@ -35,6 +35,8 @@ fun WalletSettings(
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var showSeedPhrase by remember { mutableStateOf(false) }
+    var showDeleteMintDialog by remember { mutableStateOf(false) }
+    var mintToDelete by remember { mutableStateOf<String?>(null) }
     
     // Use ViewModel's dialog state instead of local state
     val showAddMintDialog by viewModel.showAddMintDialog.observeAsState(false)
@@ -129,7 +131,8 @@ fun WalletSettings(
                         selected = activeMint == mint.url,
                         onDelete = {
                             if (mints.size > 1 && activeMint != mint.url) {
-                                // viewModel.removeMint(mint.url) // Uncomment when implemented
+                                mintToDelete = mint.url
+                                showDeleteMintDialog = true
                             }
                         },
                         onClick = {
@@ -435,7 +438,7 @@ fun WalletSettings(
                             mintUrl = ""
                         }
                     },
-                    enabled = mintUrl.isNotBlank()
+                    enabled = true // Always enable the input field itself - internal logic handles add button state
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -548,6 +551,92 @@ fun WalletSettings(
                         onClick = {
                             viewModel.exportWalletData()
                             showExportDialog = false
+                        },
+                        style = BitchatButtonStyle.Primary,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+    
+    // Delete Mint Confirmation Dialog
+    if (showDeleteMintDialog && mintToDelete != null) {
+        ModalBottomSheet(
+            onDismissRequest = { 
+                showDeleteMintDialog = false
+                mintToDelete = null
+            },
+            containerColor = colorScheme.background,
+            contentColor = colorScheme.onBackground
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                // Header with close button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Delete Mint?",
+                        style = typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        color = colorScheme.onSurface
+                    )
+                    
+                    IconButton(
+                        onClick = { 
+                            showDeleteMintDialog = false
+                            mintToDelete = null
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Close",
+                            tint = colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Warning message
+                Text(
+                    text = "Any funds you have on the mint will be permanently lost.",
+                    style = typography.bodyMedium,
+                    color = colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Action buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    BitchatButton(
+                        text = "Cancel",
+                        onClick = { 
+                            showDeleteMintDialog = false
+                            mintToDelete = null
+                        },
+                        style = BitchatButtonStyle.Secondary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    BitchatButton(
+                        text = "Delete",
+                        onClick = {
+                            mintToDelete?.let { mintUrl ->
+                                viewModel.removeMint(mintUrl)
+                            }
+                            showDeleteMintDialog = false
+                            mintToDelete = null
                         },
                         style = BitchatButtonStyle.Primary,
                         modifier = Modifier.weight(1f)

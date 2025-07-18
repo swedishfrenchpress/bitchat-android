@@ -377,6 +377,16 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
     fun updateMintNickname(mintUrl: String, newNickname: String) = mintManager.updateMintNickname(mintUrl, newNickname)
     
     /**
+     * Remove/hide a mint
+     */
+    fun removeMint(mintUrl: String) {
+        mintManager.removeMint(mintUrl) {
+            // Success callback - mint has been removed
+            Log.d(TAG, "Mint removed successfully: $mintUrl")
+        }
+    }
+
+    /**
      * Sync all mints - refresh mint information and keysets
      */
     fun syncAllMints() = mintManager.syncAllMints()

@@ -311,6 +311,20 @@ class WalletRepository private constructor(context: Context) {
     }
     
     /**
+     * Clear all mints from local storage
+     */
+    suspend fun clearMints(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            sharedPrefs.edit().remove(KEY_MINTS).apply()
+            Log.d(TAG, "Cleared all mints")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear mints", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Clear all wallet data
      */
     suspend fun clearAllData(): Result<Unit> = withContext(Dispatchers.IO) {
