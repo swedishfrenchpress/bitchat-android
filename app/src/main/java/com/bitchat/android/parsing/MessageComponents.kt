@@ -1,16 +1,20 @@
 package com.bitchat.android.parsing
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -18,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.util.Log
+import kotlinx.coroutines.delay
 
 /**
  * Composable components for rendering parsed message elements
@@ -30,7 +35,9 @@ import android.util.Log
 fun ParsedMessageContent(
     elements: List<MessageElement>,
     modifier: Modifier = Modifier,
-    onCashuPaymentClick: ((ParsedCashuToken) -> Unit)? = null
+    onCashuPaymentClick: ((ParsedCashuToken) -> Unit)? = null,
+    redeemedTokens: Set<String> = emptySet(),
+    onRedeemClick: ((ParsedCashuToken) -> Unit)? = null
 ) {
     // Use a Column with proper text and special element rendering
     Column(
@@ -56,6 +63,8 @@ fun ParsedMessageContent(
                     CashuPaymentChip(
                         token = element.token,
                         onPaymentClick = onCashuPaymentClick,
+                        isRedeemed = redeemedTokens.contains(element.token.originalString),
+                        onRedeemClick = onRedeemClick,
                         modifier = Modifier.padding(vertical = 2.dp)
                     )
                 }
@@ -83,9 +92,8 @@ fun TextRow(elements: List<MessageElement>) {
                 is MessageElement.Text -> {
                     Text(
                         text = element.content,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontFamily = FontFamily.Monospace
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 else -> { /* Skip non-text elements */ }
@@ -101,23 +109,136 @@ fun TextRow(elements: List<MessageElement>) {
 fun CashuPaymentChip(
     token: ParsedCashuToken,
     modifier: Modifier = Modifier,
-    onPaymentClick: ((ParsedCashuToken) -> Unit)? = null
+    onPaymentClick: ((ParsedCashuToken) -> Unit)? = null,
+    isRedeemed: Boolean = false,
+    onRedeemClick: ((ParsedCashuToken) -> Unit)? = null
 ) {
+    // Animation states
+    var isAnimating by remember { mutableStateOf(false) }
+    var showSuccessAnimation by remember { mutableStateOf(false) }
+    
+    // Track redemption state changes for animations
+    LaunchedEffect(isRedeemed) {
+        if (isRedeemed) {
+            showSuccessAnimation = true
+            isAnimating = true
+            delay(1000) // Show success animation for 1 second
+            showSuccessAnimation = false
+            isAnimating = false
+        }
+    }
+    
+    // Animation values
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isAnimating) 1.05f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "scale_animation"
+    )
+    
+    val animatedBorderColor by animateColorAsState(
+        targetValue = when {
+            showSuccessAnimation -> MaterialTheme.colorScheme.primary // Theme primary during success
+            isRedeemed -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f) // Subtle border when redeemed
+            else -> MaterialTheme.colorScheme.primary // Theme primary when active
+        },
+        animationSpec = tween(
+            durationMillis = if (showSuccessAnimation) 300 else 800,
+            easing = EaseInOutCubic
+        ),
+        label = "border_color_animation"
+    )
+    
+    val animatedBackgroundColor by animateColorAsState(
+        targetValue = when {
+            showSuccessAnimation -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) // Subtle primary tint during success
+            isRedeemed -> MaterialTheme.colorScheme.surface.copy(alpha = 0.7f) // Dimmed surface when redeemed
+            else -> MaterialTheme.colorScheme.surface // Theme surface when active
+        },
+        animationSpec = tween(
+            durationMillis = if (showSuccessAnimation) 300 else 800,
+            easing = EaseInOutCubic
+        ),
+        label = "background_color_animation"
+    )
+    
     Card(
         modifier = modifier
-            .clickable { 
-                onPaymentClick?.invoke(token) ?: handleCashuPayment(token)
-            },
+            .scale(animatedScale)
+            .then(
+                if (!isRedeemed) {
+                    Modifier.clickable { 
+                        onRedeemClick?.invoke(token) ?: onPaymentClick?.invoke(token) ?: handleCashuPayment(token)
+                    }
+                } else {
+                    Modifier
+                }
+            ),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF0E0E0E) // Dark background
+            containerColor = animatedBackgroundColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(
             0.25.dp, 
-            Color(0xFF2EC954) // Green outline
+            animatedBorderColor
         )
     ) {
+        // Define all animated colors using MaterialTheme design tokens
+        val animatedTextColor by animateColorAsState(
+            targetValue = when {
+                showSuccessAnimation -> MaterialTheme.colorScheme.primary // Theme primary during success
+                isRedeemed -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) // Disabled text color
+                else -> MaterialTheme.colorScheme.primary // Theme primary when active
+            },
+            animationSpec = tween(
+                durationMillis = if (showSuccessAnimation) 300 else 800,
+                easing = EaseInOutCubic
+            ),
+            label = "text_color_animation"
+        )
+        
+        val animatedMemoColor by animateColorAsState(
+            targetValue = when {
+                showSuccessAnimation -> MaterialTheme.colorScheme.secondary // Theme secondary during success
+                isRedeemed -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) // More disabled for memo
+                else -> MaterialTheme.colorScheme.secondary // Theme secondary when active
+            },
+            animationSpec = tween(
+                durationMillis = if (showSuccessAnimation) 300 else 800,
+                easing = EaseInOutCubic
+            ),
+            label = "memo_color_animation"
+        )
+        
+        val animatedButtonColor by animateColorAsState(
+            targetValue = when {
+                showSuccessAnimation -> MaterialTheme.colorScheme.primary // Theme primary during success
+                isRedeemed -> MaterialTheme.colorScheme.surface // Theme surface when disabled
+                else -> MaterialTheme.colorScheme.primary // Theme primary when active
+            },
+            animationSpec = tween(
+                durationMillis = if (showSuccessAnimation) 300 else 800,
+                easing = EaseInOutCubic
+            ),
+            label = "button_color_animation"
+        )
+        
+        val animatedButtonTextColor by animateColorAsState(
+            targetValue = when {
+                showSuccessAnimation -> MaterialTheme.colorScheme.onPrimary // Theme on-primary during success
+                isRedeemed -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) // Disabled text
+                else -> MaterialTheme.colorScheme.onPrimary // Theme on-primary when active
+            },
+            animationSpec = tween(
+                durationMillis = if (showSuccessAnimation) 300 else 800,
+                easing = EaseInOutCubic
+            ),
+            label = "button_text_color_animation"
+        )
+        
         Row(
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -134,37 +255,32 @@ fun CashuPaymentChip(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Orange Bitcoin circle with symbol inside
+                    // Bitcoin circle with symbol inside using theme colors
                     Box(
                         modifier = Modifier
                             .size(16.dp)
                             .background(
-                                Color(0xFFFF9F0A), 
+                                MaterialTheme.colorScheme.secondary, 
                                 shape = androidx.compose.foundation.shape.CircleShape
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "₿",
-                            fontSize = 10.sp,
-                            color = Color(0xFF140C01),
-                            fontFamily = FontFamily.Monospace,
-                            textAlign = TextAlign.Center,
-                            style = androidx.compose.ui.text.TextStyle(
-                                lineHeight = 10.sp,
-                                platformStyle = androidx.compose.ui.text.PlatformTextStyle(
-                                    includeFontPadding = false
-                                )
-                            )
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = MaterialTheme.typography.labelSmall.fontSize * 0.9f,
+                                lineHeight = MaterialTheme.typography.labelSmall.fontSize * 0.9f
+                            ),
+                            color = MaterialTheme.colorScheme.onSecondary,
+                            textAlign = TextAlign.Center
                         )
                     }
                     
                     // "bitcoin" text
                     Text(
                         text = "bitcoin",
-                        fontSize = 16.sp,
-                        color = Color(0xFF2EC954),
-                        fontFamily = FontFamily.Monospace
+                        style = MaterialTheme.typography.titleMedium,
+                        color = animatedTextColor
                     )
                 }
                 
@@ -175,16 +291,15 @@ fun CashuPaymentChip(
                 ) {
                     Text(
                         text = "${token.amount}",
-                        fontSize = 24.sp,
-                        color = Color(0xFF2EC954),
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = FontFamily.Monospace
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.3f
+                        ),
+                        color = animatedTextColor
                     )
                     Text(
                         text = "₿",
-                        fontSize = 16.sp,
-                        color = Color(0xFF2EC954),
-                        fontFamily = FontFamily.Monospace
+                        style = MaterialTheme.typography.titleMedium,
+                        color = animatedTextColor
                     )
                 }
                 
@@ -192,43 +307,44 @@ fun CashuPaymentChip(
                 if (token.memo?.isNotBlank() == true) {
                     Text(
                         text = "\"${token.memo}\"",
-                        fontSize = 10.sp,
-                        color = Color(0xFF26A746),
-                        fontFamily = FontFamily.Monospace
+                        style = MaterialTheme.typography.labelSmall,
+                        color = animatedMemoColor
                     )
                 }
             }
             
-            // Right side - Receive button
+            // Right side - Receive/Redeemed button
             Button(
                 onClick = { 
-                    onPaymentClick?.invoke(token) ?: handleCashuPayment(token)
+                    if (!isRedeemed) {
+                        onRedeemClick?.invoke(token) ?: onPaymentClick?.invoke(token) ?: handleCashuPayment(token)
+                    }
                 },
                 modifier = Modifier.height(40.dp),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2EC954),
-                    contentColor = Color.White
+                    containerColor = animatedButtonColor,
+                    contentColor = animatedButtonTextColor
                 ),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
+                enabled = !isRedeemed
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Download/Receive icon
+                    // Download/Receive icon or Check icon for redeemed
                     Icon(
-                        imageVector = Icons.Filled.Download,
-                        contentDescription = "Receive",
-                        tint = Color.White,
+                        imageVector = if (isRedeemed) Icons.Filled.CheckCircle else Icons.Filled.Download,
+                        contentDescription = if (isRedeemed) "Redeemed" else "Receive",
+                        tint = animatedButtonTextColor,
                         modifier = Modifier.size(16.dp)
                     )
                     
                     Text(
-                        text = "Receive",
-                        fontSize = 12.sp,
-                        color = Color.White,
-                        fontFamily = FontFamily.Monospace
+                        text = if (isRedeemed) "Redeemed" else "Receive",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = animatedButtonTextColor
                     )
                 }
             }

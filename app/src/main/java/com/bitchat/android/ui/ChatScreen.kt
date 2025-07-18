@@ -128,6 +128,9 @@ fun ChatScreen(
             
             // Messages area - takes up available space, will compress when keyboard appears
             Box(modifier = Modifier.weight(1f)) {
+                // Track redeemed tokens
+                var redeemedTokens by remember { mutableStateOf(setOf<String>()) }
+                
                 MessagesList(
                     messages = displayMessages,
                     currentUserNickname = nickname,
@@ -135,6 +138,17 @@ fun ChatScreen(
                     onCashuPaymentClick = { parsedToken ->
                         // Open wallet with the receive dialog pre-filled with this token
                         onWalletClickWithToken?.invoke(parsedToken)
+                    },
+                    redeemedTokens = redeemedTokens,
+                    onRedeemClick = { parsedToken ->
+                        // Claim the token inline and update the redeemed state
+                        walletViewModel?.let { wallet ->
+                            // Mark as redeemed immediately for UI feedback
+                            redeemedTokens = redeemedTokens + parsedToken.originalString
+                            
+                            // Use the new inline token redemption method
+                            wallet.receiveCashuTokenInline(parsedToken)
+                        }
                     },
                     modifier = Modifier.fillMaxSize()
                 )

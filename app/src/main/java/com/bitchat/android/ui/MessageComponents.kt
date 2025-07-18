@@ -35,7 +35,9 @@ fun MessagesList(
     currentUserNickname: String,
     meshService: BluetoothMeshService,
     modifier: Modifier = Modifier,
-    onCashuPaymentClick: ((ParsedCashuToken) -> Unit)? = null
+    onCashuPaymentClick: ((ParsedCashuToken) -> Unit)? = null,
+    redeemedTokens: Set<String> = emptySet(),
+    onRedeemClick: ((ParsedCashuToken) -> Unit)? = null
 ) {
     val listState = rememberLazyListState()
     
@@ -57,7 +59,9 @@ fun MessagesList(
                     message = message,
                     currentUserNickname = currentUserNickname,
                     meshService = meshService,
-                    onCashuPaymentClick = onCashuPaymentClick
+                    onCashuPaymentClick = onCashuPaymentClick,
+                    redeemedTokens = redeemedTokens,
+                    onRedeemClick = onRedeemClick
                 )
             }
         }
@@ -69,7 +73,9 @@ fun MessageItem(
     message: BitchatMessage,
     currentUserNickname: String,
     meshService: BluetoothMeshService,
-    onCashuPaymentClick: ((ParsedCashuToken) -> Unit)? = null
+    onCashuPaymentClick: ((ParsedCashuToken) -> Unit)? = null,
+    redeemedTokens: Set<String> = emptySet(),
+    onRedeemClick: ((ParsedCashuToken) -> Unit)? = null
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val timeFormatter = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
@@ -101,6 +107,8 @@ fun MessageItem(
                 ParsedMessageContent(
                     elements = parsedElements,
                     onCashuPaymentClick = onCashuPaymentClick,
+                    redeemedTokens = redeemedTokens,
+                    onRedeemClick = onRedeemClick,
                     modifier = Modifier.padding(start = 16.dp) // Indent content slightly
                 )
             }

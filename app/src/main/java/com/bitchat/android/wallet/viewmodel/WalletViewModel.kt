@@ -279,6 +279,52 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
     }
     
     /**
+     * Receive a Cashu token inline (for chat integration) - no dialog management
+     */
+    fun receiveCashuTokenInline(parsedToken: com.bitchat.android.parsing.ParsedCashuToken) {
+        viewModelScope.launch {
+            try {
+                // Create CashuToken object from ParsedCashuToken
+                val cashuToken = com.bitchat.android.wallet.data.CashuToken(
+                    token = parsedToken.originalString,
+                    amount = java.math.BigDecimal(parsedToken.amount),
+                    unit = parsedToken.unit,
+                    mint = parsedToken.mintUrl,
+                    memo = parsedToken.memo
+                )
+                
+                // Set the decoded token directly in the TokenManager
+                tokenManager.setDecodedToken(cashuToken)
+                tokenManager.setTokenInput(parsedToken.originalString)
+                
+                // Now receive the token (it will find the decoded token)
+                tokenManager.receiveCashuToken(
+                    token = parsedToken.originalString,
+                    currentMints = mintManager.getCurrentMints(),
+                    onSuccess = { animationData ->
+                        // For inline redemption, we don't show the full-screen animation
+                        // Just log success
+                        Log.d(TAG, "Token received inline: ${animationData.amount} ${animationData.unit}")
+                    },
+                    onFailure = { failureData ->
+                        // For inline redemption, we don't show the full-screen animation
+                        // Just log the error
+                        Log.e(TAG, "Failed to receive token inline: ${failureData.errorMessage}")
+                        uiStateManager.setError(failureData.errorMessage)
+                    },
+                    onTransactionSaved = { transactionManager.loadTransactions() },
+                    onBalanceRefresh = { refreshBalance() },
+                    onMintsUpdated = { mintManager.loadMints() }
+                )
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception in receiveCashuTokenInline", e)
+                uiStateManager.setError("Failed to receive token: ${e.message}")
+            }
+        }
+    }
+    
+    /**
      * Create Lightning mint quote (for receiving)
      */
     fun createMintQuote(amount: Long, description: String? = null) = lightningManager.createMintQuote(amount, description)
