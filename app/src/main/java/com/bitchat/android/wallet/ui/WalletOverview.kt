@@ -39,6 +39,7 @@ fun WalletOverview(
     onBackToChat: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onTransactionHistoryClick: () -> Unit = {},
+    onTopUpClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val balance by viewModel.balance.observeAsState(0L)
@@ -169,7 +170,7 @@ fun WalletOverview(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             TopUpButton(
-                onClick = { viewModel.showReceiveDialog() },
+                onClick = onTopUpClick,
                 modifier = Modifier.weight(1f),
                 enabled = !isLoading
             )

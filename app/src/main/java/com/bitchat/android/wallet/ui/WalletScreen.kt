@@ -32,6 +32,7 @@ fun WalletScreen(
     var showSendView by remember { mutableStateOf(false) }
     var showSettingsView by remember { mutableStateOf(false) }
     var showTransactionHistoryView by remember { mutableStateOf(false) }
+    var showTopUpScreen by remember { mutableStateOf(false) }
     val showSendDialog by walletViewModel.showSendDialog.observeAsState(false)
     val showReceiveDialog by walletViewModel.showReceiveDialog.observeAsState(false)
     val showSuccessAnimation by walletViewModel.showSuccessAnimation.observeAsState(false)
@@ -50,6 +51,11 @@ fun WalletScreen(
             // Close settings view
             showSettingsView -> {
                 showSettingsView = false
+                true
+            }
+            // Close top up screen
+            showTopUpScreen -> {
+                showTopUpScreen = false
                 true
             }
             // Close receive view
@@ -79,7 +85,15 @@ fun WalletScreen(
     
     Box(modifier = modifier.fillMaxSize()) {
         // Main content
-        if (showReceiveView) {
+        if (showTopUpScreen) {
+            // Full-screen TopUpScreen
+            TopUpScreen(
+                viewModel = walletViewModel,
+                onBackClick = { showTopUpScreen = false },
+                onSettingsClick = { showSettingsView = true },
+                modifier = Modifier.fillMaxSize()
+            )
+        } else if (showReceiveView) {
             // Full-screen ReceiveView
             ReceiveView(
                 viewModel = walletViewModel,
@@ -118,6 +132,7 @@ fun WalletScreen(
                 onBackToChat = onBackToChat,
                 onSettingsClick = { showSettingsView = true },
                 onTransactionHistoryClick = { showTransactionHistoryView = true },
+                onTopUpClick = { showTopUpScreen = true },
                 modifier = Modifier.fillMaxSize()
             )
         }
