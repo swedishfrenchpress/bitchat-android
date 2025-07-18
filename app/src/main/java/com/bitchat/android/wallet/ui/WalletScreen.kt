@@ -33,6 +33,7 @@ fun WalletScreen(
     var showSettingsView by remember { mutableStateOf(false) }
     var showTransactionHistoryView by remember { mutableStateOf(false) }
     var showTopUpScreen by remember { mutableStateOf(false) }
+    var navigationHistory by remember { mutableStateOf<String?>(null) }
     val showSendDialog by walletViewModel.showSendDialog.observeAsState(false)
     val showReceiveDialog by walletViewModel.showReceiveDialog.observeAsState(false)
     val showSuccessAnimation by walletViewModel.showSuccessAnimation.observeAsState(false)
@@ -90,7 +91,11 @@ fun WalletScreen(
             TopUpScreen(
                 viewModel = walletViewModel,
                 onBackClick = { showTopUpScreen = false },
-                onSettingsClick = { showSettingsView = true },
+                onSettingsClick = { 
+                    navigationHistory = "topup"
+                    showTopUpScreen = false
+                    showSettingsView = true 
+                },
                 modifier = Modifier.fillMaxSize()
             )
         } else if (showReceiveView) {
@@ -115,7 +120,20 @@ fun WalletScreen(
             // Settings screen
             WalletSettings(
                 viewModel = walletViewModel,
-                onBackClick = { showSettingsView = false },
+                onBackClick = { 
+                    showSettingsView = false
+                    // Navigate back to where we came from
+                    when (navigationHistory) {
+                        "topup" -> {
+                            showTopUpScreen = true
+                            navigationHistory = null
+                        }
+                        else -> {
+                            // Default: go back to main wallet overview
+                            navigationHistory = null
+                        }
+                    }
+                },
                 modifier = Modifier.fillMaxSize()
             )
         } else if (showTransactionHistoryView) {
@@ -130,7 +148,10 @@ fun WalletScreen(
             WalletOverview(
                 viewModel = walletViewModel,
                 onBackToChat = onBackToChat,
-                onSettingsClick = { showSettingsView = true },
+                onSettingsClick = { 
+                    navigationHistory = "overview"
+                    showSettingsView = true 
+                },
                 onTransactionHistoryClick = { showTransactionHistoryView = true },
                 onTopUpClick = { showTopUpScreen = true },
                 modifier = Modifier.fillMaxSize()

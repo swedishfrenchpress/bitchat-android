@@ -70,9 +70,8 @@ fun TopUpScreen(
     val tokenInput by viewModel.tokenInput.observeAsState("")
     val activeMint by viewModel.activeMint.observeAsState()
     
-    // Smooth keyboard animation: appear one second after landing
-    LaunchedEffect(Unit) {
-        delay(1000)
+    // Immediate keyboard focus for Lightning method
+    LaunchedEffect(selectedMethod) {
         if (selectedMethod == TopUpMethod.LIGHTNING) {
             focusRequester.requestFocus()
         }
@@ -589,36 +588,77 @@ private fun CashuContent(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             
-            OutlinedTextField(
-                value = tokenInput,
-                onValueChange = { if (!isLoading) onTokenInputChange(it) },
-                enabled = !isLoading,
-                label = { Text("Ecash Token") },
-                placeholder = { Text("cashuA...") },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                ),
+            // Ecash token input box - matching TotalBalance styling
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp),
-                minLines = 3,
-                maxLines = 5,
-                shape = RoundedCornerShape(4.dp),
-                trailingIcon = {
-                    IconButton(
-                        onClick = { /* TODO: QR scan */ },
-                        enabled = !isLoading
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .border(
+                        width = 0.25.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .padding(16.dp)
+            ) {
+                Column {
+                    OutlinedTextField(
+                        value = tokenInput,
+                        onValueChange = { if (!isLoading) onTokenInputChange(it) },
+                        enabled = !isLoading,
+                        label = { Text("Ecash Token", style = MaterialTheme.typography.bodySmall) },
+                        placeholder = { Text("cashuA...", style = MaterialTheme.typography.bodyMedium) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        maxLines = 5,
+                        shape = RoundedCornerShape(4.dp),
+                        textStyle = MaterialTheme.typography.bodyMedium
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Camera and QR scan button row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.QrCode,
-                            contentDescription = "Scan QR",
-                            tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary
-                        )
+                        IconButton(
+                            onClick = { /* TODO: Camera scan */ },
+                            enabled = !isLoading
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CameraAlt,
+                                contentDescription = "Scan with Camera",
+                                tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        
+                        IconButton(
+                            onClick = { /* TODO: QR scan */ },
+                            enabled = !isLoading
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.QrCode,
+                                contentDescription = "Scan QR Code",
+                                tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
-            )
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
             
             // Spacer to push button to bottom
             Spacer(modifier = Modifier.weight(1f))

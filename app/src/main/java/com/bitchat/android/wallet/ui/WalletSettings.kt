@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
@@ -34,7 +35,9 @@ fun WalletSettings(
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var showSeedPhrase by remember { mutableStateOf(false) }
-    var showAddMintDialog by remember { mutableStateOf(false) }
+    
+    // Use ViewModel's dialog state instead of local state
+    val showAddMintDialog by viewModel.showAddMintDialog.observeAsState(false)
     
     // Observe real wallet data
     val mints by viewModel.mints.observeAsState(emptyList())
@@ -137,13 +140,17 @@ fun WalletSettings(
                 }
             }
             
-            // Add New Mint button
+            // Add New Mint button - styled to match "All transactions" text
             Spacer(modifier = Modifier.height(16.dp))
-            BitchatButton(
+            Text(
                 text = "+ New mint",
-                onClick = { showAddMintDialog = true },
-                style = BitchatButtonStyle.Secondary,
-                modifier = Modifier.fillMaxWidth()
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { viewModel.showAddMintDialog() }
+                    .padding(vertical = 8.dp),
+                textAlign = TextAlign.Center
             )
         }
         
@@ -369,7 +376,7 @@ fun WalletSettings(
     // Add Mint URL Input Dialog
     if (showAddMintDialog) {
         ModalBottomSheet(
-            onDismissRequest = { showAddMintDialog = false },
+            onDismissRequest = { viewModel.hideAddMintDialog() },
             containerColor = colorScheme.background,
             contentColor = colorScheme.onBackground
         ) {
@@ -394,7 +401,7 @@ fun WalletSettings(
                     )
                     
                     IconButton(
-                        onClick = { showAddMintDialog = false }
+                        onClick = { viewModel.hideAddMintDialog() }
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Close,
@@ -424,7 +431,7 @@ fun WalletSettings(
                     onAddClick = {
                         if (mintUrl.isNotBlank()) {
                             viewModel.addMint(mintUrl, "") // Use empty nickname for now
-                            showAddMintDialog = false
+                            // Note: viewModel.addMint() already calls hideAddMintDialog()
                             mintUrl = ""
                         }
                     },
@@ -441,7 +448,7 @@ fun WalletSettings(
                     BitchatButton(
                         text = "Cancel",
                         onClick = { 
-                            showAddMintDialog = false
+                            viewModel.hideAddMintDialog()
                             mintUrl = ""
                         },
                         style = BitchatButtonStyle.Secondary,
@@ -452,7 +459,7 @@ fun WalletSettings(
                         onClick = {
                             if (mintUrl.isNotBlank()) {
                                 viewModel.addMint(mintUrl, "") // Use empty nickname for now
-                                showAddMintDialog = false
+                                // Note: viewModel.addMint() already calls hideAddMintDialog()
                                 mintUrl = ""
                             }
                         },
