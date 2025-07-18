@@ -56,7 +56,6 @@ fun TopUpScreen(
     var amountFiat by remember { mutableStateOf("") }
     var showSatsInput by remember { mutableStateOf(true) }
     var cashuToken by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
     
     val clipboardManager = LocalClipboardManager.current
     val focusRequester = remember { FocusRequester() }
@@ -157,13 +156,6 @@ fun TopUpScreen(
         }
         
         // Method Selection Tabs
-        Text(
-            text = "METHOD",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -183,16 +175,15 @@ fun TopUpScreen(
                 modifier = Modifier.weight(1f)
             )
             
-            // Cashu tab
+            // Ecash tab
             TopUpMethodTab(
-                text = "Cashu",
-                icon = Icons.Filled.Toll,
+                text = "Ecash",
+                icon = Icons.Filled.AttachMoney,
                 selected = selectedMethod == TopUpMethod.CASHU,
                 onClick = { 
                     selectedMethod = TopUpMethod.CASHU
                     amountSats = ""
                     amountFiat = ""
-                    description = ""
                     // Clear current mint quote through hideReceiveDialog which calls clearCurrentMintQuote internally
                     viewModel.hideReceiveDialog()
                 },
@@ -209,7 +200,6 @@ fun TopUpScreen(
                     showSatsInput = showSatsInput,
                     formattedSats = formattedSats,
                     formattedUsd = formattedUsd,
-                    description = description,
                     currentMintQuote = currentMintQuote,
                     isLoading = isLoading,
                     focusRequester = focusRequester,
@@ -218,7 +208,6 @@ fun TopUpScreen(
                     onAmountSatsChange = { amountSats = it },
                     onAmountFiatChange = { amountFiat = it },
                     onShowSatsInputChange = { showSatsInput = it },
-                    onDescriptionChange = { description = it },
                     onSwapCurrency = {
                         showSatsInput = !showSatsInput
                         if (showSatsInput) {
@@ -233,7 +222,7 @@ fun TopUpScreen(
                         val finalAmount = if (showSatsInput) satsAmount else calculatedSats
                         if (finalAmount > 0) {
                             focusManager.clearFocus()
-                            viewModel.createMintQuote(finalAmount, description.ifEmpty { null })
+                            viewModel.createMintQuote(finalAmount, null)
                         }
                     }
                 )
@@ -322,7 +311,6 @@ private fun LightningContent(
     showSatsInput: Boolean,
     formattedSats: String,
     formattedUsd: String,
-    description: String,
     currentMintQuote: com.bitchat.android.wallet.data.MintQuote?,
     isLoading: Boolean,
     focusRequester: FocusRequester,
@@ -331,7 +319,6 @@ private fun LightningContent(
     onAmountSatsChange: (String) -> Unit,
     onAmountFiatChange: (String) -> Unit,
     onShowSatsInputChange: (Boolean) -> Unit,
-    onDescriptionChange: (String) -> Unit,
     onSwapCurrency: () -> Unit,
     onCreateInvoice: () -> Unit
 ) {
@@ -446,33 +433,6 @@ private fun LightningContent(
                     )
                 }
             }
-            
-            // 32px spacing below input section as requested
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Description input
-            Text(
-                text = "DESCRIPTION",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            
-            OutlinedTextField(
-                value = description,
-                onValueChange = onDescriptionChange,
-                label = { Text("Description (optional)") },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp),
-                shape = RoundedCornerShape(4.dp)
-            )
             
             // Spacer to push button to bottom
             Spacer(modifier = Modifier.weight(1f))
@@ -623,7 +583,7 @@ private fun CashuContent(
         // Show token input
         Column {
             Text(
-                text = "CASHU TOKEN",
+                text = "ECASH TOKEN",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -633,7 +593,7 @@ private fun CashuContent(
                 value = tokenInput,
                 onValueChange = { if (!isLoading) onTokenInputChange(it) },
                 enabled = !isLoading,
-                label = { Text("Cashu Token") },
+                label = { Text("Ecash Token") },
                 placeholder = { Text("cashuA...") },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,

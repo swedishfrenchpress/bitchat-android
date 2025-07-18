@@ -13,7 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
+
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -113,11 +113,7 @@ fun SeedPhraseBottomSheet(
                         columns = GridCells.Fixed(2),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .then(
-                                if (!isRevealed) Modifier.blur(8.dp) else Modifier
-                            )
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         itemsIndexed(seedWords) { index, word ->
                             Row(
@@ -131,7 +127,7 @@ fun SeedPhraseBottomSheet(
                                     modifier = Modifier.width(24.dp)
                                 )
                                 Text(
-                                    text = word,
+                                    text = if (isRevealed) word else "****",
                                     style = typography.bodyMedium,
                                     color = colorScheme.onSurface,
                                     modifier = Modifier.weight(1f)

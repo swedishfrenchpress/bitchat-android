@@ -34,11 +34,13 @@ fun WalletSettings(
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var showSeedPhrase by remember { mutableStateOf(false) }
+    var showAddMintDialog by remember { mutableStateOf(false) }
     
     // Observe real wallet data
     val mints by viewModel.mints.observeAsState(emptyList())
     val activeMint by viewModel.activeMint.observeAsState()
     val transactions by viewModel.transactions.observeAsState(emptyList())
+    val balance by viewModel.balance.observeAsState(0L)
     
     Column(
         modifier = modifier
@@ -120,7 +122,7 @@ fun WalletSettings(
                     MintListItem(
                         mintName = mint.info?.name ?: mint.nickname,
                         mintUrl = mint.url,
-                        balance = "— ₿", // Individual mint balances not tracked currently
+                        balance = if (activeMint == mint.url) "${balance} ₿" else "— ₿", // Show balance for active mint
                         selected = activeMint == mint.url,
                         onDelete = {
                             if (mints.size > 1 && activeMint != mint.url) {
@@ -134,6 +136,15 @@ fun WalletSettings(
                     )
                 }
             }
+            
+            // Add New Mint button
+            Spacer(modifier = Modifier.height(16.dp))
+            BitchatButton(
+                text = "+ New mint",
+                onClick = { showAddMintDialog = true },
+                style = BitchatButtonStyle.Secondary,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
         
         // BACK UP section
@@ -351,10 +362,109 @@ fun WalletSettings(
                         style = BitchatButtonStyle.Primary,
                         modifier = Modifier.weight(1f)
                     )
+                            }
+        }
+    }
+    
+    // Add Mint URL Input Dialog
+    if (showAddMintDialog) {
+        ModalBottomSheet(
+            onDismissRequest = { showAddMintDialog = false },
+            containerColor = colorScheme.background,
+            contentColor = colorScheme.onBackground
+        ) {
+            var mintUrl by remember { mutableStateOf("") }
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                // Header with close button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Add New Mint",
+                        style = typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        color = colorScheme.onSurface
+                    )
+                    
+                    IconButton(
+                        onClick = { showAddMintDialog = false }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Close",
+                            tint = colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Description
+                Text(
+                    text = "Enter the URL of a Cashu mint to add it to your wallet.",
+                    style = typography.bodyMedium,
+                    color = colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Mint URL Input
+                MintUrlInput(
+                    url = mintUrl,
+                    onUrlChange = { mintUrl = it },
+                    onAddClick = {
+                        if (mintUrl.isNotBlank()) {
+                            viewModel.addMint(mintUrl, "") // Use empty nickname for now
+                            showAddMintDialog = false
+                            mintUrl = ""
+                        }
+                    },
+                    enabled = mintUrl.isNotBlank()
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Action buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    BitchatButton(
+                        text = "Cancel",
+                        onClick = { 
+                            showAddMintDialog = false
+                            mintUrl = ""
+                        },
+                        style = BitchatButtonStyle.Secondary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    BitchatButton(
+                        text = "Add Mint",
+                        onClick = {
+                            if (mintUrl.isNotBlank()) {
+                                viewModel.addMint(mintUrl, "") // Use empty nickname for now
+                                showAddMintDialog = false
+                                mintUrl = ""
+                            }
+                        },
+                        style = BitchatButtonStyle.Primary,
+                        enabled = mintUrl.isNotBlank(),
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }
     }
+}
     
     // Export Data Bottom Sheet
     if (showExportDialog) {
