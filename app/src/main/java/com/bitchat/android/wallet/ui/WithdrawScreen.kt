@@ -16,13 +16,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bitchat.android.ui.theme.BitchatTheme
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
+import java.text.NumberFormat
+import java.util.*
 
 /**
  * WithdrawScreen - Unified withdraw functionality (Lightning & Ecash)
@@ -43,8 +53,12 @@ fun WithdrawScreen(
     var selectedMethod by remember { mutableStateOf(WithdrawMethod.LIGHTNING) }
     var lightningInvoice by remember { mutableStateOf("") }
     var ecashToken by remember { mutableStateOf("") }
+    var amountSats by remember { mutableStateOf("") }
+    var amountFiat by remember { mutableStateOf("") }
+    var showSatsInput by remember { mutableStateOf(true) }
     
     val clipboardManager = LocalClipboardManager.current
+    val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     
     // ViewModel state
@@ -53,6 +67,26 @@ fun WithdrawScreen(
     val errorMessage by viewModel.errorMessage.observeAsState()
     val currentMeltQuote by viewModel.currentMeltQuote.observeAsState()
     val generatedToken by viewModel.generatedToken.observeAsState()
+    
+    // Immediate keyboard focus for amount input
+    LaunchedEffect(selectedMethod) {
+        focusRequester.requestFocus()
+    }
+    
+    // Conversion calculations
+    val satsAmount = amountSats.toLongOrNull() ?: 0L
+    val fiatAmount = amountFiat.toDoubleOrNull() ?: 0.0
+    val usdAmount = satsAmount * 0.001
+    val calculatedSats = (fiatAmount / 0.001).toLong()
+    
+    // Format displays
+    val formattedSats = if (satsAmount > 0) {
+        NumberFormat.getNumberInstance(Locale.US).format(satsAmount)
+    } else "0"
+    
+    val formattedUsd = if (usdAmount > 0) {
+        String.format("%.2f", usdAmount)
+    } else "0.00"
 
     Column(
         modifier = modifier
@@ -152,10 +186,30 @@ fun WithdrawScreen(
         when (selectedMethod) {
             WithdrawMethod.LIGHTNING -> {
                 LightningWithdrawContent(
+                    amountSats = amountSats,
+                    amountFiat = amountFiat,
+                    showSatsInput = showSatsInput,
+                    formattedSats = formattedSats,
+                    formattedUsd = formattedUsd,
                     lightningInvoice = lightningInvoice,
                     currentMeltQuote = currentMeltQuote,
                     isLoading = isLoading,
+                    focusRequester = focusRequester,
+                    focusManager = focusManager,
                     clipboardManager = clipboardManager,
+                    onAmountSatsChange = { amountSats = it },
+                    onAmountFiatChange = { amountFiat = it },
+                    onShowSatsInputChange = { showSatsInput = it },
+                    onSwapCurrency = {
+                        showSatsInput = !showSatsInput
+                        if (showSatsInput) {
+                            amountSats = calculatedSats.toString()
+                            amountFiat = ""
+                        } else {
+                            amountFiat = formattedUsd
+                            amountSats = ""
+                        }
+                    },
                     onLightningInvoiceChange = { lightningInvoice = it },
                     onPayInvoice = {
                         if (lightningInvoice.isNotBlank()) {
@@ -167,14 +221,38 @@ fun WithdrawScreen(
             
             WithdrawMethod.ECASH -> {
                 EcashWithdrawContent(
+                    amountSats = amountSats,
+                    amountFiat = amountFiat,
+                    showSatsInput = showSatsInput,
+                    formattedSats = formattedSats,
+                    formattedUsd = formattedUsd,
                     ecashToken = ecashToken,
                     generatedToken = generatedToken,
                     isLoading = isLoading,
+                    focusRequester = focusRequester,
+                    focusManager = focusManager,
                     clipboardManager = clipboardManager,
+                    onAmountSatsChange = { amountSats = it },
+                    onAmountFiatChange = { amountFiat = it },
+                    onShowSatsInputChange = { showSatsInput = it },
+                    onSwapCurrency = {
+                        showSatsInput = !showSatsInput
+                        if (showSatsInput) {
+                            amountSats = calculatedSats.toString()
+                            amountFiat = ""
+                        } else {
+                            amountFiat = formattedUsd
+                            amountSats = ""
+                        }
+                    },
                     onEcashTokenChange = { ecashToken = it },
                     onCreateToken = {
-                        // This would create a Cashu token for withdrawal
-                        // For now, just show the generated token
+                        val finalAmount = if (showSatsInput) satsAmount else calculatedSats
+                        if (finalAmount > 0) {
+                            focusManager.clearFocus()
+                            // TODO: Implement CDK ecash withdrawal flow
+                            // viewModel.createEcashToken(finalAmount)
+                        }
                     }
                 )
             }
@@ -239,10 +317,21 @@ private fun WithdrawMethodTab(
 
 @Composable
 private fun LightningWithdrawContent(
+    amountSats: String,
+    amountFiat: String,
+    showSatsInput: Boolean,
+    formattedSats: String,
+    formattedUsd: String,
     lightningInvoice: String,
     currentMeltQuote: com.bitchat.android.wallet.data.MeltQuote?,
     isLoading: Boolean,
+    focusRequester: FocusRequester,
+    focusManager: androidx.compose.ui.focus.FocusManager,
     clipboardManager: androidx.compose.ui.platform.ClipboardManager,
+    onAmountSatsChange: (String) -> Unit,
+    onAmountFiatChange: (String) -> Unit,
+    onShowSatsInputChange: (Boolean) -> Unit,
+    onSwapCurrency: () -> Unit,
     onLightningInvoiceChange: (String) -> Unit,
     onPayInvoice: () -> Unit
 ) {
@@ -326,6 +415,9 @@ private fun LightningWithdrawContent(
                         color = MaterialTheme.colorScheme.primary,
                         shape = RoundedCornerShape(4.dp)
                     )
+                    .clickable {
+                        focusRequester.requestFocus()
+                    }
                     .padding(24.dp), // Exact padding from TopUpScreen
                 contentAlignment = Alignment.Center
             ) {
@@ -333,20 +425,74 @@ private fun LightningWithdrawContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp) // Exact spacing from TopUpScreen
                 ) {
-                    // Amount display
-                    Text(
-                        text = "0​₿",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
+                    // Amount display row with swap arrow
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        // Main amount display
+                        Text(
+                            text = if (showSatsInput) "${formattedSats}​₿" else "$${formattedUsd}",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
+                            )
                         )
-                    )
+                        
+                        Spacer(modifier = Modifier.width(12.dp))
+                        
+                        // Swap arrow
+                        IconButton(
+                            onClick = onSwapCurrency,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.SwapVert,
+                                contentDescription = "Swap currency",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                     
-                    // USD equivalent
+                    // Secondary amount display
                     Text(
-                        text = "$0.00 USD",
+                        text = if (showSatsInput) "$${formattedUsd} USD" else "${formattedSats}​₿",
                         color = MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodyLarge
+                    )
+                    
+                    // Hidden input field for keyboard
+                    BasicTextField(
+                        value = if (showSatsInput) amountSats else amountFiat,
+                        onValueChange = { newValue ->
+                            if (showSatsInput) {
+                                if (newValue.all { it.isDigit() } && newValue.length <= 10) {
+                                    onAmountSatsChange(newValue)
+                                }
+                            } else {
+                                // Allow digits and decimal point for fiat
+                                if (newValue.matches(Regex("^\\d*\\.?\\d*$")) && newValue.length <= 10) {
+                                    onAmountFiatChange(newValue)
+                                }
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = if (showSatsInput) KeyboardType.Number else KeyboardType.Decimal,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                            }
+                        ),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            color = Color.Transparent
+                        ),
+                        cursorBrush = SolidColor(Color.Transparent),
+                        modifier = Modifier
+                            .size(1.dp)
+                            .focusRequester(focusRequester)
                     )
                 }
             }
@@ -420,10 +566,21 @@ private fun LightningWithdrawContent(
 
 @Composable
 private fun EcashWithdrawContent(
+    amountSats: String,
+    amountFiat: String,
+    showSatsInput: Boolean,
+    formattedSats: String,
+    formattedUsd: String,
     ecashToken: String,
     generatedToken: String?,
     isLoading: Boolean,
+    focusRequester: FocusRequester,
+    focusManager: androidx.compose.ui.focus.FocusManager,
     clipboardManager: androidx.compose.ui.platform.ClipboardManager,
+    onAmountSatsChange: (String) -> Unit,
+    onAmountFiatChange: (String) -> Unit,
+    onShowSatsInputChange: (Boolean) -> Unit,
+    onSwapCurrency: () -> Unit,
     onEcashTokenChange: (String) -> Unit,
     onCreateToken: () -> Unit
 ) {
@@ -509,6 +666,9 @@ private fun EcashWithdrawContent(
                         color = MaterialTheme.colorScheme.primary,
                         shape = RoundedCornerShape(4.dp)
                     )
+                    .clickable {
+                        focusRequester.requestFocus()
+                    }
                     .padding(24.dp), // Exact padding from TopUpScreen
                 contentAlignment = Alignment.Center
             ) {
@@ -516,87 +676,93 @@ private fun EcashWithdrawContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp) // Exact spacing from TopUpScreen
                 ) {
-                    // Amount display
-                    Text(
-                        text = "0​₿",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
+                    // Amount display row with swap arrow
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        // Main amount display
+                        Text(
+                            text = if (showSatsInput) "${formattedSats}​₿" else "$${formattedUsd}",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
+                            )
                         )
-                    )
+                        
+                        Spacer(modifier = Modifier.width(12.dp))
+                        
+                        // Swap arrow
+                        IconButton(
+                            onClick = onSwapCurrency,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.SwapVert,
+                                contentDescription = "Swap currency",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                     
-                    // USD equivalent
+                    // Secondary amount display
                     Text(
-                        text = "$0.00 USD",
+                        text = if (showSatsInput) "$${formattedUsd} USD" else "${formattedSats}​₿",
                         color = MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodyLarge
+                    )
+                    
+                    // Hidden input field for keyboard
+                    BasicTextField(
+                        value = if (showSatsInput) amountSats else amountFiat,
+                        onValueChange = { newValue ->
+                            if (showSatsInput) {
+                                if (newValue.all { it.isDigit() } && newValue.length <= 10) {
+                                    onAmountSatsChange(newValue)
+                                }
+                            } else {
+                                // Allow digits and decimal point for fiat
+                                if (newValue.matches(Regex("^\\d*\\.?\\d*$")) && newValue.length <= 10) {
+                                    onAmountFiatChange(newValue)
+                                }
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = if (showSatsInput) KeyboardType.Number else KeyboardType.Decimal,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                            }
+                        ),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            color = Color.Transparent
+                        ),
+                        cursorBrush = SolidColor(Color.Transparent),
+                        modifier = Modifier
+                            .size(1.dp)
+                            .focusRequester(focusRequester)
                     )
                 }
             }
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            Text(
-                text = "ECASH TOKEN",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            
-            // Standard input field - no nested box
-            OutlinedTextField(
-                value = ecashToken,
-                onValueChange = { if (!isLoading) onEcashTokenChange(it) },
-                enabled = !isLoading,
-                label = { Text("Ecash Token", style = MaterialTheme.typography.bodySmall) },
-                placeholder = { 
-                    Text(
-                        "cashuA...", 
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-                    ) 
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(4.dp),
-                textStyle = MaterialTheme.typography.bodyMedium
-            )
-            
             Spacer(modifier = Modifier.weight(1f))
             
-            // Action buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                BitchatButton(
-                    text = "Paste from Clipboard",
-                    onClick = {
-                        clipboardManager.getText()?.text?.let { clipText ->
-                            if (clipText.startsWith("cashu")) {
-                                onEcashTokenChange(clipText)
-                            }
-                        }
-                    },
-                    enabled = !isLoading,
-                    style = BitchatButtonStyle.Secondary,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                BitchatButton(
-                    text = if (isLoading) "Creating..." else "Create Token",
-                    onClick = onCreateToken,
-                    enabled = !isLoading && ecashToken.isNotBlank(),
-                    style = BitchatButtonStyle.Primary,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            // Spacer to push button to bottom
+            Spacer(modifier = Modifier.weight(1f))
+            
+            // Single CTA button - "Create Ecash"
+            BitchatButton(
+                text = if (isLoading) "Creating..." else "Create Ecash",
+                onClick = onCreateToken,
+                enabled = !isLoading && (amountSats.toLongOrNull() ?: 0L) > 0,
+                style = BitchatButtonStyle.Primary,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
