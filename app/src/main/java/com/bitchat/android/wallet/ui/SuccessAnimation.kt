@@ -108,9 +108,9 @@ fun SuccessAnimation(
                     }
                 }
                 
-                // Success message in terminal style
+                // Success message in terminal style - dynamic based on animation type
                 Text(
-                    text = "PAYMENT SENT",
+                    text = getSuccessMessage(animationData.type),
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontFamily = FontFamily.Monospace,
@@ -324,6 +324,18 @@ private fun getIconForAnimationType(type: WalletViewModel.SuccessAnimationType):
         WalletViewModel.SuccessAnimationType.CASHU_SENT -> Icons.Filled.Upload
         WalletViewModel.SuccessAnimationType.LIGHTNING_RECEIVED -> Icons.Filled.FlashOn
         WalletViewModel.SuccessAnimationType.LIGHTNING_SENT -> Icons.AutoMirrored.Filled.Send
+    }
+}
+
+/**
+ * Get appropriate success message for animation type
+ */
+private fun getSuccessMessage(type: WalletViewModel.SuccessAnimationType): String {
+    return when (type) {
+        WalletViewModel.SuccessAnimationType.CASHU_RECEIVED -> "PAYMENT RECEIVED"
+        WalletViewModel.SuccessAnimationType.CASHU_SENT -> "PAYMENT SENT"
+        WalletViewModel.SuccessAnimationType.LIGHTNING_RECEIVED -> "PAYMENT RECEIVED"
+        WalletViewModel.SuccessAnimationType.LIGHTNING_SENT -> "PAYMENT SENT"
     }
 }
 

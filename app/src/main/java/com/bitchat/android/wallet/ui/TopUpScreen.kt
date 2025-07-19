@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import android.util.Log
 import com.bitchat.android.ui.theme.BitchatTheme
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import kotlinx.coroutines.delay
@@ -88,10 +89,17 @@ fun TopUpScreen(
         }
     }
     
-    // Immediate keyboard focus for Lightning method
+    // Immediate keyboard focus for Lightning method - with safety checks
     LaunchedEffect(selectedMethod) {
         if (selectedMethod == TopUpMethod.LIGHTNING) {
-            focusRequester.requestFocus()
+            try {
+                // Add a small delay to ensure the composable is fully laid out
+                delay(100)
+                focusRequester.requestFocus()
+            } catch (e: Exception) {
+                // Ignore focus errors - they can happen during navigation
+                Log.w("TopUpScreen", "Error requesting focus: ${e.message}")
+            }
         }
     }
     
