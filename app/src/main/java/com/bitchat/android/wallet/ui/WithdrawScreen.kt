@@ -19,16 +19,19 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.bitchat.android.ui.theme.BitchatTheme
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import java.text.NumberFormat
@@ -639,9 +642,15 @@ private fun EcashWithdrawContent(
                     )
                     
                     Text(
-                        text = "Ready to share",
+                        text = if (generatedToken.length > 50) {
+                            "${generatedToken.take(25)}...${generatedToken.takeLast(25)}"
+                        } else {
+                            generatedToken
+                        },
                         color = MaterialTheme.colorScheme.secondary,
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontFamily = FontFamily.Monospace
+                        )
                     )
                 }
             }
@@ -850,4 +859,4 @@ fun WithdrawScreenPreview() {
         //     onSettingsClick = {}
         // )
     }
-} 
+}
