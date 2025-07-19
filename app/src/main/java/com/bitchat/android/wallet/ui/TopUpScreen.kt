@@ -50,6 +50,7 @@ fun TopUpScreen(
     onBackClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onTokenReceived: () -> Unit = {}, // Callback to return to Wallet Overview after receiving token
+    onSuccessAnimationComplete: () -> Unit = {}, // Callback when success animation completes
     modifier: Modifier = Modifier
 ) {
     var selectedMethod by remember { mutableStateOf(TopUpMethod.LIGHTNING) }
@@ -70,6 +71,22 @@ fun TopUpScreen(
     val decodedToken by viewModel.decodedToken.observeAsState()
     val tokenInput by viewModel.tokenInput.observeAsState("")
     val activeMint by viewModel.activeMint.observeAsState()
+    val showSuccessAnimation by viewModel.showSuccessAnimation.observeAsState(false)
+    
+    // Track if we've shown a success animation to avoid premature navigation
+    var hasShownSuccessAnimation by remember { mutableStateOf(false) }
+    
+    // Handle success animation completion and navigation
+    LaunchedEffect(showSuccessAnimation) {
+        if (showSuccessAnimation) {
+            // Success animation has started
+            hasShownSuccessAnimation = true
+        } else if (hasShownSuccessAnimation) {
+            // Success animation has completed after being shown
+            hasShownSuccessAnimation = false
+            onSuccessAnimationComplete()
+        }
+    }
     
     // Immediate keyboard focus for Lightning method
     LaunchedEffect(selectedMethod) {
@@ -237,8 +254,8 @@ fun TopUpScreen(
                     onTokenInputChange = { viewModel.setTokenInput(it) },
                     onReceiveToken = { 
                         viewModel.receiveCashuToken(it)
-                        // Return to Wallet Overview after receiving token
-                        onTokenReceived()
+                        // Success animation will be shown by the ViewModel
+                        // Navigation back to Wallet Overview will be handled after animation
                     },
                     onPasteFromClipboard = {
                         clipboardManager.getText()?.text?.let { clipText ->

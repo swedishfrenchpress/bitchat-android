@@ -103,6 +103,7 @@ fun WalletScreen(
                     showSettingsView = true 
                 },
                 onTokenReceived = { showTopUpScreen = false }, // Return to Wallet Overview after receiving token
+                onSuccessAnimationComplete = { showTopUpScreen = false }, // Return to Wallet Overview after success animation
                 modifier = Modifier.fillMaxSize()
             )
         } else if (showWithdrawScreen) {

@@ -156,7 +156,8 @@ class LightningManager(
      */
     suspend fun checkPendingQuotes(
         onTransactionSaved: () -> Unit,
-        onBalanceRefresh: () -> Unit
+        onBalanceRefresh: () -> Unit,
+        onLightningReceived: (WalletViewModel.SuccessAnimationData) -> Unit = {}
     ) {
         // Check mint quotes
         repository.getMintQuotes().onSuccess { quotes ->
@@ -185,6 +186,15 @@ class LightningManager(
                             repository.saveTransaction(transaction).onSuccess {
                                 onTransactionSaved()
                                 onBalanceRefresh()
+                                
+                                // Show success animation for Lightning invoice top-up
+                                val animationData = WalletViewModel.SuccessAnimationData(
+                                    type = WalletViewModel.SuccessAnimationType.LIGHTNING_RECEIVED,
+                                    amount = quote.amount.toLong(),
+                                    unit = quote.unit,
+                                    description = "Lightning payment received and ecash minted!"
+                                )
+                                onLightningReceived(animationData)
                                 
                                 Log.d(TAG, "Mint quote ${quote.id} was paid and minted")
                             }.onFailure { error ->

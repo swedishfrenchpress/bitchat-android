@@ -144,7 +144,11 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
                 try {
                     lightningManager.checkPendingQuotes(
                         onTransactionSaved = { transactionManager.loadTransactions() },
-                        onBalanceRefresh = { refreshBalance() }
+                        onBalanceRefresh = { refreshBalance() },
+                        onLightningReceived = { animationData ->
+                            // Show success animation for Lightning invoice top-up
+                            showSuccessAnimation(animationData)
+                        }
                     )
                     delay(POLLING_INTERVAL)
                 } catch (e: Exception) {
@@ -260,14 +264,16 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
             token = token,
             currentMints = mintManager.getCurrentMints(),
             onSuccess = { animationData ->
-                // Don't show success animation - just refresh data
+                // Show success animation with terminal-style feedback
+                showSuccessAnimation(animationData)
+                // Refresh data after animation
                 transactionManager.loadTransactions()
                 refreshBalance()
                 mintManager.loadMints()
             },
             onFailure = { failureData ->
-                // Don't show failure animation - just set error message
-                uiStateManager.setError(failureData.errorMessage)
+                // Show failure animation
+                showFailureAnimation(failureData)
             },
             onTransactionSaved = { transactionManager.loadTransactions() },
             onBalanceRefresh = { refreshBalance() },
