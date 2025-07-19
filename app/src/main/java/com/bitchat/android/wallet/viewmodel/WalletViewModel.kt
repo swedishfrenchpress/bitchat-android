@@ -103,9 +103,10 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
      * Initialize with default mint if no mints are configured
      */
     private fun initializeDefaultWallet() {
-        mintManager.initializeDefaultWallet {
-            refreshBalance()
-        }
+        mintManager.initializeDefaultWallet(
+            onWalletInitialized = { refreshBalance() },
+            addDefaultMint = true
+        )
     }
     
     /**
@@ -401,17 +402,26 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
                 uiStateManager.setLoading(true)
                 pollingJob?.cancel()
                 
-                // Clear all data
+                // Clear all data from repository
                 repository.clearAllData()
                 
-                // Reset state
+                // Clear CDK wallet state
+                cashuService.cleanup()
+                
+                // Reset all manager states
+                mintManager.resetState()
+                tokenManager.clearTokenInput()
+                lightningManager.clearCurrentMintQuote()
+                lightningManager.clearCurrentMeltQuote()
+                
+                // Reset ViewModel state
                 _balance.value = 0L
                 
                 // Restart polling
                 startPolling()
                 
-                // Reload all data
-                loadInitialData()
+                // Load initial data WITHOUT initializing default wallet
+                loadInitialDataWithoutDefaultMint()
                 
             } catch (e: Exception) {
                 Log.e(TAG, "Error clearing wallet data", e)
@@ -420,6 +430,15 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
                 uiStateManager.setLoading(false)
             }
         }
+    }
+    
+    /**
+     * Load initial wallet data without initializing default mint
+     */
+    private fun loadInitialDataWithoutDefaultMint() {
+        mintManager.loadMints()
+        transactionManager.loadTransactions()
+        lightningManager.loadPendingQuotes()
     }
     
     /**

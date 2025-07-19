@@ -36,30 +36,40 @@ class MintManager(
     private val _errorMessage = MutableLiveData<String?>(null)
     val errorMessage: androidx.lifecycle.LiveData<String?> = _errorMessage
     
+    // Track if wallet was reset to prevent auto-adding default mint
+    private var wasReset = false
+    
     /**
      * Initialize with default mint if no mints are configured
      */
-    fun initializeDefaultWallet(onWalletInitialized: () -> Unit) {
+    fun initializeDefaultWallet(onWalletInitialized: () -> Unit, addDefaultMint: Boolean = true) {
         coroutineScope.launch {
             try {
                 // Check if we have mints configured
                 repository.getMints().onSuccess { mintList ->
-                    if (mintList.isEmpty()) {
+                    if (mintList.isEmpty() && addDefaultMint && !wasReset) {
                         Log.d(TAG, "No mints found, initializing with default mint")
                         // Add default mint
                         addDefaultMint(onWalletInitialized)
                     } else {
                         _mints.value = mintList
+                        if (mintList.isEmpty()) {
+                            Log.d(TAG, "No mints configured - wallet is clean")
+                        }
                     }
                 }
                 
-                // Ensure we have an active mint
+                // Ensure we have an active mint only if we have mints
                 repository.getActiveMint().onSuccess { activeMintUrl ->
                     if (activeMintUrl.isNullOrEmpty()) {
-                        Log.d(TAG, "No active mint, setting default")
-                        // Use default mint URL from CashuService
-                        cashuService.initializeWallet("https://testnut.cashu.space").onSuccess {
-                            onWalletInitialized()
+                        if (addDefaultMint && !wasReset) {
+                            Log.d(TAG, "No active mint, setting default")
+                            // Use default mint URL from CashuService
+                            cashuService.initializeWallet("https://testnut.cashu.space").onSuccess {
+                                onWalletInitialized()
+                            }
+                        } else {
+                            Log.d(TAG, "No active mint - wallet is clean")
                         }
                     } else {
                         _activeMint.value = activeMintUrl
@@ -156,6 +166,10 @@ class MintManager(
         coroutineScope.launch {
             try {
                 uiStateManager.setLoading(true)
+                
+                // Clear reset flag when user manually adds a mint
+                clearResetFlag()
+                
                 cashuService.getMintInfo(mintUrl).onSuccess { mintInfo ->
                     val mint = Mint(
                         url = mintUrl,
@@ -276,6 +290,24 @@ class MintManager(
      */
     fun clearError() {
         _errorMessage.value = null
+    }
+    
+    /**
+     * Reset all mint state (for wallet reset)
+     */
+    fun resetState() {
+        _mints.value = emptyList()
+        _activeMint.value = null
+        _isLoading.value = false
+        _errorMessage.value = null
+        wasReset = true // Set flag to prevent auto-adding default mint after reset
+    }
+    
+    /**
+     * Clear the reset flag (called when user manually adds a mint)
+     */
+    private fun clearResetFlag() {
+        wasReset = false
     }
     
     /**
