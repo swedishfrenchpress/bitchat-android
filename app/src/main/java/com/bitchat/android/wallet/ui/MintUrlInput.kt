@@ -28,45 +28,30 @@ fun MintUrlInput(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    // Box with green background matching TotalBalance styling
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(
-                color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(4.dp)
-            )
-            .border(
-                width = 0.25.dp,
-                color = MaterialTheme.colorScheme.primary,
-                shape = RoundedCornerShape(4.dp)
-            )
-            .padding(16.dp)
-    ) {
-        OutlinedTextField(
-            value = url,
-            onValueChange = onUrlChange,
-            enabled = enabled,
-            singleLine = true,
-            label = { Text("Mint URL", style = MaterialTheme.typography.bodySmall) },
-            placeholder = { 
-                Text(
-                    "https://mint.example.com", 
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-                ) 
-            },
-                                colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    ),
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(4.dp),
-            textStyle = MaterialTheme.typography.bodyMedium
-        )
-    }
+    // Clean standalone input field using proper theme styles
+    OutlinedTextField(
+        value = url,
+        onValueChange = onUrlChange,
+        enabled = enabled,
+        singleLine = true,
+        label = { Text("Mint URL", style = MaterialTheme.typography.bodySmall) },
+        placeholder = { 
+            Text(
+                "https://mint.example.com", 
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+            ) 
+        },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            focusedLabelColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(4.dp),
+        textStyle = MaterialTheme.typography.bodyMedium
+    )
 }
 
 @Preview(showBackground = true)

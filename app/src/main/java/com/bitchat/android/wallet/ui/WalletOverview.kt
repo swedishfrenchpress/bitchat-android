@@ -40,6 +40,7 @@ fun WalletOverview(
     onSettingsClick: () -> Unit = {},
     onTransactionHistoryClick: () -> Unit = {},
     onTopUpClick: () -> Unit = {},
+    onWithdrawClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val balance by viewModel.balance.observeAsState(0L)
@@ -175,7 +176,7 @@ fun WalletOverview(
                 enabled = !isLoading
             )
             WithdrawButton(
-                onClick = { viewModel.showSendDialog() },
+                onClick = onWithdrawClick,
                 modifier = Modifier.weight(1f),
                 enabled = !isLoading && balance > 0
             )

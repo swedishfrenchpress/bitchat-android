@@ -33,6 +33,7 @@ fun WalletScreen(
     var showSettingsView by remember { mutableStateOf(false) }
     var showTransactionHistoryView by remember { mutableStateOf(false) }
     var showTopUpScreen by remember { mutableStateOf(false) }
+    var showWithdrawScreen by remember { mutableStateOf(false) }
     var navigationHistory by remember { mutableStateOf<String?>(null) }
     val showSendDialog by walletViewModel.showSendDialog.observeAsState(false)
     val showReceiveDialog by walletViewModel.showReceiveDialog.observeAsState(false)
@@ -57,6 +58,11 @@ fun WalletScreen(
             // Close top up screen
             showTopUpScreen -> {
                 showTopUpScreen = false
+                true
+            }
+            // Close withdraw screen
+            showWithdrawScreen -> {
+                showWithdrawScreen = false
                 true
             }
             // Close receive view
@@ -97,6 +103,18 @@ fun WalletScreen(
                     showSettingsView = true 
                 },
                 onTokenReceived = { showTopUpScreen = false }, // Return to Wallet Overview after receiving token
+                modifier = Modifier.fillMaxSize()
+            )
+        } else if (showWithdrawScreen) {
+            // Full-screen WithdrawScreen
+            WithdrawScreen(
+                viewModel = walletViewModel,
+                onBackClick = { showWithdrawScreen = false },
+                onSettingsClick = { 
+                    navigationHistory = "withdraw"
+                    showWithdrawScreen = false
+                    showSettingsView = true 
+                },
                 modifier = Modifier.fillMaxSize()
             )
         } else if (showReceiveView) {
@@ -155,6 +173,7 @@ fun WalletScreen(
                 },
                 onTransactionHistoryClick = { showTransactionHistoryView = true },
                 onTopUpClick = { showTopUpScreen = true },
+                onWithdrawClick = { showWithdrawScreen = true },
                 modifier = Modifier.fillMaxSize()
             )
         }

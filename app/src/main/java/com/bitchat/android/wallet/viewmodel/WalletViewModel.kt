@@ -257,20 +257,14 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
             token = token,
             currentMints = mintManager.getCurrentMints(),
             onSuccess = { animationData ->
-                showSuccessAnimation(animationData)
-                viewModelScope.launch {
-                    // Delay navigation until partway through the success animation
-                    // This allows the view transition to happen during the animation fade-out
-                    delay(1200) // Animation is visible for 2000ms, start transition at 1200ms
-                    hideReceiveDialog()
-                }
+                // Don't show success animation - just refresh data
+                transactionManager.loadTransactions()
+                refreshBalance()
+                mintManager.loadMints()
             },
             onFailure = { failureData ->
-                showFailureAnimation(failureData)
-                viewModelScope.launch {
-                    delay(500)
-                    hideReceiveDialog()
-                }
+                // Don't show failure animation - just set error message
+                uiStateManager.setError(failureData.errorMessage)
             },
             onTransactionSaved = { transactionManager.loadTransactions() },
             onBalanceRefresh = { refreshBalance() },

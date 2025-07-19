@@ -47,6 +47,26 @@ fun WalletSettings(
     val transactions by viewModel.transactions.observeAsState(emptyList())
     val balance by viewModel.balance.observeAsState(0L)
     
+    // State for mint balances
+    var mintBalances by remember { mutableStateOf<Map<String, Long>>(emptyMap()) }
+    
+    // Load balances for all mints
+    LaunchedEffect(mints) {
+        val balances = mutableMapOf<String, Long>()
+        for (mint in mints) {
+            viewModel.getMintBalance(mint.url,
+                onSuccess = { balance ->
+                    balances[mint.url] = balance
+                    mintBalances = balances.toMap()
+                },
+                onError = { _ ->
+                    balances[mint.url] = 0L
+                    mintBalances = balances.toMap()
+                }
+            )
+        }
+    }
+    
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -127,7 +147,7 @@ fun WalletSettings(
                     MintListItem(
                         mintName = mint.info?.name ?: mint.nickname,
                         mintUrl = mint.url,
-                        balance = if (activeMint == mint.url) "${balance} ₿" else "— ₿", // Note: CDK limitation - only active mint shows balance
+                        balance = mintBalances[mint.url]?.let { "${it} ₿" } ?: "— ₿",
                         selected = activeMint == mint.url,
                         onDelete = {
                             if (mints.size > 1 && activeMint != mint.url) {

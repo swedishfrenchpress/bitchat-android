@@ -584,7 +584,7 @@ private fun CashuContent(
             modifier = Modifier.padding(bottom = 8.dp)
         )
         
-        // Simplified Ecash token input box - single box with camera icon
+        // Ecash token input box - matching TotalBalance dimensions and styling
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -597,103 +597,97 @@ private fun CashuContent(
                     color = MaterialTheme.colorScheme.primary,
                     shape = RoundedCornerShape(4.dp)
                 )
-                .padding(16.dp)
+                .padding(24.dp), // Exact padding from TotalBalance
+            contentAlignment = Alignment.Center
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = tokenInput,
-                    onValueChange = { if (!isLoading) onTokenInputChange(it) },
-                    enabled = !isLoading,
-                    label = { Text("Ecash Token", style = MaterialTheme.typography.bodySmall) },
-                    placeholder = { 
-                        Text(
-                            "cashuA...", 
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-                        ) 
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    ),
-                    modifier = Modifier.weight(1f),
-                    minLines = 3,
-                    maxLines = 5,
-                    shape = RoundedCornerShape(4.dp),
-                    textStyle = MaterialTheme.typography.bodyMedium
-                )
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                // Camera icon on the right side
-                IconButton(
-                    onClick = { /* TODO: Camera scan */ },
-                    enabled = !isLoading
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.CameraAlt,
-                        contentDescription = "Scan with Camera",
-                        tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
+            // Input field with camera icon as trailing icon
+            OutlinedTextField(
+                value = tokenInput,
+                onValueChange = { if (!isLoading) onTokenInputChange(it) },
+                enabled = !isLoading,
+                label = { Text("Ecash Token", style = MaterialTheme.typography.bodySmall) },
+                placeholder = { 
+                    Text(
+                        "cashuA...", 
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                    ) 
+                },
+                trailingIcon = {
+                    IconButton(
+                        onClick = { /* TODO: Camera scan */ },
+                        enabled = !isLoading
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CameraAlt,
+                            contentDescription = "Scan with Camera",
+                            tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3,
+                maxLines = 5,
+                shape = RoundedCornerShape(4.dp),
+                textStyle = MaterialTheme.typography.bodyMedium
+            )
         }
         
         // Show token details below input if token is decoded
         if (decodedToken != null) {
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Token details card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            // Token details section
+            Text(
+                text = "TOKEN DETAILS",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            // Simple token details display
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .border(
+                        width = 0.25.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .padding(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Toll,
-                            contentDescription = "Token",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "Token Details",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "Amount: ${decodedToken.amount.toLong()} ₿",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = "From: ${decodedToken.mint}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                        }
-                    }
-                    
-                    if (!decodedToken.memo.isNullOrEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Memo: ${decodedToken.memo}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                    }
+                Text(
+                    text = "Amount: ${decodedToken.amount.toLong()} ₿",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Text(
+                    text = "From: ${decodedToken.mint}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                if (!decodedToken.memo.isNullOrEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Memo: ${decodedToken.memo}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
         }
