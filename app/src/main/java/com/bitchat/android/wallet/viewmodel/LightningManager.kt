@@ -103,8 +103,10 @@ class LightningManager(
         coroutineScope.launch {
             try {
                 uiStateManager.setLoading(true)
+                Log.d(TAG, "Starting payment for quote: $quoteId")
                 cashuService.payInvoice(quoteId).onSuccess { success ->
                     if (success) {
+                        Log.d(TAG, "Payment successful for quote: $quoteId")
                         // Update quote status and add transaction
                         val quote = _currentMeltQuote.value
                         if (quote != null) {
@@ -122,6 +124,7 @@ class LightningManager(
                                     fee = quote.feeReserve
                                 )
                                 repository.saveTransaction(transaction).onSuccess {
+                                    Log.d(TAG, "Transaction saved successfully")
                                     onTransactionSaved()
                                     onBalanceRefresh()
                                     onPaymentComplete()
@@ -135,9 +138,11 @@ class LightningManager(
                             }
                         }
                     } else {
+                        Log.e(TAG, "Payment failed for quote: $quoteId")
                         _errorMessage.value = "Payment failed"
                     }
                 }.onFailure { error ->
+                    Log.e(TAG, "Payment failed with error: ${error.message}")
                     _errorMessage.value = "Payment failed: ${error.message}"
                 }
             } finally {

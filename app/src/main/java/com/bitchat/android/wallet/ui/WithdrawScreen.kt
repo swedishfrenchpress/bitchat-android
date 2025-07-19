@@ -36,6 +36,8 @@ import com.bitchat.android.ui.theme.BitchatTheme
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import java.text.NumberFormat
 import java.util.*
+import kotlinx.coroutines.delay
+import android.util.Log
 
 /**
  * WithdrawScreen - Unified withdraw functionality (Lightning & Ecash)
@@ -44,6 +46,10 @@ import java.util.*
 
 enum class WithdrawMethod {
     LIGHTNING, ECASH
+}
+
+enum class PaymentState {
+    IDLE, LOADING, SUCCESS
 }
 
 @Composable
@@ -59,6 +65,8 @@ fun WithdrawScreen(
     var amountSats by remember { mutableStateOf("") }
     var amountFiat by remember { mutableStateOf("") }
     var showSatsInput by remember { mutableStateOf(true) }
+    var paymentState by remember { mutableStateOf(PaymentState.IDLE) }
+    var isParsingInvoice by remember { mutableStateOf(false) }
     
     val clipboardManager = LocalClipboardManager.current
     val focusRequester = remember { FocusRequester() }
@@ -74,6 +82,51 @@ fun WithdrawScreen(
     // Immediate keyboard focus for amount input
     LaunchedEffect(selectedMethod) {
         focusRequester.requestFocus()
+    }
+    
+    // Handle payment success and auto-navigation
+    LaunchedEffect(paymentState) {
+        if (paymentState == PaymentState.SUCCESS) {
+            delay(2500) // 2.5 second delay
+            paymentState = PaymentState.IDLE
+            onBackClick() // Navigate back to wallet overview
+        }
+    }
+    
+    // Monitor melt quote creation and payment completion
+    LaunchedEffect(currentMeltQuote) {
+        if (currentMeltQuote != null && paymentState == PaymentState.LOADING) {
+            Log.d("WithdrawScreen", "Melt quote created, proceeding with payment")
+            // Melt quote was created, now we can proceed with payment
+            // The payment will be triggered by the user clicking Pay in the melt quote UI
+        }
+    }
+    
+    // Monitor error messages
+    LaunchedEffect(errorMessage) {
+        if (errorMessage != null && paymentState == PaymentState.LOADING) {
+            Log.e("WithdrawScreen", "Payment error: $errorMessage")
+            paymentState = PaymentState.IDLE
+            // Clear the error after a delay
+            delay(5000)
+            viewModel.clearError()
+        }
+    }
+    
+    // Handle Lightning invoice parsing
+    LaunchedEffect(lightningInvoice) {
+        if (lightningInvoice.isNotBlank() && (lightningInvoice.startsWith("lnbc") || lightningInvoice.startsWith("lnbtb"))) {
+            isParsingInvoice = true
+            delay(1000) // Show loading for 1 second
+            
+            val parsedAmount = parseLightningInvoiceAmount(lightningInvoice)
+            if (parsedAmount > 0) {
+                amountSats = parsedAmount.toString()
+                amountFiat = ""
+                showSatsInput = true
+            }
+            isParsingInvoice = false
+        }
     }
     
     // Conversion calculations
@@ -197,6 +250,8 @@ fun WithdrawScreen(
                     lightningInvoice = lightningInvoice,
                     currentMeltQuote = currentMeltQuote,
                     isLoading = isLoading,
+                    paymentState = paymentState,
+                    isParsingInvoice = isParsingInvoice,
                     focusRequester = focusRequester,
                     focusManager = focusManager,
                     clipboardManager = clipboardManager,
@@ -217,9 +272,15 @@ fun WithdrawScreen(
                     onPayInvoice = {
                         val finalAmount = if (showSatsInput) satsAmount else calculatedSats
                         if (lightningInvoice.isNotBlank() && finalAmount > 0) {
+                            Log.d("WithdrawScreen", "Creating melt quote for invoice: ${lightningInvoice.take(20)}...")
+                            paymentState = PaymentState.LOADING
                             // First create melt quote, then pay it
                             viewModel.createMeltQuote(lightningInvoice)
                         }
+                    },
+                    onPaymentComplete = {
+                        Log.d("WithdrawScreen", "Payment completed, setting success state")
+                        paymentState = PaymentState.SUCCESS
                     },
                     viewModel = viewModel
                 )
@@ -273,6 +334,36 @@ fun WithdrawScreen(
                 onDismiss = { viewModel.clearError() }
             )
         }
+    }
+}
+
+/**
+ * Parse Lightning invoice to extract amount in satoshis
+ * Supports lnbc (mainnet) and lnbtb (testnet) invoices
+ * Simplified parser for demo purposes - in production use a proper bech32 decoder
+ */
+private fun parseLightningInvoiceAmount(invoice: String): Long {
+    return try {
+        // For demo purposes, we'll extract a simple amount
+        // In production, you'd use a proper Lightning invoice decoder
+        when {
+            invoice.startsWith("lnbc") -> {
+                // Extract amount from lnbc invoice format
+                // Look for amount pattern: lnbc[amount][rest]
+                // This is a simplified approach - real parsing is more complex
+                val amountMatch = Regex("lnbc(\\d+)[a-zA-Z]").find(invoice)
+                amountMatch?.groupValues?.get(1)?.toLongOrNull() ?: 0L
+            }
+            invoice.startsWith("lnbtb") -> {
+                // Extract amount from lnbtb invoice format
+                val amountMatch = Regex("lnbtb(\\d+)[a-zA-Z]").find(invoice)
+                amountMatch?.groupValues?.get(1)?.toLongOrNull() ?: 0L
+            }
+            else -> 0L
+        }
+    } catch (e: Exception) {
+        Log.e("WithdrawScreen", "Error parsing Lightning invoice: ${e.message}")
+        0L
     }
 }
 
@@ -332,6 +423,8 @@ private fun LightningWithdrawContent(
     lightningInvoice: String,
     currentMeltQuote: com.bitchat.android.wallet.data.MeltQuote?,
     isLoading: Boolean,
+    paymentState: PaymentState,
+    isParsingInvoice: Boolean,
     focusRequester: FocusRequester,
     focusManager: androidx.compose.ui.focus.FocusManager,
     clipboardManager: androidx.compose.ui.platform.ClipboardManager,
@@ -341,8 +434,11 @@ private fun LightningWithdrawContent(
     onSwapCurrency: () -> Unit,
     onLightningInvoiceChange: (String) -> Unit,
     onPayInvoice: () -> Unit,
+    onPaymentComplete: () -> Unit,
     viewModel: com.bitchat.android.wallet.viewmodel.WalletViewModel
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+    val typography = MaterialTheme.typography
     if (currentMeltQuote != null) {
         // Show melt quote details
         Column {
@@ -391,24 +487,77 @@ private fun LightningWithdrawContent(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Show fee information
-            Text(
-                text = "FEE RESERVE: ${currentMeltQuote.feeReserve.toLong()}​₿",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-            
-            BitchatButton(
-                text = if (isLoading) "Processing..." else "Pay Invoice",
-                onClick = {
-                    // Pay the Lightning invoice using the melt quote
-                    viewModel.payLightningInvoice(currentMeltQuote.id)
-                },
-                enabled = !isLoading,
-                style = BitchatButtonStyle.Primary,
-                modifier = Modifier.fillMaxWidth()
-            )
+            // Payment button with loading/success states
+            when (paymentState) {
+                PaymentState.LOADING -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Green spinner
+                        Box(
+                            modifier = Modifier.size(40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.fillMaxSize(),
+                                color = colorScheme.primary,
+                                strokeWidth = 3.dp
+                            )
+                        }
+                        
+                        Text(
+                            text = "Sending payment...",
+                            style = typography.bodyMedium,
+                            color = colorScheme.onSurface.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+                
+                PaymentState.SUCCESS -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Success checkmark
+                        Box(
+                            modifier = Modifier.size(40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = "Payment successful",
+                                tint = colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        
+                        Text(
+                            text = "Payment sent!",
+                            style = typography.bodyMedium,
+                            color = colorScheme.primary
+                        )
+                    }
+                }
+                
+                PaymentState.IDLE -> {
+                    BitchatButton(
+                        text = "Pay",
+                        onClick = {
+                            // Pay the Lightning invoice using the melt quote
+                            Log.d("WithdrawScreen", "Starting payment for quote: ${currentMeltQuote.id}")
+                            viewModel.payLightningInvoice(currentMeltQuote.id) {
+                                Log.d("WithdrawScreen", "Payment completed via callback")
+                                onPaymentComplete()
+                            }
+                        },
+                        enabled = !isLoading,
+                        style = BitchatButtonStyle.Primary,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
         }
     } else {
         // Show amount input and invoice input
@@ -449,26 +598,45 @@ private fun LightningWithdrawContent(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        // Main amount display
-                        Text(
-                            text = if (showSatsInput) "${formattedSats}​₿" else "$${formattedUsd}",
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
+                        // Main amount display or loading spinner
+                        if (isParsingInvoice) {
+                            // Loading spinner while parsing invoice
+                            Box(
+                                modifier = Modifier.size(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.fillMaxSize(),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    strokeWidth = 2.dp
+                                )
+                            }
+                        } else {
+                            // Normal amount display
+                            Text(
+                                text = if (showSatsInput) "${formattedSats}​₿" else "$${formattedUsd}",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.headlineSmall.copy(
+                                    fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
+                                )
                             )
-                        )
+                        }
                         
                         Spacer(modifier = Modifier.width(12.dp))
                         
-                        // Swap arrow
+                        // Swap arrow (disabled during parsing)
                         IconButton(
                             onClick = onSwapCurrency,
+                            enabled = !isParsingInvoice,
                             modifier = Modifier.size(24.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.SwapVert,
                                 contentDescription = "Swap currency",
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = if (isParsingInvoice) 
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) 
+                                else 
+                                    MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -528,12 +696,12 @@ private fun LightningWithdrawContent(
             // Standard input field - no nested box
             OutlinedTextField(
                 value = lightningInvoice,
-                onValueChange = { if (!isLoading) onLightningInvoiceChange(it) },
-                enabled = !isLoading,
+                onValueChange = { if (!isLoading && !isParsingInvoice) onLightningInvoiceChange(it) },
+                enabled = !isLoading && !isParsingInvoice,
                 label = { Text("Lightning Invoice / Address", style = MaterialTheme.typography.bodySmall) },
                 placeholder = { 
                     Text(
-                        "lnbc...", 
+                        "Enter invoice / address...", 
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
                     ) 
@@ -561,20 +729,21 @@ private fun LightningWithdrawContent(
                     text = "Paste from Clipboard",
                     onClick = {
                         clipboardManager.getText()?.text?.let { clipText ->
-                            if (clipText.startsWith("lnbc")) {
+                            if (clipText.startsWith("lnbc") || clipText.startsWith("lnbtb")) {
                                 onLightningInvoiceChange(clipText)
                             }
                         }
                     },
-                    enabled = !isLoading,
+                    enabled = !isLoading && !isParsingInvoice,
                     style = BitchatButtonStyle.Secondary,
                     modifier = Modifier.weight(1f)
                 )
                 
                 BitchatButton(
-                    text = if (isLoading) "Processing..." else "Pay Invoice",
+                    text = "Pay",
                     onClick = onPayInvoice,
-                    enabled = !isLoading && lightningInvoice.isNotBlank(),
+                    enabled = !isLoading && !isParsingInvoice && lightningInvoice.isNotBlank() && 
+                             (amountSats.toLongOrNull() ?: 0L) > 0 && paymentState == PaymentState.IDLE,
                     style = BitchatButtonStyle.Primary,
                     modifier = Modifier.weight(1f)
                 )

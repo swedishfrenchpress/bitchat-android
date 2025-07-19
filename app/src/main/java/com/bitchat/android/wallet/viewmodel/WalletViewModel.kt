@@ -337,12 +337,25 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
     /**
      * Pay Lightning invoice (melt)
      */
-    fun payLightningInvoice(quoteId: String) {
+    fun payLightningInvoice(quoteId: String, onPaymentComplete: () -> Unit = {}) {
+        Log.d(TAG, "payLightningInvoice called with quoteId: $quoteId")
         lightningManager.payLightningInvoice(
             quoteId = quoteId,
-            onTransactionSaved = { transactionManager.loadTransactions() },
-            onBalanceRefresh = { refreshBalance() },
-            onPaymentComplete = { hideSendDialog() }
+            onTransactionSaved = { 
+                Log.d(TAG, "Transaction saved successfully")
+                transactionManager.loadTransactions() 
+            },
+            onBalanceRefresh = { 
+                Log.d(TAG, "Refreshing balance after payment")
+                refreshBalance() 
+            },
+            onPaymentComplete = { 
+                Log.d(TAG, "Payment completed successfully")
+                // Clear the melt quote after successful payment
+                lightningManager.clearCurrentMeltQuote()
+                // Call the completion callback
+                onPaymentComplete()
+            }
         )
     }
     

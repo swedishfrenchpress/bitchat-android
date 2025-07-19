@@ -6,7 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,9 +42,9 @@ fun WithdrawButton(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Down arrow icon (above text)
+        // Up arrow icon (above text) - money going out of wallet
         Icon(
-            imageVector = Icons.Filled.ArrowDownward,
+            imageVector = Icons.Filled.ArrowUpward,
             contentDescription = "Withdraw",
             tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
             modifier = Modifier.size(16.dp)
