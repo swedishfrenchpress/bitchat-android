@@ -24,7 +24,8 @@ import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import kotlinx.coroutines.delay
 
 /**
- * Fullscreen success animation component for wallet operations
+ * Terminal-style success animation component for wallet operations
+ * Matches the app's TTY/terminal aesthetic with minimal, retro styling
  */
 @Composable
 fun SuccessAnimation(
@@ -34,151 +35,119 @@ fun SuccessAnimation(
 ) {
     var isVisible by remember { mutableStateOf(false) }
     var startExit by remember { mutableStateOf(false) }
+    var showCursor by remember { mutableStateOf(false) }
     
     // Control animation timing
     LaunchedEffect(animationData) {
         // Start with fade in
         isVisible = true
-        delay(2000) // Show for 2 seconds
+        delay(1500) // Show for 1.5 seconds
         // Start exit animation
         startExit = true
-        delay(500) // Allow fade out animation to complete
+        delay(300) // Allow fade out animation to complete
         onAnimationComplete()
     }
     
-    // Wobble/tada animation for the icon
-    val infiniteTransition = rememberInfiniteTransition(label = "success_animation")
-    val iconRotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = if (isVisible && !startExit) 6f else 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 150, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "icon_wobble"
-    )
-    
-    val iconScale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = if (isVisible && !startExit) 1.05f else 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "icon_scale"
-    )
+    // Blinking cursor effect
+    LaunchedEffect(isVisible) {
+        if (isVisible && !startExit) {
+            while (true) {
+                showCursor = !showCursor
+                delay(500)
+            }
+        }
+    }
     
     // Smooth fade in/out animations
-    val contentScale by animateFloatAsState(
-        targetValue = if (isVisible && !startExit) 1f else 0.9f,
-        animationSpec = spring(
-            dampingRatio = 0.7f, 
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "content_scale"
-    )
-    
     val alpha by animateFloatAsState(
         targetValue = if (isVisible && !startExit) 1f else 0f,
         animationSpec = tween(
-            durationMillis = if (startExit) 400 else 600,
+            durationMillis = if (startExit) 300 else 400,
             easing = if (startExit) FastOutLinearInEasing else LinearOutSlowInEasing
         ),
         label = "content_alpha"
-    )
-    
-    val backgroundAlpha by animateFloatAsState(
-        targetValue = if (isVisible && !startExit) 0.95f else 0f,
-        animationSpec = tween(
-            durationMillis = if (startExit) 400 else 600
-        ),
-        label = "background_alpha"
     )
     
     if (alpha > 0f) {
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = backgroundAlpha)),
+                .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-                modifier = Modifier.scale(contentScale)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.graphicsLayer { this.alpha = alpha }
             ) {
-                // Success icon with wobble/tada effect
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(120.dp)
+                // Terminal-style success indicator
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Outer glow circle
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .background(
-                                Color(0xFF00C851).copy(alpha = 0.2f),
-                                CircleShape
-                            )
+                    // ASCII-style checkmark
+                    Text(
+                        text = "[✓]",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold
+                        )
                     )
                     
-                    // Main success circle with wobble
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .background(
-                                Color(0xFF00C851),
-                                CircleShape
+                    // Blinking cursor
+                    if (showCursor) {
+                        Text(
+                            text = "_",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold
                             )
-                            .scale(iconScale)
-                            .graphicsLayer {
-                                rotationZ = iconRotation
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = getIconForAnimationType(animationData.type),
-                            contentDescription = "Success",
-                            tint = Color.Black,
-                            modifier = Modifier.size(40.dp)
                         )
                     }
                 }
                 
-                // Success message with smooth fade
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.graphicsLayer { this.alpha = alpha }
-                ) {
-                    Text(
-                        text = "SUCCESS!",
-                        color = Color(0xFF00C851),
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
+                // Success message in terminal style
+                Text(
+                    text = "PAYMENT SENT",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.headlineSmall.copy(
                         fontFamily = FontFamily.Monospace,
-                        letterSpacing = 2.sp
-                    )
-                    
-                    // Amount
-                    Text(
-                        text = formatAmount(animationData.amount, animationData.unit),
-                        color = Color.White,
-                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                )
+                
+                // Amount in terminal style
+                Text(
+                    text = formatAmount(animationData.amount, animationData.unit),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+                
+                // ASCII-style separator
+                Text(
+                    text = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                    style = MaterialTheme.typography.bodySmall.copy(
                         fontFamily = FontFamily.Monospace
                     )
-                    
-                    // Description
-                    Text(
-                        text = animationData.description,
-                        color = Color.Gray,
-                        fontSize = 16.sp,
+                )
+                
+                // Description in terminal style
+                Text(
+                    text = animationData.description.uppercase(),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    style = MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = FontFamily.Monospace,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 32.dp)
-                    )
-                }
+                        letterSpacing = 0.5.sp
+                    ),
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }

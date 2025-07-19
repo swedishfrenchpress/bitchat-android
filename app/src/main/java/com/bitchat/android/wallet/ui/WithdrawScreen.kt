@@ -93,6 +93,18 @@ fun WithdrawScreen(
     val currentMeltQuote by viewModel.currentMeltQuote.observeAsState()
     val generatedToken by viewModel.generatedToken.observeAsState()
     
+    // Reset function to clear all state
+    fun resetWithdrawState() {
+        amountSats = ""
+        amountFiat = ""
+        lightningInvoice = ""
+        showSatsInput = true
+        paymentStateHolder.value = PaymentState.IDLE
+        paymentErrorHolder.value = null
+        isParsingInvoiceHolder.value = false
+        viewModel.clearCurrentMeltQuote()
+    }
+    
     // Immediate keyboard focus for amount input - with safety check
     LaunchedEffect(selectedMethod) {
         try {
@@ -368,6 +380,7 @@ fun WithdrawScreen(
                         paymentStateHolder.value = PaymentState.IDLE
                         paymentErrorHolder.value = null
                     },
+                    onResetState = { resetWithdrawState() },
                     viewModel = viewModel
                 )
             }
@@ -498,6 +511,7 @@ private fun LightningWithdrawContent(
     onPaymentComplete: () -> Unit,
     onPaymentError: (String) -> Unit,
     onPaymentCancel: () -> Unit,
+    onResetState: () -> Unit,
     viewModel: com.bitchat.android.wallet.viewmodel.WalletViewModel
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -735,12 +749,7 @@ private fun LightningWithdrawContent(
                             // Go Back button
                             BitchatButton(
                                 text = "Go Back",
-                                onClick = {
-                                    // Reset to invoice input state
-                                    paymentStateHolder.value = PaymentState.IDLE
-                                    paymentErrorHolder.value = null
-                                    viewModel.clearCurrentMeltQuote()
-                                },
+                                onClick = { onResetState() },
                                 enabled = true,
                                 style = BitchatButtonStyle.Secondary,
                                 modifier = Modifier.fillMaxWidth()
