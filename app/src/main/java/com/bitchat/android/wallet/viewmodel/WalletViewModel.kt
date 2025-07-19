@@ -188,6 +188,8 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
     
     fun clearTokenInput() = tokenManager.clearTokenInput()
     
+    fun clearCurrentMeltQuote() = lightningManager.clearCurrentMeltQuote()
+    
     // Animation management - Delegate to UIStateManager
     fun showSuccessAnimation(animationData: SuccessAnimationData) = uiStateManager.showSuccessAnimation(animationData)
     

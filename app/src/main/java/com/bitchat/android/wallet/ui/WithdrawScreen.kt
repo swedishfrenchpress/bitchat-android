@@ -107,7 +107,8 @@ fun WithdrawScreen(
     // Handle payment success and auto-navigation
     LaunchedEffect(paymentState) {
         if (paymentState == PaymentState.SUCCESS) {
-            delay(2500) // 2.5 second delay
+            // Show success state briefly, then navigate directly to wallet overview
+            delay(1500) // 1.5 second delay to show success state
             paymentStateHolder.value = PaymentState.IDLE
             // Clear focus before navigation to prevent crash
             try {
@@ -115,7 +116,7 @@ fun WithdrawScreen(
             } catch (e: Exception) {
                 Log.w("WithdrawScreen", "Error clearing focus: ${e.message}")
             }
-            // Navigate back to wallet overview
+            // Navigate back to wallet overview with success animation
             onBackClick()
         }
     }
@@ -345,6 +346,16 @@ fun WithdrawScreen(
                     },
                     onPaymentComplete = {
                         Log.d("WithdrawScreen", "Payment completed, setting success state")
+                        // Trigger success animation with payment details
+                        currentMeltQuote?.let { quote ->
+                            val animationData = WalletViewModel.SuccessAnimationData(
+                                type = WalletViewModel.SuccessAnimationType.LIGHTNING_SENT,
+                                amount = quote.amount.toLong(),
+                                unit = quote.unit,
+                                description = "Lightning payment sent"
+                            )
+                            viewModel.showSuccessAnimation(animationData)
+                        }
                         paymentStateHolder.value = PaymentState.SUCCESS
                     },
                     onPaymentError = { error ->
@@ -686,28 +697,55 @@ private fun LightningWithdrawContent(
                  
                  PaymentState.IDLE -> {
                     currentMeltQuote?.let { quote ->
-                        BitchatButton(
-                            text = "Pay",
-                            onClick = {
-                                // Pay the Lightning invoice using the melt quote
-                                Log.d("WithdrawScreen", "Starting payment for quote: ${quote.id}")
-                                paymentStateHolder.value = PaymentState.LOADING
-                                viewModel.payLightningInvoice(
-                                    quoteId = quote.id,
-                                    onPaymentComplete = {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Pay button
+                            BitchatButton(
+                                text = "Pay",
+                                onClick = {
+                                    // Pay the Lightning invoice using the melt quote
+                                    Log.d("WithdrawScreen", "Starting payment for quote: ${quote.id}")
+                                    paymentStateHolder.value = PaymentState.LOADING
+                                    viewModel.payLightningInvoice(
+                                        quoteId = quote.id,
+                                                                            onPaymentComplete = {
                                         Log.d("WithdrawScreen", "Payment completed via callback")
+                                        // Trigger success animation with payment details
+                                        val animationData = WalletViewModel.SuccessAnimationData(
+                                            type = WalletViewModel.SuccessAnimationType.LIGHTNING_SENT,
+                                            amount = quote.amount.toLong(),
+                                            unit = quote.unit,
+                                            description = "Lightning payment sent"
+                                        )
+                                        viewModel.showSuccessAnimation(animationData)
                                         onPaymentComplete()
                                     },
-                                    onPaymentError = { error ->
-                                        Log.e("WithdrawScreen", "Payment failed via callback: $error")
-                                        onPaymentError(error)
-                                    }
-                                )
-                            },
-                            enabled = !isLoading,
-                            style = BitchatButtonStyle.Primary,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                                        onPaymentError = { error ->
+                                            Log.e("WithdrawScreen", "Payment failed via callback: $error")
+                                            onPaymentError(error)
+                                        }
+                                    )
+                                },
+                                enabled = !isLoading,
+                                style = BitchatButtonStyle.Primary,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            
+                            // Go Back button
+                            BitchatButton(
+                                text = "Go Back",
+                                onClick = {
+                                    // Reset to invoice input state
+                                    paymentStateHolder.value = PaymentState.IDLE
+                                    paymentErrorHolder.value = null
+                                    viewModel.clearCurrentMeltQuote()
+                                },
+                                enabled = true,
+                                style = BitchatButtonStyle.Secondary,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     } ?: run {
                         BitchatButton(
                             text = "Pay",
