@@ -7,9 +7,18 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +58,7 @@ enum class WithdrawMethod {
 }
 
 enum class PaymentState {
-    IDLE, LOADING, SUCCESS
+    IDLE, LOADING, SUCCESS, ERROR, CANCELLED
 }
 
 @Composable
@@ -65,8 +74,13 @@ fun WithdrawScreen(
     var amountSats by remember { mutableStateOf("") }
     var amountFiat by remember { mutableStateOf("") }
     var showSatsInput by remember { mutableStateOf(true) }
-    var paymentState by remember { mutableStateOf(PaymentState.IDLE) }
-    var isParsingInvoice by remember { mutableStateOf(false) }
+    val paymentStateHolder = remember { mutableStateOf(PaymentState.IDLE) }
+    val isParsingInvoiceHolder = remember { mutableStateOf(false) }
+    val paymentErrorHolder = remember { mutableStateOf<String?>(null) }
+    
+    val paymentState by paymentStateHolder
+    val isParsingInvoice by isParsingInvoiceHolder
+    val paymentError by paymentErrorHolder
     
     val clipboardManager = LocalClipboardManager.current
     val focusRequester = remember { FocusRequester() }
@@ -79,53 +93,100 @@ fun WithdrawScreen(
     val currentMeltQuote by viewModel.currentMeltQuote.observeAsState()
     val generatedToken by viewModel.generatedToken.observeAsState()
     
-    // Immediate keyboard focus for amount input
+    // Immediate keyboard focus for amount input - with safety check
     LaunchedEffect(selectedMethod) {
-        focusRequester.requestFocus()
+        try {
+            // Add a small delay to ensure the composable is fully laid out
+            delay(100)
+            focusRequester.requestFocus()
+        } catch (e: Exception) {
+            Log.w("WithdrawScreen", "Error requesting focus: ${e.message}")
+        }
     }
     
     // Handle payment success and auto-navigation
     LaunchedEffect(paymentState) {
         if (paymentState == PaymentState.SUCCESS) {
             delay(2500) // 2.5 second delay
-            paymentState = PaymentState.IDLE
-            onBackClick() // Navigate back to wallet overview
+            paymentStateHolder.value = PaymentState.IDLE
+            // Clear focus before navigation to prevent crash
+            try {
+                focusManager.clearFocus()
+            } catch (e: Exception) {
+                Log.w("WithdrawScreen", "Error clearing focus: ${e.message}")
+            }
+            // Navigate back to wallet overview
+            onBackClick()
         }
     }
     
-    // Monitor melt quote creation and payment completion
+    // Handle Lightning invoice parsing - let CDK handle it
+    LaunchedEffect(lightningInvoice) {
+        if (lightningInvoice.isNotBlank() && (lightningInvoice.startsWith("lnbc") || lightningInvoice.startsWith("lnbtb"))) {
+            isParsingInvoiceHolder.value = true
+            paymentErrorHolder.value = null
+            
+            // Let CDK handle the invoice parsing by creating a melt quote
+            try {
+                viewModel.createMeltQuote(lightningInvoice)
+                // CDK will parse the invoice and extract the correct amount
+                delay(1000) // Show loading for 1 second
+            } catch (e: Exception) {
+                Log.e("WithdrawScreen", "Error creating melt quote: ${e.message}")
+                paymentErrorHolder.value = "Failed to parse invoice: ${e.message}"
+            } finally {
+                isParsingInvoiceHolder.value = false
+            }
+        }
+    }
+    
+    // Monitor melt quote creation and update amount
     LaunchedEffect(currentMeltQuote) {
-        if (currentMeltQuote != null && paymentState == PaymentState.LOADING) {
-            Log.d("WithdrawScreen", "Melt quote created, proceeding with payment")
-            // Melt quote was created, now we can proceed with payment
-            // The payment will be triggered by the user clicking Pay in the melt quote UI
+        currentMeltQuote?.let { quote ->
+            if (isParsingInvoice) {
+                // CDK has parsed the invoice and created a melt quote
+                // Use the amount from CDK (this is the correct amount)
+                val cdkAmount = quote.amount.toLong()
+                if (cdkAmount > 0) {
+                    amountSats = cdkAmount.toString()
+                    amountFiat = ""
+                    showSatsInput = true
+                    Log.d("WithdrawScreen", "CDK parsed amount: $cdkAmount sats")
+                }
+                isParsingInvoiceHolder.value = false
+            }
         }
     }
     
-    // Monitor error messages
+    // Monitor error messages and handle payment failures
     LaunchedEffect(errorMessage) {
         if (errorMessage != null && paymentState == PaymentState.LOADING) {
             Log.e("WithdrawScreen", "Payment error: $errorMessage")
-            paymentState = PaymentState.IDLE
-            // Clear the error after a delay
-            delay(5000)
-            viewModel.clearError()
+            paymentStateHolder.value = PaymentState.ERROR
+            paymentErrorHolder.value = errorMessage
         }
     }
     
-    // Handle Lightning invoice parsing
-    LaunchedEffect(lightningInvoice) {
-        if (lightningInvoice.isNotBlank() && (lightningInvoice.startsWith("lnbc") || lightningInvoice.startsWith("lnbtb"))) {
-            isParsingInvoice = true
-            delay(1000) // Show loading for 1 second
-            
-            val parsedAmount = parseLightningInvoiceAmount(lightningInvoice)
-            if (parsedAmount > 0) {
-                amountSats = parsedAmount.toString()
-                amountFiat = ""
-                showSatsInput = true
+    // Payment timeout handling
+    LaunchedEffect(paymentState) {
+        if (paymentState == PaymentState.LOADING) {
+            delay(30000) // 30 second timeout
+            if (paymentState == PaymentState.LOADING) {
+                Log.e("WithdrawScreen", "Payment timeout")
+                paymentStateHolder.value = PaymentState.ERROR
+                paymentErrorHolder.value = "Payment timed out. Please try again."
             }
-            isParsingInvoice = false
+        }
+    }
+    
+    // Cleanup on navigation away
+    DisposableEffect(Unit) {
+        onDispose {
+            if (paymentState == PaymentState.LOADING) {
+                Log.d("WithdrawScreen", "User navigated away during payment, cancelling")
+                paymentStateHolder.value = PaymentState.CANCELLED
+                paymentErrorHolder.value = null
+            }
         }
     }
     
@@ -252,6 +313,9 @@ fun WithdrawScreen(
                     isLoading = isLoading,
                     paymentState = paymentState,
                     isParsingInvoice = isParsingInvoice,
+                    paymentError = paymentError,
+                    paymentStateHolder = paymentStateHolder,
+                    paymentErrorHolder = paymentErrorHolder,
                     focusRequester = focusRequester,
                     focusManager = focusManager,
                     clipboardManager = clipboardManager,
@@ -273,14 +337,25 @@ fun WithdrawScreen(
                         val finalAmount = if (showSatsInput) satsAmount else calculatedSats
                         if (lightningInvoice.isNotBlank() && finalAmount > 0) {
                             Log.d("WithdrawScreen", "Creating melt quote for invoice: ${lightningInvoice.take(20)}...")
-                            paymentState = PaymentState.LOADING
+                            paymentStateHolder.value = PaymentState.LOADING
+                            paymentErrorHolder.value = null
                             // First create melt quote, then pay it
                             viewModel.createMeltQuote(lightningInvoice)
                         }
                     },
                     onPaymentComplete = {
                         Log.d("WithdrawScreen", "Payment completed, setting success state")
-                        paymentState = PaymentState.SUCCESS
+                        paymentStateHolder.value = PaymentState.SUCCESS
+                    },
+                    onPaymentError = { error ->
+                        Log.e("WithdrawScreen", "Payment error: $error")
+                        paymentStateHolder.value = PaymentState.ERROR
+                        paymentErrorHolder.value = error
+                    },
+                    onPaymentCancel = {
+                        Log.d("WithdrawScreen", "Payment cancelled")
+                        paymentStateHolder.value = PaymentState.IDLE
+                        paymentErrorHolder.value = null
                     },
                     viewModel = viewModel
                 )
@@ -327,45 +402,17 @@ fun WithdrawScreen(
         }
         
         // Error message
-        errorMessage?.let { message ->
+        paymentError?.let { message ->
             Spacer(modifier = Modifier.height(16.dp))
             ErrorCard(
                 message = message,
-                onDismiss = { viewModel.clearError() }
+                onDismiss = { paymentErrorHolder.value = null }
             )
         }
     }
 }
 
-/**
- * Parse Lightning invoice to extract amount in satoshis
- * Supports lnbc (mainnet) and lnbtb (testnet) invoices
- * Simplified parser for demo purposes - in production use a proper bech32 decoder
- */
-private fun parseLightningInvoiceAmount(invoice: String): Long {
-    return try {
-        // For demo purposes, we'll extract a simple amount
-        // In production, you'd use a proper Lightning invoice decoder
-        when {
-            invoice.startsWith("lnbc") -> {
-                // Extract amount from lnbc invoice format
-                // Look for amount pattern: lnbc[amount][rest]
-                // This is a simplified approach - real parsing is more complex
-                val amountMatch = Regex("lnbc(\\d+)[a-zA-Z]").find(invoice)
-                amountMatch?.groupValues?.get(1)?.toLongOrNull() ?: 0L
-            }
-            invoice.startsWith("lnbtb") -> {
-                // Extract amount from lnbtb invoice format
-                val amountMatch = Regex("lnbtb(\\d+)[a-zA-Z]").find(invoice)
-                amountMatch?.groupValues?.get(1)?.toLongOrNull() ?: 0L
-            }
-            else -> 0L
-        }
-    } catch (e: Exception) {
-        Log.e("WithdrawScreen", "Error parsing Lightning invoice: ${e.message}")
-        0L
-    }
-}
+// CDK handles all Lightning invoice parsing - no manual parsing needed
 
 @Composable
 private fun WithdrawMethodTab(
@@ -425,6 +472,9 @@ private fun LightningWithdrawContent(
     isLoading: Boolean,
     paymentState: PaymentState,
     isParsingInvoice: Boolean,
+    paymentError: String?,
+    paymentStateHolder: androidx.compose.runtime.MutableState<PaymentState>,
+    paymentErrorHolder: androidx.compose.runtime.MutableState<String?>,
     focusRequester: FocusRequester,
     focusManager: androidx.compose.ui.focus.FocusManager,
     clipboardManager: androidx.compose.ui.platform.ClipboardManager,
@@ -435,6 +485,8 @@ private fun LightningWithdrawContent(
     onLightningInvoiceChange: (String) -> Unit,
     onPayInvoice: () -> Unit,
     onPaymentComplete: () -> Unit,
+    onPaymentError: (String) -> Unit,
+    onPaymentCancel: () -> Unit,
     viewModel: com.bitchat.android.wallet.viewmodel.WalletViewModel
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -541,21 +593,130 @@ private fun LightningWithdrawContent(
                     }
                 }
                 
-                PaymentState.IDLE -> {
-                    BitchatButton(
-                        text = "Pay",
-                        onClick = {
-                            // Pay the Lightning invoice using the melt quote
-                            Log.d("WithdrawScreen", "Starting payment for quote: ${currentMeltQuote.id}")
-                            viewModel.payLightningInvoice(currentMeltQuote.id) {
-                                Log.d("WithdrawScreen", "Payment completed via callback")
-                                onPaymentComplete()
-                            }
-                        },
-                        enabled = !isLoading,
-                        style = BitchatButtonStyle.Primary,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                PaymentState.ERROR -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Error icon
+                        Box(
+                            modifier = Modifier.size(40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Warning,
+                                contentDescription = "Payment failed",
+                                tint = colorScheme.error,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        
+                        Text(
+                            text = "Payment failed: ${paymentError ?: "Unknown error"}",
+                            style = typography.bodyMedium,
+                            color = colorScheme.error,
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        // Retry and Cancel buttons
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            BitchatButton(
+                                text = "Retry",
+                                onClick = {
+                                    paymentStateHolder.value = PaymentState.LOADING
+                                    paymentErrorHolder.value = null
+                                    viewModel.createMeltQuote(lightningInvoice)
+                                },
+                                enabled = !isLoading,
+                                style = BitchatButtonStyle.Secondary,
+                                modifier = Modifier.weight(1f)
+                            )
+                            BitchatButton(
+                                text = "Cancel",
+                                onClick = onPaymentCancel,
+                                enabled = true,
+                                style = BitchatButtonStyle.Secondary,
+                                modifier = Modifier.weight(1f)
+                            )
+                                                 }
+                     }
+                 }
+                 
+                 PaymentState.CANCELLED -> {
+                     Column(
+                         horizontalAlignment = Alignment.CenterHorizontally,
+                         verticalArrangement = Arrangement.spacedBy(16.dp)
+                     ) {
+                         // Cancelled icon
+                         Box(
+                             modifier = Modifier.size(40.dp),
+                             contentAlignment = Alignment.Center
+                         ) {
+                             Icon(
+                                 imageVector = Icons.Filled.Cancel,
+                                 contentDescription = "Payment cancelled",
+                                 tint = colorScheme.onSurface.copy(alpha = 0.6f),
+                                 modifier = Modifier.size(32.dp)
+                             )
+                         }
+                         
+                         Text(
+                             text = "Payment cancelled",
+                             style = typography.bodyMedium,
+                             color = colorScheme.onSurface.copy(alpha = 0.6f),
+                             textAlign = TextAlign.Center
+                         )
+                         
+                         // Try again button
+                         BitchatButton(
+                             text = "Try Again",
+                             onClick = {
+                                 paymentStateHolder.value = PaymentState.IDLE
+                                 paymentErrorHolder.value = null
+                             },
+                             enabled = true,
+                             style = BitchatButtonStyle.Primary,
+                             modifier = Modifier.fillMaxWidth()
+                         )
+                     }
+                 }
+                 
+                 PaymentState.IDLE -> {
+                    currentMeltQuote?.let { quote ->
+                        BitchatButton(
+                            text = "Pay",
+                            onClick = {
+                                // Pay the Lightning invoice using the melt quote
+                                Log.d("WithdrawScreen", "Starting payment for quote: ${quote.id}")
+                                paymentStateHolder.value = PaymentState.LOADING
+                                viewModel.payLightningInvoice(
+                                    quoteId = quote.id,
+                                    onPaymentComplete = {
+                                        Log.d("WithdrawScreen", "Payment completed via callback")
+                                        onPaymentComplete()
+                                    },
+                                    onPaymentError = { error ->
+                                        Log.e("WithdrawScreen", "Payment failed via callback: $error")
+                                        onPaymentError(error)
+                                    }
+                                )
+                            },
+                            enabled = !isLoading,
+                            style = BitchatButtonStyle.Primary,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } ?: run {
+                        BitchatButton(
+                            text = "Pay",
+                            onClick = onPayInvoice,
+                            enabled = !isLoading && lightningInvoice.isNotBlank(),
+                            style = BitchatButtonStyle.Primary,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
         }

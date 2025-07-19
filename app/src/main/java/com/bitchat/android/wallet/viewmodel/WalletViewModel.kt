@@ -8,8 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.bitchat.android.wallet.data.*
 import com.bitchat.android.wallet.repository.WalletRepository
 import com.bitchat.android.wallet.service.CashuService
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import android.util.Log
 import java.math.BigDecimal
 import java.util.*
@@ -337,8 +337,16 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
     /**
      * Pay Lightning invoice (melt)
      */
-    fun payLightningInvoice(quoteId: String, onPaymentComplete: () -> Unit = {}) {
+    fun payLightningInvoice(
+        quoteId: String, 
+        onPaymentComplete: () -> Unit = {},
+        onPaymentError: (String) -> Unit = {}
+    ) {
         Log.d(TAG, "payLightningInvoice called with quoteId: $quoteId")
+        
+        // Track payment state to prevent calling both success and error callbacks
+        var paymentHandled = false
+        
         lightningManager.payLightningInvoice(
             quoteId = quoteId,
             onTransactionSaved = { 
@@ -350,13 +358,38 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
                 refreshBalance() 
             },
             onPaymentComplete = { 
-                Log.d(TAG, "Payment completed successfully")
-                // Clear the melt quote after successful payment
-                lightningManager.clearCurrentMeltQuote()
-                // Call the completion callback
-                onPaymentComplete()
+                if (!paymentHandled) {
+                    paymentHandled = true
+                    Log.d(TAG, "Payment completed successfully")
+                    // Clear the melt quote after successful payment
+                    lightningManager.clearCurrentMeltQuote()
+                    // Call the completion callback
+                    onPaymentComplete()
+                }
             }
         )
+        
+        // Monitor error messages from LightningManager
+        val errorObserver = androidx.lifecycle.Observer<String?> { error ->
+            if (error != null && !paymentHandled) {
+                paymentHandled = true
+                Log.e(TAG, "Payment error detected: $error")
+                onPaymentError(error)
+                lightningManager.clearError()
+            }
+        }
+        lightningManager.errorMessage.observeForever(errorObserver)
+        
+        // Clean up observer and handle timeout
+        viewModelScope.launch {
+            delay(5000) // 5 second timeout for payment
+            if (!paymentHandled) {
+                paymentHandled = true
+                Log.e(TAG, "Payment timeout - no response received")
+                onPaymentError("Payment timeout - please try again")
+            }
+            lightningManager.errorMessage.removeObserver(errorObserver)
+        }
     }
     
     // Mint Management - Delegate to MintManager
