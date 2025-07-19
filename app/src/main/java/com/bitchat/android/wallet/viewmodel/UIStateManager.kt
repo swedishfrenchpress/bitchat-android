@@ -77,10 +77,12 @@ class UIStateManager {
     }
     
     fun showAddMintDialog() {
+        android.util.Log.d("UIStateManager", "showAddMintDialog called - setting to true")
         _showAddMintDialog.value = true
     }
     
     fun hideAddMintDialog() {
+        android.util.Log.d("UIStateManager", "hideAddMintDialog called - setting to false")
         _showAddMintDialog.value = false
     }
     

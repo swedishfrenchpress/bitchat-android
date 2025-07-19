@@ -118,7 +118,7 @@ fun TransactionHistoryScreen(
         } else {
             // Transaction count header (following section header styling)
             Text(
-                text = "ALL TRANSACTIONS (${transactions.size})",
+                text = "TRANSACTIONS (${transactions.size})",
                 style = typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = colorScheme.onSurface.copy(alpha = 0.7f),
                 modifier = Modifier.padding(bottom = 16.dp)

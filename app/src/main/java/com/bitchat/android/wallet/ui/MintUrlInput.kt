@@ -37,7 +37,7 @@ fun MintUrlInput(
         label = { Text("Mint URL", style = MaterialTheme.typography.bodySmall) },
         placeholder = { 
             Text(
-                "https://mint.example.com", 
+                "mint.example.com", 
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
             ) 

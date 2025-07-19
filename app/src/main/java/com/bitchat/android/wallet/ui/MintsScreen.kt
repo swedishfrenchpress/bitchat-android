@@ -33,6 +33,17 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
+ * Helper function to normalize mint URL (add https:// if missing)
+ */
+private fun normalizeMintUrl(url: String): String {
+    return if (url.isNotBlank() && !url.startsWith("http://") && !url.startsWith("https://")) {
+        "https://$url"
+    } else {
+        url
+    }
+}
+
+/**
  * Mints management screen
  */
 @Composable
@@ -227,7 +238,7 @@ private fun AddMintDialog(
                     },
                     placeholder = {
                         Text(
-                            text = "https://mint.example.com",
+                            text = "mint.example.com",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -269,7 +280,8 @@ private fun AddMintDialog(
                     text = if (isLoading) "Adding..." else "Add Mint",
                     onClick = {
                         if (mintUrl.isNotEmpty()) {
-                            viewModel.addMint(mintUrl, nickname)
+                            val normalizedUrl = normalizeMintUrl(mintUrl)
+                            viewModel.addMint(normalizedUrl, nickname)
                         }
                     },
                     enabled = !isLoading && mintUrl.isNotEmpty(),

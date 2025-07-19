@@ -397,6 +397,7 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
      * Clear all wallet data
      */
     fun clearAllWalletData() {
+        Log.d(TAG, "clearAllWalletData called")
         viewModelScope.launch {
             try {
                 uiStateManager.setLoading(true)
@@ -413,6 +414,10 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
                 tokenManager.clearTokenInput()
                 lightningManager.clearCurrentMintQuote()
                 lightningManager.clearCurrentMeltQuote()
+                
+                // Close any open dialogs
+                Log.d(TAG, "Closing add mint dialog during clear")
+                hideAddMintDialog()
                 
                 // Reset ViewModel state
                 _balance.value = 0L
