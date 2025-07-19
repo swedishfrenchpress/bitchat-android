@@ -212,10 +212,13 @@ fun WithdrawScreen(
                     },
                     onLightningInvoiceChange = { lightningInvoice = it },
                     onPayInvoice = {
-                        if (lightningInvoice.isNotBlank()) {
+                        val finalAmount = if (showSatsInput) satsAmount else calculatedSats
+                        if (lightningInvoice.isNotBlank() && finalAmount > 0) {
+                            // First create melt quote, then pay it
                             viewModel.createMeltQuote(lightningInvoice)
                         }
-                    }
+                    },
+                    viewModel = viewModel
                 )
             }
             
@@ -250,10 +253,11 @@ fun WithdrawScreen(
                         val finalAmount = if (showSatsInput) satsAmount else calculatedSats
                         if (finalAmount > 0) {
                             focusManager.clearFocus()
-                            // TODO: Implement CDK ecash withdrawal flow
-                            // viewModel.createEcashToken(finalAmount)
+                            // Create real Cashu token using CDK
+                            viewModel.createCashuToken(finalAmount, "Withdrawal token")
                         }
-                    }
+                    },
+                    viewModel = viewModel
                 )
             }
         }
@@ -333,7 +337,8 @@ private fun LightningWithdrawContent(
     onShowSatsInputChange: (Boolean) -> Unit,
     onSwapCurrency: () -> Unit,
     onLightningInvoiceChange: (String) -> Unit,
-    onPayInvoice: () -> Unit
+    onPayInvoice: () -> Unit,
+    viewModel: com.bitchat.android.wallet.viewmodel.WalletViewModel
 ) {
     if (currentMeltQuote != null) {
         // Show melt quote details
@@ -383,9 +388,20 @@ private fun LightningWithdrawContent(
             
             Spacer(modifier = Modifier.height(32.dp))
             
+            // Show fee information
+            Text(
+                text = "FEE RESERVE: ${currentMeltQuote.feeReserve.toLong()}​₿",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
             BitchatButton(
                 text = if (isLoading) "Processing..." else "Pay Invoice",
-                onClick = onPayInvoice,
+                onClick = {
+                    // Pay the Lightning invoice using the melt quote
+                    viewModel.payLightningInvoice(currentMeltQuote.id)
+                },
                 enabled = !isLoading,
                 style = BitchatButtonStyle.Primary,
                 modifier = Modifier.fillMaxWidth()
@@ -582,7 +598,8 @@ private fun EcashWithdrawContent(
     onShowSatsInputChange: (Boolean) -> Unit,
     onSwapCurrency: () -> Unit,
     onEcashTokenChange: (String) -> Unit,
-    onCreateToken: () -> Unit
+    onCreateToken: () -> Unit,
+    viewModel: com.bitchat.android.wallet.viewmodel.WalletViewModel
 ) {
     if (generatedToken != null) {
         // Show generated token
@@ -614,7 +631,7 @@ private fun EcashWithdrawContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Token Generated",
+                        text = "Ecash Token Generated",
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.headlineSmall.copy(
                             fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
@@ -622,7 +639,7 @@ private fun EcashWithdrawContent(
                     )
                     
                     Text(
-                        text = "Ready to copy",
+                        text = "Ready to share",
                         color = MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodyLarge
                     )
