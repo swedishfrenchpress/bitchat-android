@@ -584,61 +584,31 @@ private fun CashuContent(
             modifier = Modifier.padding(bottom = 8.dp)
         )
         
-        // Ecash token input box - matching TotalBalance dimensions and styling
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(4.dp)
-                )
-                .border(
-                    width = 0.25.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(4.dp)
-                )
-                .padding(24.dp), // Exact padding from TotalBalance
-            contentAlignment = Alignment.Center
-        ) {
-            // Input field with camera icon as trailing icon
-            OutlinedTextField(
-                value = tokenInput,
-                onValueChange = { if (!isLoading) onTokenInputChange(it) },
-                enabled = !isLoading,
-                label = { Text("Ecash Token", style = MaterialTheme.typography.bodySmall) },
-                placeholder = { 
-                    Text(
-                        "cashuA...", 
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-                    ) 
-                },
-                trailingIcon = {
-                    IconButton(
-                        onClick = { /* TODO: Camera scan */ },
-                        enabled = !isLoading
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.CameraAlt,
-                            contentDescription = "Scan with Camera",
-                            tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                maxLines = 5,
-                shape = RoundedCornerShape(4.dp),
-                textStyle = MaterialTheme.typography.bodyMedium
-            )
-        }
+        // Ecash token input field - clean standalone input
+        OutlinedTextField(
+            value = tokenInput,
+            onValueChange = { if (!isLoading) onTokenInputChange(it) },
+            enabled = !isLoading,
+            label = { Text("Ecash Token", style = MaterialTheme.typography.bodySmall) },
+            placeholder = { 
+                Text(
+                    "cashuA...", 
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                ) 
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            ),
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 3,
+            maxLines = 5,
+            shape = RoundedCornerShape(4.dp),
+            textStyle = MaterialTheme.typography.bodyMedium
+        )
         
         // Show token details below input if token is decoded
         if (decodedToken != null) {

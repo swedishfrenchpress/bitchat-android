@@ -3,6 +3,7 @@ package com.bitchat.android.wallet.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -14,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,6 +45,7 @@ fun WithdrawScreen(
     var ecashToken by remember { mutableStateOf("") }
     
     val clipboardManager = LocalClipboardManager.current
+    val focusManager = LocalFocusManager.current
     
     // ViewModel state
     val balance by viewModel.balance.observeAsState(0L)
@@ -56,6 +59,12 @@ fun WithdrawScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                focusManager.clearFocus()
+            }
     ) {
         // Header - exactly matching TopUpScreen pattern
         Box(
@@ -106,20 +115,6 @@ fun WithdrawScreen(
                 )
             }
         }
-        
-        // Balance Section - using TotalBalance component exactly as-is
-        Text(
-            text = "TOTAL BALANCE",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        
-        TotalBalance(
-            bitcoinAmount = formatBitcoinAmount(balance),
-            dollarAmount = formatDollarAmount(balance),
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
         
         // Method Selection Tabs - matching TopUpScreen exactly
         Row(
@@ -308,16 +303,17 @@ private fun LightningWithdrawContent(
             )
         }
     } else {
-        // Show invoice input
+        // Show amount input and invoice input
         Column {
+            // Amount Input Section - matching TopUpScreen pattern
             Text(
-                text = "LIGHTNING INVOICE",
+                text = "AMOUNT",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             
-            // Invoice input box - matching TotalBalance dimensions
+            // Amount input box - exactly matching TopUpScreen styling
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -330,34 +326,64 @@ private fun LightningWithdrawContent(
                         color = MaterialTheme.colorScheme.primary,
                         shape = RoundedCornerShape(4.dp)
                     )
-                    .padding(24.dp),
+                    .padding(24.dp), // Exact padding from TopUpScreen
                 contentAlignment = Alignment.Center
             ) {
-                OutlinedTextField(
-                    value = lightningInvoice,
-                    onValueChange = { if (!isLoading) onLightningInvoiceChange(it) },
-                    enabled = !isLoading,
-                    label = { Text("Lightning Invoice", style = MaterialTheme.typography.bodySmall) },
-                    placeholder = { 
-                        Text(
-                            "lnbc...", 
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-                        ) 
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    maxLines = 5,
-                    shape = RoundedCornerShape(4.dp),
-                    textStyle = MaterialTheme.typography.bodyMedium
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp) // Exact spacing from TopUpScreen
+                ) {
+                    // Amount display
+                    Text(
+                        text = "0​₿",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
+                        )
+                    )
+                    
+                    // USD equivalent
+                    Text(
+                        text = "$0.00 USD",
+                        color = MaterialTheme.colorScheme.secondary,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
             }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            Text(
+                text = "LIGHTNING INVOICE / ADDRESS",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            // Standard input field - no nested box
+            OutlinedTextField(
+                value = lightningInvoice,
+                onValueChange = { if (!isLoading) onLightningInvoiceChange(it) },
+                enabled = !isLoading,
+                label = { Text("Lightning Invoice / Address", style = MaterialTheme.typography.bodySmall) },
+                placeholder = { 
+                    Text(
+                        "lnbc...", 
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                    ) 
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(4.dp),
+                textStyle = MaterialTheme.typography.bodyMedium
+            )
             
             Spacer(modifier = Modifier.weight(1f))
             
@@ -460,16 +486,17 @@ private fun EcashWithdrawContent(
             )
         }
     } else {
-        // Show token input
+        // Show amount input and token input
         Column {
+            // Amount Input Section - matching TopUpScreen pattern
             Text(
-                text = "ECASH TOKEN",
+                text = "AMOUNT",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             
-            // Token input box - matching TotalBalance dimensions
+            // Amount input box - exactly matching TopUpScreen styling
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -482,34 +509,64 @@ private fun EcashWithdrawContent(
                         color = MaterialTheme.colorScheme.primary,
                         shape = RoundedCornerShape(4.dp)
                     )
-                    .padding(24.dp),
+                    .padding(24.dp), // Exact padding from TopUpScreen
                 contentAlignment = Alignment.Center
             ) {
-                OutlinedTextField(
-                    value = ecashToken,
-                    onValueChange = { if (!isLoading) onEcashTokenChange(it) },
-                    enabled = !isLoading,
-                    label = { Text("Ecash Token", style = MaterialTheme.typography.bodySmall) },
-                    placeholder = { 
-                        Text(
-                            "cashuA...", 
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-                        ) 
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    maxLines = 5,
-                    shape = RoundedCornerShape(4.dp),
-                    textStyle = MaterialTheme.typography.bodyMedium
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp) // Exact spacing from TopUpScreen
+                ) {
+                    // Amount display
+                    Text(
+                        text = "0​₿",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
+                        )
+                    )
+                    
+                    // USD equivalent
+                    Text(
+                        text = "$0.00 USD",
+                        color = MaterialTheme.colorScheme.secondary,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
             }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            Text(
+                text = "ECASH TOKEN",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            // Standard input field - no nested box
+            OutlinedTextField(
+                value = ecashToken,
+                onValueChange = { if (!isLoading) onEcashTokenChange(it) },
+                enabled = !isLoading,
+                label = { Text("Ecash Token", style = MaterialTheme.typography.bodySmall) },
+                placeholder = { 
+                    Text(
+                        "cashuA...", 
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                    ) 
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(4.dp),
+                textStyle = MaterialTheme.typography.bodyMedium
+            )
             
             Spacer(modifier = Modifier.weight(1f))
             
