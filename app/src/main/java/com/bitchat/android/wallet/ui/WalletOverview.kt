@@ -243,9 +243,9 @@ private fun ErrorCard(
 
 private fun formatBitcoinAmount(sats: Long): String {
     return when {
-        sats >= 100_000_000 -> String.format("%.8f​₿", sats / 100_000_000.0)
-        sats >= 1000 -> String.format("%,d​₿", sats)
-        else -> "$sats​₿"
+        sats >= 100_000_000 -> String.format("₿%.8f", sats / 100_000_000.0)
+        sats >= 1000 -> String.format("₿%,d", sats)
+        else -> "₿$sats"
     }
 }
 
@@ -263,8 +263,8 @@ private fun formatTransactionAmount(transaction: WalletTransaction): String {
     )
     val sign = if (isIncoming) "+" else "-"
     val amount = when {
-        transaction.amount.toLong() >= 1000 -> String.format("%,d ₿", transaction.amount.toLong())
-        else -> "${transaction.amount.toLong()} ₿"
+        transaction.amount.toLong() >= 1000 -> String.format("₿%,d", transaction.amount.toLong())
+        else -> "₿${transaction.amount.toLong()}"
     }
     return "$sign$amount"
 }

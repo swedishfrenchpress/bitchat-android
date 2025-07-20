@@ -347,8 +347,8 @@ private fun formatAmount(amount: Long, unit: String): String {
         "sat", "sats" -> {
             when {
                 amount >= 100_000_000 -> String.format("%.8f BTC", amount / 100_000_000.0)
-                amount >= 1000 -> String.format("%,d ₿", amount)
-                else -> "$amount ₿"
+                        amount >= 1000 -> String.format("₿%,d", amount)
+        else -> "₿$amount"
             }
         }
         else -> "$amount $unit"

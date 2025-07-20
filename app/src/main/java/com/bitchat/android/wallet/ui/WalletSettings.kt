@@ -186,7 +186,7 @@ fun WalletSettings(
                         MintListItem(
                             mintName = mint.info?.name ?: mint.nickname,
                             mintUrl = mint.url,
-                            balance = mintBalances[mint.url]?.let { "${it} ₿" } ?: "— ₿",
+                            balance = mintBalances[mint.url]?.let { "₿${it}" } ?: "₿—",
                             selected = activeMint == mint.url,
                             onDelete = {
                                 if (mints.size > 1 && activeMint != mint.url) {

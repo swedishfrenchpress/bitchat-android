@@ -87,7 +87,7 @@ fun ReceiveView(
         MintDropDownSelector(
             mintName = "Antifiat Fiat",
             mintUrl = "https://antifiat.cash",
-            bitcoinAmount = "0 ₿", // Following Figma exactly
+                                bitcoinAmount = "₿0", // Following Figma exactly
             onDropdownClick = { /* TODO: Implement mint selection */ },
             expanded = false,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -117,7 +117,7 @@ fun ReceiveView(
             ) {
                 // Visual amount display (following Figma exactly)
                 Text(
-                    text = "$formattedSats ₿",
+                                            text = "₿$formattedSats",
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Medium
                     ),

@@ -86,7 +86,7 @@ fun SendEcashDialog(
                     ) {
                         // Main amount display - following TopUpScreen pattern
                         Text(
-                            text = "${token.amount.toLong()}​₿",
+                            text = "₿${token.amount.toLong()}",
                             color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f

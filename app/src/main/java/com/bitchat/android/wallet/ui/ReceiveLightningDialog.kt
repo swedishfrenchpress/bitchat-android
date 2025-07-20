@@ -77,7 +77,7 @@ fun ReceiveLightningDialog(
                 ) {
                     // Main amount display - following TopUpScreen pattern
                     Text(
-                        text = "${currentMintQuote.amount.toLong()}​₿",
+                        text = "₿${currentMintQuote.amount.toLong()}",
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.headlineSmall.copy(
                             fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f

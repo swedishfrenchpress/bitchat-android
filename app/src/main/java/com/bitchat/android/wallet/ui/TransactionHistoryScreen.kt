@@ -152,8 +152,8 @@ private fun formatTransactionAmount(transaction: WalletTransaction): String {
     )
     val sign = if (isIncoming) "+" else "-"
     val amount = when {
-        transaction.amount.toLong() >= 1000 -> String.format("%,d ₿", transaction.amount.toLong())
-        else -> "${transaction.amount.toLong()} ₿"
+        transaction.amount.toLong() >= 1000 -> String.format("₿%,d", transaction.amount.toLong())
+        else -> "₿${transaction.amount.toLong()}"
     }
     return "$sign$amount"
 }

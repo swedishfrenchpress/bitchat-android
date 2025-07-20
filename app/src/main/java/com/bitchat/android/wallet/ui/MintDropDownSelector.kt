@@ -115,7 +115,7 @@ fun MintDropDownSelectorPreview() {
         MintDropDownSelector(
             mintName = "Cashu Mint",
             mintUrl = "https://mint.example.com",
-            bitcoinAmount = "0.005 ₿",
+            bitcoinAmount = "₿0.005",
             onDropdownClick = { expanded = !expanded },
             expanded = expanded,
             enabled = true
@@ -131,7 +131,7 @@ fun MintDropDownSelectorDarkPreview() {
         MintDropDownSelector(
             mintName = "Cashu Mint",
             mintUrl = "https://mint.example.com",
-            bitcoinAmount = "0.005 ₿",
+            bitcoinAmount = "₿0.005",
             onDropdownClick = { expanded = !expanded },
             expanded = expanded,
             enabled = true

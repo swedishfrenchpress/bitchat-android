@@ -20,7 +20,7 @@ import com.bitchat.android.ui.theme.BitchatTheme
 
 @Composable
 fun TotalBalance(
-    bitcoinAmount: String = "0​₿",
+    bitcoinAmount: String = "₿0",
     dollarAmount: String = "$0",
     modifier: Modifier = Modifier
 ) {
@@ -77,7 +77,7 @@ fun TotalBalancePreview() {
 fun TotalBalanceWithDataPreview() {
     BitchatTheme {
         TotalBalance(
-            bitcoinAmount = "0.00234​₿",
+            bitcoinAmount = "₿0.00234",
             dollarAmount = "$156.78"
         )
     }
@@ -88,7 +88,7 @@ fun TotalBalanceWithDataPreview() {
 fun TotalBalanceDarkPreview() {
     BitchatTheme {
         TotalBalance(
-            bitcoinAmount = "1.5​₿",
+            bitcoinAmount = "₿1.5",
             dollarAmount = "$67,890"
         )
     }

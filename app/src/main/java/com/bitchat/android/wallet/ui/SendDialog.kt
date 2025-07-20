@@ -83,7 +83,7 @@ fun SendView(
                 ) {
                 // Main balance display - following TopUpScreen pattern
                 Text(
-                    text = "${balance}​₿",
+                                            text = "₿${balance}",
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f

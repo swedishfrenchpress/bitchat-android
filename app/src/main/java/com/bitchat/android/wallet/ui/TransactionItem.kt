@@ -106,7 +106,7 @@ fun TransactionItemPendingPreview() {
         TransactionItem(
             label = "Sent to Alice",
             date = "2025-07-16 14:23",
-            amount = "-0.002 ₿",
+            amount = "-₿0.002",
             status = TransactionStatus.Pending,
             enabled = true
         )
@@ -120,7 +120,7 @@ fun TransactionItemCompletePreview() {
         TransactionItem(
             label = "Received from Bob",
             date = "2025-07-15 09:10",
-            amount = "+0.005 ₿",
+            amount = "+₿0.005",
             status = TransactionStatus.Complete,
             enabled = true
         )
@@ -134,7 +134,7 @@ fun TransactionItemPendingDarkPreview() {
         TransactionItem(
             label = "Sent to Alice",
             date = "2025-07-16 14:23",
-            amount = "-0.002 ₿",
+            amount = "-₿0.002",
             status = TransactionStatus.Pending,
             enabled = true
         )
@@ -147,8 +147,8 @@ fun TransactionItemCompleteDarkPreview() {
     BitchatTheme {
         TransactionItem(
             label = "Received from Bob",
-            date = "2025-07-15 09:10",
-            amount = "+0.005 ₿",
+            date = "2025-07-15 09:09:10",
+            amount = "+₿0.005",
             status = TransactionStatus.Complete,
             enabled = true
         )

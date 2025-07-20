@@ -608,7 +608,7 @@ private fun LightningWithdrawContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "${currentMeltQuote.amount.toLong()}​₿",
+                        text = "₿${currentMeltQuote.amount.toLong()}",
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.headlineSmall.copy(
                             fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
@@ -884,7 +884,7 @@ private fun LightningWithdrawContent(
                         } else {
                             // Normal amount display
                             Text(
-                                text = if (showSatsInput) "${formattedSats}​₿" else "$${formattedUsd}",
+                                text = if (showSatsInput) "₿${formattedSats}" else "$${formattedUsd}",
                                 color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.headlineSmall.copy(
                                     fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
@@ -914,7 +914,7 @@ private fun LightningWithdrawContent(
                     
                     // Secondary amount display
                     Text(
-                        text = if (showSatsInput) "$${formattedUsd} USD" else "${formattedSats}​₿",
+                        text = if (showSatsInput) "$${formattedUsd} USD" else "₿${formattedSats}",
                         color = MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -1201,7 +1201,7 @@ private fun EcashWithdrawContent(
                     ) {
                         // Main amount display
                         Text(
-                            text = if (showSatsInput) "${formattedSats}​₿" else "$${formattedUsd}",
+                            text = if (showSatsInput) "₿${formattedSats}" else "$${formattedUsd}",
                             color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
@@ -1226,7 +1226,7 @@ private fun EcashWithdrawContent(
                     
                     // Secondary amount display
                     Text(
-                        text = if (showSatsInput) "$${formattedUsd} USD" else "${formattedSats}​₿",
+                        text = if (showSatsInput) "$${formattedUsd} USD" else "₿${formattedSats}",
                         color = MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -1416,9 +1416,9 @@ private fun TerminalBalanceErrorCard(
 // Formatting functions - matching WalletOverview
 private fun formatBitcoinAmount(sats: Long): String {
     return when {
-        sats >= 100_000_000 -> String.format("%.8f​₿", sats / 100_000_000.0)
-        sats >= 1000 -> String.format("%,d​₿", sats)
-        else -> "$sats​₿"
+        sats >= 100_000_000 -> String.format("₿%.8f", sats / 100_000_000.0)
+        sats >= 1000 -> String.format("₿%,d", sats)
+        else -> "₿$sats"
     }
 }
 

@@ -76,7 +76,7 @@ fun ReceiveEcashDialog(
                 ) {
                     // Main amount display - following TopUpScreen pattern
                     Text(
-                        text = "${decodedToken.amount.toLong()}​₿",
+                        text = "₿${decodedToken.amount.toLong()}",
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.headlineSmall.copy(
                             fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f

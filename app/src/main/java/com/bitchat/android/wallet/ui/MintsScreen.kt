@@ -127,7 +127,7 @@ private fun MintsList(
             MintListItem(
                 mintName = mint.nickname,
                 mintUrl = mint.url,
-                balance = "0​₿", // TODO: Get actual balance for this mint
+                balance = "₿0", // TODO: Get actual balance for this mint
                 selected = mint.url == activeMint,
                 onDelete = { onMintDelete(mint.url) },
                 onClick = { onMintSelect(mint.url) },

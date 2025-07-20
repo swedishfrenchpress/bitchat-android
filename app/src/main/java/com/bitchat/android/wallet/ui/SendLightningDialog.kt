@@ -72,7 +72,7 @@ fun SendLightningDialog(
                 ) {
                     // Main amount display - following TopUpScreen pattern
                     Text(
-                        text = "${currentMeltQuote.amount.toLong()}​₿",
+                        text = "₿${currentMeltQuote.amount.toLong()}",
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.headlineSmall.copy(
                             fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
@@ -90,7 +90,7 @@ fun SendLightningDialog(
                     // Fee if applicable
                     if (currentMeltQuote.feeReserve.toLong() > 0) {
                         Text(
-                            text = "Fee: ${currentMeltQuote.feeReserve.toLong()}​₿",
+                            text = "Fee: ₿${currentMeltQuote.feeReserve.toLong()}",
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             style = MaterialTheme.typography.bodyMedium
                         )

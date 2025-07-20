@@ -429,7 +429,7 @@ private fun LightningContent(
                     ) {
                         // Main amount display
                         Text(
-                            text = if (showSatsInput) "${formattedSats}​₿" else "$${formattedUsd}",
+                            text = if (showSatsInput) "₿${formattedSats}" else "$${formattedUsd}",
                             color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
@@ -454,7 +454,7 @@ private fun LightningContent(
                     
                     // Secondary amount display
                     Text(
-                        text = if (showSatsInput) "$${formattedUsd} USD" else "${formattedSats}​₿",
+                        text = if (showSatsInput) "$${formattedUsd} USD" else "₿${formattedSats}",
                         color = MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -546,7 +546,7 @@ private fun LightningInvoiceView(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "${mintQuote.amount.toLong()}​₿",
+                                            text = "₿${mintQuote.amount.toLong()}",
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
@@ -690,7 +690,7 @@ private fun CashuContent(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "Amount: ${decodedToken.amount.toLong()} ₿",
+                                            text = "Amount: ₿${decodedToken.amount.toLong()}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
