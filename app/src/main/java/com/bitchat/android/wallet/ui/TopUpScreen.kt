@@ -33,6 +33,8 @@ import android.util.Log
 import com.bitchat.android.ui.theme.BitchatTheme
 import com.bitchat.android.ui.TerminalInputField
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
+import com.bitchat.android.wallet.ui.BitchatButton
+import com.bitchat.android.wallet.ui.BitchatButtonStyle
 import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.util.*
@@ -220,38 +222,46 @@ fun TopUpScreen(
         // Content based on selected method
         when (selectedMethod) {
             TopUpMethod.LIGHTNING -> {
-                LightningContent(
-                    amountSats = amountSats,
-                    amountFiat = amountFiat,
-                    showSatsInput = showSatsInput,
-                    formattedSats = formattedSats,
-                    formattedUsd = formattedUsd,
-                    currentMintQuote = currentMintQuote,
-                    isLoading = isLoading,
-                    focusRequester = focusRequester,
-                    focusManager = focusManager,
-                    clipboardManager = clipboardManager,
-                    onAmountSatsChange = { amountSats = it },
-                    onAmountFiatChange = { amountFiat = it },
-                    onShowSatsInputChange = { showSatsInput = it },
-                    onSwapCurrency = {
-                        showSatsInput = !showSatsInput
-                        if (showSatsInput) {
-                            amountSats = calculatedSats.toString()
-                            amountFiat = ""
-                        } else {
-                            amountFiat = formattedUsd
-                            amountSats = ""
+                // Check if there's an active mint before showing Lightning content
+                if (activeMint.isNullOrEmpty()) {
+                    // No mint connected - show empty state
+                    LightningEmptyState(
+                        onAddMintClick = { viewModel.showAddMintDialog() }
+                    )
+                } else {
+                    LightningContent(
+                        amountSats = amountSats,
+                        amountFiat = amountFiat,
+                        showSatsInput = showSatsInput,
+                        formattedSats = formattedSats,
+                        formattedUsd = formattedUsd,
+                        currentMintQuote = currentMintQuote,
+                        isLoading = isLoading,
+                        focusRequester = focusRequester,
+                        focusManager = focusManager,
+                        clipboardManager = clipboardManager,
+                        onAmountSatsChange = { amountSats = it },
+                        onAmountFiatChange = { amountFiat = it },
+                        onShowSatsInputChange = { showSatsInput = it },
+                        onSwapCurrency = {
+                            showSatsInput = !showSatsInput
+                            if (showSatsInput) {
+                                amountSats = calculatedSats.toString()
+                                amountFiat = ""
+                            } else {
+                                amountFiat = formattedUsd
+                                amountSats = ""
+                            }
+                        },
+                        onCreateInvoice = {
+                            val finalAmount = if (showSatsInput) satsAmount else calculatedSats
+                            if (finalAmount > 0) {
+                                focusManager.clearFocus()
+                                viewModel.createMintQuote(finalAmount, null)
+                            }
                         }
-                    },
-                    onCreateInvoice = {
-                        val finalAmount = if (showSatsInput) satsAmount else calculatedSats
-                        if (finalAmount > 0) {
-                            focusManager.clearFocus()
-                            viewModel.createMintQuote(finalAmount, null)
-                        }
-                    }
-                )
+                    )
+                }
             }
             
             TopUpMethod.CASHU -> {
@@ -745,6 +755,33 @@ private fun ErrorCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun LightningEmptyState(
+    onAddMintClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Empty state message - matching the visual structure of other parts
+        Text(
+            text = "To top up connect to a mint first.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+        
+        // + New Mint button - styled to match other parts of the app
+        BitchatButton(
+            text = "+ New Mint",
+            onClick = onAddMintClick,
+            style = BitchatButtonStyle.Primary,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 

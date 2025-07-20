@@ -189,13 +189,9 @@ class CashuService {
                 Log.d(TAG, "Wallet initialized: $isInitialized")
                 
                 if (activeMintUrl.isNullOrEmpty()) {
-                    Log.w(TAG, "No active mint configured, using default")
-                    // Fallback to default mint if no active mint is set
-                    if (!isInitialized) {
-                        Log.d(TAG, "Initializing wallet with default mint: $DEFAULT_MINT_URL")
-                        initializeWallet(DEFAULT_MINT_URL).getOrThrow()
-                    }
-                    return@withContext Result.success(DEFAULT_MINT_URL)
+                    Log.w(TAG, "No active mint configured - wallet is clean")
+                    // No fallback to default mint - return failure if no mint is configured
+                    return@withContext Result.failure(Exception("No active mint configured"))
                 } else {
                     // Use the currently active mint
                     if (!isInitialized || currentMintUrl != activeMintUrl) {

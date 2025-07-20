@@ -45,6 +45,14 @@ class LightningManager(
         coroutineScope.launch {
             try {
                 uiStateManager.setLoading(true)
+                
+                // Check if there's an active mint before creating quote
+                val activeMint = repository.getActiveMint().getOrNull()
+                if (activeMint.isNullOrEmpty()) {
+                    _errorMessage.value = "No active mint configured. Please add a mint first."
+                    return@launch
+                }
+                
                 cashuService.createMintQuote(amount, description).onSuccess { quote ->
                     _currentMintQuote.value = quote
                     
@@ -71,6 +79,14 @@ class LightningManager(
         coroutineScope.launch {
             try {
                 uiStateManager.setLoading(true)
+                
+                // Check if there's an active mint before creating quote
+                val activeMint = repository.getActiveMint().getOrNull()
+                if (activeMint.isNullOrEmpty()) {
+                    _errorMessage.value = "No active mint configured. Please add a mint first."
+                    return@launch
+                }
+                
                 cashuService.createMeltQuote(invoice).onSuccess { quote ->
                     _currentMeltQuote.value = quote
                     
@@ -112,6 +128,14 @@ class LightningManager(
         coroutineScope.launch {
             try {
                 uiStateManager.setLoading(true)
+                
+                // Check if there's an active mint before paying invoice
+                val activeMint = repository.getActiveMint().getOrNull()
+                if (activeMint.isNullOrEmpty()) {
+                    _errorMessage.value = "No active mint configured. Please add a mint first."
+                    return@launch
+                }
+                
                 Log.d(TAG, "Starting payment for quote: $quoteId")
                 cashuService.payInvoice(quoteId).onSuccess { success ->
                     if (success) {
@@ -174,6 +198,13 @@ class LightningManager(
         onBalanceRefresh: () -> Unit,
         onLightningReceived: (WalletViewModel.SuccessAnimationData) -> Unit = {}
     ) {
+        // Check if there's an active mint before checking quotes
+        val activeMint = repository.getActiveMint().getOrNull()
+        if (activeMint.isNullOrEmpty()) {
+            Log.d(TAG, "No active mint configured, skipping quote checks")
+            return
+        }
+        
         // Check mint quotes
         repository.getMintQuotes().onSuccess { quotes ->
             val unpaidQuotes = quotes.filter { !it.paid }
