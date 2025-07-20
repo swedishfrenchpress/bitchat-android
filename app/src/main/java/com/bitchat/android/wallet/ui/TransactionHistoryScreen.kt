@@ -34,6 +34,7 @@ import java.util.*
 fun TransactionHistoryScreen(
     viewModel: WalletViewModel = viewModel(),
     onBackClick: () -> Unit = {},
+    onTransactionClick: (WalletTransaction) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -134,7 +135,8 @@ fun TransactionHistoryScreen(
                         date = formatTimestamp(transaction.timestamp),
                         amount = formatTransactionAmount(transaction),
                         status = mapTransactionStatus(transaction.status),
-                        enabled = true
+                        enabled = true,
+                        onClick = { onTransactionClick(transaction) }
                     )
                 }
             }

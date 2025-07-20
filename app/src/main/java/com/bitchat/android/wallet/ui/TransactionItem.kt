@@ -2,6 +2,7 @@ package com.bitchat.android.wallet.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,7 +28,8 @@ fun TransactionItem(
     amount: String,
     status: TransactionStatus,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    onClick: (() -> Unit)? = null
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val borderColor = if (enabled) colorScheme.primary else colorScheme.primary.copy(alpha = 0.5f)
@@ -46,6 +48,13 @@ fun TransactionItem(
         modifier = modifier
             .fillMaxWidth()
             .background(color = colorScheme.surface, shape = shape)
+            .then(
+                if (onClick != null && enabled) {
+                    Modifier.clickable { onClick() }
+                } else {
+                    Modifier
+                }
+            )
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {

@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
+import com.bitchat.android.wallet.data.WalletTransaction
 
 // Import the SuccessAnimation component (same package, no need for full path)
 
@@ -32,6 +33,8 @@ fun WalletScreen(
     var showSendView by remember { mutableStateOf(false) }
     var showSettingsView by remember { mutableStateOf(false) }
     var showTransactionHistoryView by remember { mutableStateOf(false) }
+    var showTransactionDetailView by remember { mutableStateOf(false) }
+    var selectedTransaction by remember { mutableStateOf<WalletTransaction?>(null) }
     var showTopUpScreen by remember { mutableStateOf(false) }
     var showWithdrawScreen by remember { mutableStateOf(false) }
     var navigationHistory by remember { mutableStateOf<String?>(null) }
@@ -45,6 +48,12 @@ fun WalletScreen(
     // Back handler for the wallet
     fun handleBackPress(): Boolean {
         return when {
+            // Close transaction detail view
+            showTransactionDetailView -> {
+                showTransactionDetailView = false
+                selectedTransaction = null
+                true
+            }
             // Close transaction history view
             showTransactionHistoryView -> {
                 showTransactionHistoryView = false
@@ -156,11 +165,29 @@ fun WalletScreen(
                 },
                 modifier = Modifier.fillMaxSize()
             )
+        } else if (showTransactionDetailView && selectedTransaction != null) {
+            // Transaction detail screen
+            TransactionDetailScreen(
+                transaction = selectedTransaction!!,
+                onBackClick = { 
+                    showTransactionDetailView = false
+                    selectedTransaction = null
+                },
+                onReclaimToken = { token ->
+                    // TODO: Implement token reclamation via CDK
+                    // This would call the wallet service to attempt redeeming the token again
+                },
+                modifier = Modifier.fillMaxSize()
+            )
         } else if (showTransactionHistoryView) {
             // Transaction history screen
             TransactionHistoryScreen(
                 viewModel = walletViewModel,
                 onBackClick = { showTransactionHistoryView = false },
+                onTransactionClick = { transaction ->
+                    selectedTransaction = transaction
+                    showTransactionDetailView = true
+                },
                 modifier = Modifier.fillMaxSize()
             )
         } else {
