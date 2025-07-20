@@ -85,11 +85,13 @@ fun WithdrawScreen(
     val isParsingInvoiceHolder = remember { mutableStateOf(false) }
     val paymentErrorHolder = remember { mutableStateOf<String?>(null) }
     val lightningInvoiceErrorHolder = remember { mutableStateOf<String?>(null) }
+    val balanceErrorHolder = remember { mutableStateOf<String?>(null) }
     
     val paymentState by paymentStateHolder
     val isParsingInvoice by isParsingInvoiceHolder
     val paymentError by paymentErrorHolder
     val lightningInvoiceError by lightningInvoiceErrorHolder
+    val balanceError by balanceErrorHolder
     
     val clipboardManager = LocalClipboardManager.current
     val focusRequester = remember { FocusRequester() }
@@ -101,6 +103,30 @@ fun WithdrawScreen(
     val errorMessage by viewModel.errorMessage.observeAsState()
     val currentMeltQuote by viewModel.currentMeltQuote.observeAsState()
     val generatedToken by viewModel.generatedToken.observeAsState()
+    
+    // Conversion calculations
+    val satsAmount = amountSats.toLongOrNull() ?: 0L
+    val fiatAmount = amountFiat.toDoubleOrNull() ?: 0.0
+    val usdAmount = satsAmount * 0.001
+    val calculatedSats = (fiatAmount / 0.001).toLong()
+    
+    // Balance validation for ecash withdrawals
+    val finalAmount = if (showSatsInput) satsAmount else calculatedSats
+    val isAmountValid = finalAmount > 0 && finalAmount <= balance
+    val balanceErrorMessage = if (finalAmount > balance && finalAmount > 0) {
+        "You only have ${balance} sats available in this mint. Try reducing the amount or select a different mint."
+    } else null
+    
+    // Debug logging
+    LaunchedEffect(finalAmount, balance) {
+        Log.d("WithdrawScreen", "Balance validation: finalAmount=$finalAmount, balance=$balance, isAmountValid=$isAmountValid, errorMessage=$balanceErrorMessage")
+    }
+    
+    // Update balance error when amount changes
+    LaunchedEffect(finalAmount, balance) {
+        balanceErrorHolder.value = balanceErrorMessage
+        Log.d("WithdrawScreen", "Setting balance error: ${balanceErrorHolder.value}")
+    }
     
     // Lightning invoice validator
     fun validateLightningInvoice(invoice: String): String? {
@@ -123,6 +149,7 @@ fun WithdrawScreen(
         paymentStateHolder.value = PaymentState.IDLE
         paymentErrorHolder.value = null
         lightningInvoiceErrorHolder.value = null
+        balanceErrorHolder.value = null
         isParsingInvoiceHolder.value = false
         viewModel.clearCurrentMeltQuote()
     }
@@ -237,12 +264,6 @@ fun WithdrawScreen(
             viewModel.clearGeneratedToken()
         }
     }
-    
-    // Conversion calculations
-    val satsAmount = amountSats.toLongOrNull() ?: 0L
-    val fiatAmount = amountFiat.toDoubleOrNull() ?: 0.0
-    val usdAmount = satsAmount * 0.001
-    val calculatedSats = (fiatAmount / 0.001).toLong()
     
     // Format displays
     val formattedSats = if (satsAmount > 0) {
@@ -433,6 +454,8 @@ fun WithdrawScreen(
                     ecashToken = ecashToken,
                     generatedToken = generatedToken,
                     isLoading = isLoading,
+                    isAmountValid = isAmountValid,
+                    balanceError = balanceError,
                     focusRequester = focusRequester,
                     focusManager = focusManager,
                     clipboardManager = clipboardManager,
@@ -452,7 +475,7 @@ fun WithdrawScreen(
                     onEcashTokenChange = { ecashToken = it },
                     onCreateToken = {
                         val finalAmount = if (showSatsInput) satsAmount else calculatedSats
-                        if (finalAmount > 0) {
+                        if (finalAmount > 0 && isAmountValid) {
                             focusManager.clearFocus()
                             // Create real Cashu token using CDK
                             viewModel.createCashuToken(finalAmount, "Withdrawal token")
@@ -1017,6 +1040,8 @@ private fun EcashWithdrawContent(
     ecashToken: String,
     generatedToken: String?,
     isLoading: Boolean,
+    isAmountValid: Boolean,
+    balanceError: String?,
     focusRequester: FocusRequester,
     focusManager: androidx.compose.ui.focus.FocusManager,
     clipboardManager: androidx.compose.ui.platform.ClipboardManager,
@@ -1239,6 +1264,16 @@ private fun EcashWithdrawContent(
             
             Spacer(modifier = Modifier.height(32.dp))
             
+            // Balance error message - display right after amount input
+            if (balanceError != null) {
+                Log.d("WithdrawScreen", "Displaying balance error in EcashWithdrawContent: $balanceError")
+                ErrorCard(
+                    message = balanceError!!,
+                    onDismiss = { /* Error will be cleared when amount changes */ }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+            
             Spacer(modifier = Modifier.weight(1f))
             
             // Spacer to push button to bottom
@@ -1248,7 +1283,7 @@ private fun EcashWithdrawContent(
             BitchatButton(
                 text = if (isLoading) "Creating..." else "Create Ecash",
                 onClick = onCreateToken,
-                enabled = !isLoading && (amountSats.toLongOrNull() ?: 0L) > 0,
+                enabled = !isLoading && isAmountValid,
                 style = BitchatButtonStyle.Primary,
                 modifier = Modifier.fillMaxWidth()
             )
