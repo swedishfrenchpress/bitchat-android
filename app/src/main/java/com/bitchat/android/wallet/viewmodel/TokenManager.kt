@@ -69,6 +69,12 @@ class TokenManager(
                     )
                     repository.saveTransaction(transaction).onSuccess {
                         onTransactionSaved()
+                        
+                        // Add a small delay to ensure CDK wallet state is updated
+                        kotlinx.coroutines.delay(500)
+                        
+                        // Refresh balance after creating token
+                        Log.d(TAG, "Refreshing balance after token created")
                         onBalanceRefresh()
                     }.onFailure { error ->
                         Log.e(TAG, "Failed to save transaction", error)
@@ -112,6 +118,12 @@ class TokenManager(
                     
                     repository.saveTransaction(transaction).onSuccess {
                         onTransactionSaved()
+                        
+                        // Add a small delay to ensure CDK wallet state is updated
+                        kotlinx.coroutines.delay(500)
+                        
+                        // Refresh balance after creating payment token
+                        Log.d(TAG, "Refreshing balance after payment token created")
                         onBalanceRefresh()
                         
                         // Success callback with token
@@ -200,6 +212,12 @@ class TokenManager(
                     )
                     repository.saveTransaction(transaction).onSuccess {
                         onTransactionSaved()
+                        
+                        // Add a small delay to ensure CDK wallet state is updated
+                        kotlinx.coroutines.delay(500)
+                        
+                        // Refresh balance after receiving token
+                        Log.d(TAG, "Refreshing balance after token received")
                         onBalanceRefresh()
                         // Reload mints in case a new one was added
                         onMintsUpdated()

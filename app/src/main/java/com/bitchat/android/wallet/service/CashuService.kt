@@ -153,30 +153,66 @@ class CashuService {
     private fun initializeCdkAvailability(): Boolean {
         if (isCdkAvailable) return true
         
-        Log.d(TAG, "=== CDK LIBRARY AVAILABILITY CHECK ===")
-        
         try {
-            // Test CDK availability by calling a simple function
-            val testMnemonic = generateMnemonic()
-            Log.d(TAG, "✅ CDK library is fully available and functional!")
-            Log.d(TAG, "Generated test mnemonic with ${testMnemonic.split(" ").size} words")
+            // Test CDK availability by trying to create a simple object
+            val testAmount = FfiAmount(1000u)
             isCdkAvailable = true
+            Log.d(TAG, "CDK library is available")
             return true
-            
-        } catch (e: UnsatisfiedLinkError) {
-            Log.w(TAG, "❌ CDK library not available: ${e.message}")
-        } catch (e: FfiException) {
-            Log.w(TAG, "❌ CDK FFI error: ${e.message}")
-        } catch (e: NoClassDefFoundError) {
-            Log.w(TAG, "❌ CDK classes not found: ${e.message}")
         } catch (e: Exception) {
-            Log.w(TAG, "❌ Unexpected CDK error: ${e.message}")
+            Log.e(TAG, "CDK library not available", e)
+            isCdkAvailable = false
+            return false
         }
-        
-        isCdkAvailable = false
-        Log.w(TAG, "⚠️ CDK library not available - wallet will not function properly")
-        Log.d(TAG, "=== END CDK LIBRARY CHECK ===")
-        return false
+    }
+    
+    /**
+     * Ensure wallet is initialized with the currently active mint
+     * This method centralizes the logic for getting the active mint and initializing the wallet
+     */
+    private suspend fun ensureWalletInitializedWithActiveMint(): Result<String> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Get the currently active mint from repository
+                initializeRepository()
+                val repo = repository ?: return@withContext Result.failure(Exception("Repository not available"))
+                
+                val activeMintResult = repo.getActiveMint()
+                if (activeMintResult.isFailure) {
+                    Log.e(TAG, "Failed to get active mint", activeMintResult.exceptionOrNull())
+                    return@withContext Result.failure(Exception("Failed to get active mint"))
+                }
+                
+                val activeMintUrl = activeMintResult.getOrThrow()
+                Log.d(TAG, "Current active mint from repository: $activeMintUrl")
+                Log.d(TAG, "Current wallet mint URL: $currentMintUrl")
+                Log.d(TAG, "Wallet initialized: $isInitialized")
+                
+                if (activeMintUrl.isNullOrEmpty()) {
+                    Log.w(TAG, "No active mint configured, using default")
+                    // Fallback to default mint if no active mint is set
+                    if (!isInitialized) {
+                        Log.d(TAG, "Initializing wallet with default mint: $DEFAULT_MINT_URL")
+                        initializeWallet(DEFAULT_MINT_URL).getOrThrow()
+                    }
+                    return@withContext Result.success(DEFAULT_MINT_URL)
+                } else {
+                    // Use the currently active mint
+                    if (!isInitialized || currentMintUrl != activeMintUrl) {
+                        Log.d(TAG, "Initializing wallet with active mint: $activeMintUrl")
+                        Log.d(TAG, "Previous wallet mint: $currentMintUrl")
+                        initializeWallet(activeMintUrl).getOrThrow()
+                        Log.d(TAG, "Wallet successfully initialized with active mint: $activeMintUrl")
+                    } else {
+                        Log.d(TAG, "Wallet already initialized with correct active mint: $activeMintUrl")
+                    }
+                    return@withContext Result.success(activeMintUrl)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to ensure wallet initialized with active mint", e)
+                return@withContext Result.failure(e)
+            }
+        }
     }
     
     /**
@@ -301,9 +337,8 @@ class CashuService {
     suspend fun getBalance(): Result<Long> {
         return withContext(Dispatchers.IO) {
             try {
-                if (!isInitialized) {
-                    initializeWallet(DEFAULT_MINT_URL).getOrThrow()
-                }
+                // Ensure wallet is initialized with the currently active mint
+                ensureWalletInitializedWithActiveMint().getOrThrow()
                 
                 if (!isCdkAvailable || wallet == null) {
                     return@withContext Result.failure(Exception("CDK not available"))
@@ -313,7 +348,7 @@ class CashuService {
                 val ffiAmount = wallet!!.balance()
                 val balanceValue = ffiAmount.value.toLong()
                 
-                Log.d(TAG, "Real balance: $balanceValue sats")
+                Log.d(TAG, "Real balance from active mint: $balanceValue sats")
                 Result.success(balanceValue)
                 
             } catch (e: FfiException) {
@@ -373,15 +408,14 @@ class CashuService {
     suspend fun createToken(amount: Long, memo: String? = null): Result<String> {
         return withContext(Dispatchers.IO) {
             try {
-                if (!isInitialized) {
-                    initializeWallet(DEFAULT_MINT_URL).getOrThrow()
-                }
+                // Ensure wallet is initialized with the currently active mint
+                val activeMintUrl = ensureWalletInitializedWithActiveMint().getOrThrow()
                 
                 if (!isCdkAvailable || wallet == null) {
                     return@withContext Result.failure(Exception("CDK not available"))
                 }
                 
-                Log.d(TAG, "Creating real token for amount: $amount")
+                Log.d(TAG, "Creating real token for amount: $amount from active mint: $activeMintUrl")
                 
                 // Create send options
                 val sendMemo = memo?.let { FfiSendMemo(it, true) }
@@ -401,7 +435,7 @@ class CashuService {
                     memo = sendMemo
                 )
                 
-                Log.d(TAG, "Created real token successfully")
+                Log.d(TAG, "Created real token successfully from active mint")
                 Result.success(ffiToken.tokenString)
                 
             } catch (e: FfiException) {
@@ -500,15 +534,14 @@ class CashuService {
     suspend fun createMintQuote(amount: Long, description: String? = null): Result<MintQuote> {
         return withContext(Dispatchers.IO) {
             try {
-                if (!isInitialized) {
-                    initializeWallet(DEFAULT_MINT_URL).getOrThrow()
-                }
+                // Ensure wallet is initialized with the currently active mint
+                val activeMintUrl = ensureWalletInitializedWithActiveMint().getOrThrow()
                 
                 if (!isCdkAvailable || wallet == null) {
                     return@withContext Result.failure(Exception("CDK not available"))
                 }
                 
-                Log.d(TAG, "Creating real mint quote for $amount")
+                Log.d(TAG, "Creating real mint quote for $amount from active mint: $activeMintUrl")
                 
                 val ffiMintQuote = wallet!!.mintQuote(
                     amount = FfiAmount(amount.toULong()),
@@ -551,9 +584,8 @@ class CashuService {
     suspend fun checkAndMintQuote(quoteId: String): Result<Boolean> {
         return withContext(Dispatchers.IO) {
             try {
-                if (!isInitialized) {
-                    initializeWallet(DEFAULT_MINT_URL).getOrThrow()
-                }
+                // Ensure wallet is initialized with the currently active mint
+                val activeMintUrl = ensureWalletInitializedWithActiveMint().getOrThrow()
                 
                 if (!isCdkAvailable || wallet == null) {
                     return@withContext Result.failure(Exception("CDK not available"))
@@ -598,15 +630,14 @@ class CashuService {
     suspend fun createMeltQuote(invoice: String): Result<MeltQuote> {
         return withContext(Dispatchers.IO) {
             try {
-                if (!isInitialized) {
-                    initializeWallet(DEFAULT_MINT_URL).getOrThrow()
-                }
+                // Ensure wallet is initialized with the currently active mint
+                val activeMintUrl = ensureWalletInitializedWithActiveMint().getOrThrow()
                 
                 if (!isCdkAvailable || wallet == null) {
                     return@withContext Result.failure(Exception("CDK not available"))
                 }
                 
-                Log.d(TAG, "Creating real melt quote for invoice")
+                Log.d(TAG, "Creating real melt quote for invoice from active mint: $activeMintUrl")
                 
                 val ffiMeltQuote = wallet!!.meltQuote(invoice)
                 
@@ -643,15 +674,14 @@ class CashuService {
     suspend fun payInvoice(quoteId: String): Result<Boolean> {
         return withContext(Dispatchers.IO) {
             try {
-                if (!isInitialized) {
-                    initializeWallet(DEFAULT_MINT_URL).getOrThrow()
-                }
+                // Ensure wallet is initialized with the currently active mint
+                val activeMintUrl = ensureWalletInitializedWithActiveMint().getOrThrow()
                 
                 if (!isCdkAvailable || wallet == null) {
                     return@withContext Result.failure(Exception("CDK not available"))
                 }
                 
-                Log.d(TAG, "Paying invoice with melt quote: $quoteId")
+                Log.d(TAG, "Paying invoice with melt quote: $quoteId from active mint: $activeMintUrl")
                 
                 val meltResult = wallet!!.melt(quoteId)
                 

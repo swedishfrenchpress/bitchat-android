@@ -1,5 +1,10 @@
 package com.bitchat.android.wallet.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -79,10 +84,12 @@ fun WithdrawScreen(
     val paymentStateHolder = remember { mutableStateOf(PaymentState.IDLE) }
     val isParsingInvoiceHolder = remember { mutableStateOf(false) }
     val paymentErrorHolder = remember { mutableStateOf<String?>(null) }
+    val lightningInvoiceErrorHolder = remember { mutableStateOf<String?>(null) }
     
     val paymentState by paymentStateHolder
     val isParsingInvoice by isParsingInvoiceHolder
     val paymentError by paymentErrorHolder
+    val lightningInvoiceError by lightningInvoiceErrorHolder
     
     val clipboardManager = LocalClipboardManager.current
     val focusRequester = remember { FocusRequester() }
@@ -95,6 +102,18 @@ fun WithdrawScreen(
     val currentMeltQuote by viewModel.currentMeltQuote.observeAsState()
     val generatedToken by viewModel.generatedToken.observeAsState()
     
+    // Lightning invoice validator
+    fun validateLightningInvoice(invoice: String): String? {
+        return when {
+            invoice.isBlank() -> null
+            !invoice.startsWith("lnbc") && !invoice.startsWith("lnbtb") -> 
+                "Invalid Lightning invoice format. Please check and try again."
+            invoice.length < 20 -> 
+                "Invoice appears to be incomplete. Please check and try again."
+            else -> null
+        }
+    }
+    
     // Reset function to clear all state
     fun resetWithdrawState() {
         amountSats = ""
@@ -103,6 +122,7 @@ fun WithdrawScreen(
         showSatsInput = true
         paymentStateHolder.value = PaymentState.IDLE
         paymentErrorHolder.value = null
+        lightningInvoiceErrorHolder.value = null
         isParsingInvoiceHolder.value = false
         viewModel.clearCurrentMeltQuote()
     }
@@ -135,13 +155,23 @@ fun WithdrawScreen(
         }
     }
     
-    // Handle Lightning invoice parsing - let CDK handle it
+    // Handle Lightning invoice parsing with validation
     LaunchedEffect(lightningInvoice) {
-        if (lightningInvoice.isNotBlank() && (lightningInvoice.startsWith("lnbc") || lightningInvoice.startsWith("lnbtb"))) {
-            isParsingInvoiceHolder.value = true
-            paymentErrorHolder.value = null
+        // Clear previous errors
+        lightningInvoiceErrorHolder.value = null
+        paymentErrorHolder.value = null
+        
+        if (lightningInvoice.isNotBlank()) {
+            // Validate invoice format first
+            val validationError = validateLightningInvoice(lightningInvoice)
+            if (validationError != null) {
+                lightningInvoiceErrorHolder.value = validationError
+                return@LaunchedEffect
+            }
             
-            // Let CDK handle the invoice parsing by creating a melt quote
+            // Invoice format is valid, try to parse with CDK
+            isParsingInvoiceHolder.value = true
+            
             try {
                 viewModel.createMeltQuote(lightningInvoice)
                 // CDK will parse the invoice and extract the correct amount
@@ -332,8 +362,10 @@ fun WithdrawScreen(
                     paymentState = paymentState,
                     isParsingInvoice = isParsingInvoice,
                     paymentError = paymentError,
+                    lightningInvoiceError = lightningInvoiceError,
                     paymentStateHolder = paymentStateHolder,
                     paymentErrorHolder = paymentErrorHolder,
+                    lightningInvoiceErrorHolder = lightningInvoiceErrorHolder,
                     focusRequester = focusRequester,
                     focusManager = focusManager,
                     clipboardManager = clipboardManager,
@@ -386,6 +418,7 @@ fun WithdrawScreen(
                         paymentErrorHolder.value = null
                     },
                     onResetState = { resetWithdrawState() },
+                    validateLightningInvoice = { validateLightningInvoice(it) },
                     viewModel = viewModel
                 )
             }
@@ -502,8 +535,10 @@ private fun LightningWithdrawContent(
     paymentState: PaymentState,
     isParsingInvoice: Boolean,
     paymentError: String?,
+    lightningInvoiceError: String?,
     paymentStateHolder: androidx.compose.runtime.MutableState<PaymentState>,
     paymentErrorHolder: androidx.compose.runtime.MutableState<String?>,
+    lightningInvoiceErrorHolder: androidx.compose.runtime.MutableState<String?>,
     focusRequester: FocusRequester,
     focusManager: androidx.compose.ui.focus.FocusManager,
     clipboardManager: androidx.compose.ui.platform.ClipboardManager,
@@ -517,6 +552,7 @@ private fun LightningWithdrawContent(
     onPaymentError: (String) -> Unit,
     onPaymentCancel: () -> Unit,
     onResetState: () -> Unit,
+    validateLightningInvoice: (String) -> String?,
     viewModel: com.bitchat.android.wallet.viewmodel.WalletViewModel
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -913,8 +949,25 @@ private fun LightningWithdrawContent(
                 placeholder = "Enter invoice or address...",
                 enabled = !isLoading && !isParsingInvoice,
                 singleLine = true,
+                isError = lightningInvoiceError != null,
                 modifier = Modifier.fillMaxWidth()
             )
+            
+            // Error message display
+            lightningInvoiceError?.let { error ->
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
             
             Spacer(modifier = Modifier.weight(1f))
             
@@ -927,7 +980,11 @@ private fun LightningWithdrawContent(
                     text = "Paste from Clipboard",
                     onClick = {
                         clipboardManager.getText()?.text?.let { clipText ->
-                            if (clipText.startsWith("lnbc") || clipText.startsWith("lnbtb")) {
+                            // Validate the clipboard content before pasting
+                            val validationError = validateLightningInvoice(clipText)
+                            if (validationError != null) {
+                                lightningInvoiceErrorHolder.value = validationError
+                            } else {
                                 onLightningInvoiceChange(clipText)
                             }
                         }

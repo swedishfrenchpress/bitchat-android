@@ -83,7 +83,16 @@ class LightningManager(
                         _errorMessage.value = "Failed to save quote: ${error.message}"
                     }
                 }.onFailure { error ->
-                    _errorMessage.value = "Failed to process invoice: ${error.message}"
+                    val errorMessage = when {
+                        error.message?.contains("quote not found", ignoreCase = true) == true -> 
+                            "This invoice has already been paid or is no longer valid."
+                        error.message?.contains("invalid", ignoreCase = true) == true -> 
+                            "Invalid Lightning invoice format. Please check and try again."
+                        error.message?.contains("expired", ignoreCase = true) == true -> 
+                            "This invoice has expired. Please request a new one."
+                        else -> "Failed to process invoice: ${error.message}"
+                    }
+                    _errorMessage.value = errorMessage
                 }
             } finally {
                 uiStateManager.setLoading(false)
@@ -126,6 +135,12 @@ class LightningManager(
                                 repository.saveTransaction(transaction).onSuccess {
                                     Log.d(TAG, "Transaction saved successfully")
                                     onTransactionSaved()
+                                    
+                                    // Add a small delay to ensure CDK wallet state is updated
+                                    kotlinx.coroutines.delay(500)
+                                    
+                                    // Refresh balance after payment
+                                    Log.d(TAG, "Refreshing balance after Lightning payment")
                                     onBalanceRefresh()
                                     onPaymentComplete()
                                 }.onFailure { error ->
@@ -185,6 +200,12 @@ class LightningManager(
                             )
                             repository.saveTransaction(transaction).onSuccess {
                                 onTransactionSaved()
+                                
+                                // Add a small delay to ensure CDK wallet state is updated
+                                kotlinx.coroutines.delay(500)
+                                
+                                // Refresh balance after minting
+                                Log.d(TAG, "Refreshing balance after Lightning minting")
                                 onBalanceRefresh()
                                 
                                 // Show success animation for Lightning invoice top-up

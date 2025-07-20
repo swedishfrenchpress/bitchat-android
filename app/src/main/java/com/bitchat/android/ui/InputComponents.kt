@@ -223,7 +223,8 @@ fun TerminalInputField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium.copy(
         fontFamily = FontFamily.Monospace
-    )
+    ),
+    isError: Boolean = false
 ) {
     Box(
         modifier = modifier
@@ -234,7 +235,7 @@ fun TerminalInputField(
             )
             .border(
                 width = 0.25.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(4.dp)
             )
             .padding(16.dp)
