@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bitchat.android.ui.theme.BitchatTheme
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
+import com.bitchat.android.parsing.CashuTokenParser
 import java.text.NumberFormat
 import java.util.*
 import kotlinx.coroutines.delay
@@ -200,6 +201,9 @@ fun WithdrawScreen(
                 paymentStateHolder.value = PaymentState.CANCELLED
                 paymentErrorHolder.value = null
             }
+            // Clear generated token when navigating away
+            Log.d("WithdrawScreen", "Clearing generated token on navigation")
+            viewModel.clearGeneratedToken()
         }
     }
     
@@ -982,7 +986,11 @@ private fun EcashWithdrawContent(
     viewModel: com.bitchat.android.wallet.viewmodel.WalletViewModel
 ) {
     if (generatedToken != null) {
-        // Show generated token
+        // Parse the generated token to show details
+        val parser = remember { CashuTokenParser() }
+        val parsedToken = remember(generatedToken) { parser.parseToken(generatedToken) }
+        
+        // Show generated token with layout matching TopUpScreen exactly
         Column {
             Text(
                 text = "ECASH TOKEN",
@@ -991,44 +999,79 @@ private fun EcashWithdrawContent(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = RoundedCornerShape(4.dp)
-                    )
-                    .border(
-                        width = 0.25.dp,
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(4.dp)
-                    )
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
+            // Token display field - matching TopUpScreen OutlinedTextField exactly
+            OutlinedTextField(
+                value = generatedToken,
+                onValueChange = { }, // Read-only
+                enabled = false,
+                label = { Text("Generated Token", style = MaterialTheme.typography.bodySmall) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    disabledBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    disabledTextColor = MaterialTheme.colorScheme.primary
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3,
+                maxLines = 5,
+                shape = RoundedCornerShape(4.dp),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = FontFamily.Monospace
+                )
+            )
+            
+            // Show token details below input if token is decoded - matching TopUpScreen exactly
+            if (parsedToken != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Token details section - matching TopUpScreen exactly
+                Text(
+                    text = "TOKEN DETAILS",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                // Simple token details display - matching TopUpScreen exactly
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .border(
+                            width = 0.25.dp,
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(16.dp)
                 ) {
                     Text(
-                        text = "Ecash Token Generated",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontSize = MaterialTheme.typography.headlineSmall.fontSize * 1.8f
-                        )
+                        text = "Amount: ${parsedToken.amount} ${parsedToken.unit}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
                     )
                     
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
                     Text(
-                        text = if (generatedToken.length > 50) {
-                            "${generatedToken.take(25)}...${generatedToken.takeLast(25)}"
-                        } else {
-                            generatedToken
-                        },
-                        color = MaterialTheme.colorScheme.secondary,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontFamily = FontFamily.Monospace
-                        )
+                        text = "From: ${parsedToken.mintUrl}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+                    
+                    if (!parsedToken.memo.isNullOrEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Memo: ${parsedToken.memo}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
             
