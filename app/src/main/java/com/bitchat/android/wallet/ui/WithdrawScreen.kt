@@ -42,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bitchat.android.ui.theme.BitchatTheme
+import com.bitchat.android.ui.TerminalInputField
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import com.bitchat.android.parsing.CashuTokenParser
 import java.text.NumberFormat
@@ -905,29 +906,14 @@ private fun LightningWithdrawContent(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             
-            // Standard input field - no nested box
-            OutlinedTextField(
+            // Standard input field - using standardized terminal input
+            TerminalInputField(
                 value = lightningInvoice,
                 onValueChange = { if (!isLoading && !isParsingInvoice) onLightningInvoiceChange(it) },
+                placeholder = "Enter invoice or address...",
                 enabled = !isLoading && !isParsingInvoice,
-                label = { Text("Lightning Invoice / Address", style = MaterialTheme.typography.bodySmall) },
-                placeholder = { 
-                    Text(
-                        "Enter invoice / address...", 
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-                    ) 
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                ),
-                modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(4.dp),
-                textStyle = MaterialTheme.typography.bodyMedium
+                modifier = Modifier.fillMaxWidth()
             )
             
             Spacer(modifier = Modifier.weight(1f))

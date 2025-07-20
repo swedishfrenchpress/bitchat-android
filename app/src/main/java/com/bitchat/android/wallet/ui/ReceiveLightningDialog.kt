@@ -26,6 +26,7 @@ import com.bitchat.android.wallet.data.MintQuote
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import com.bitchat.android.wallet.ui.BitchatButton
 import com.bitchat.android.wallet.ui.BitchatButtonStyle
+import com.bitchat.android.ui.TerminalInputField
 
 /**
  * Lightning invoice receive dialog content
@@ -213,28 +214,15 @@ fun ReceiveLightningDialog(
             )
             
             // Amount input field
-            OutlinedTextField(
+            TerminalInputField(
                 value = amount,
                 onValueChange = { amount = it },
-                label = {
-                    Text(
-                        text = "Amount (₿)",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface
-                ),
+                placeholder = "Enter amount in sats...",
+                keyboardType = KeyboardType.Number,
+                singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp),
-                shape = RoundedCornerShape(16.dp)
+                    .padding(bottom = 32.dp)
             )
             
             // Description section header
@@ -246,27 +234,14 @@ fun ReceiveLightningDialog(
             )
             
             // Description input field
-            OutlinedTextField(
+            TerminalInputField(
                 value = description,
                 onValueChange = { description = it },
-                label = {
-                    Text(
-                        text = "Description (optional)",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface
-                ),
+                placeholder = "Description (optional)",
+                singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp),
-                shape = RoundedCornerShape(16.dp)
+                    .padding(bottom = 32.dp)
             )
             
             // Create invoice button

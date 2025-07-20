@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.bitchat.android.ui.TerminalInputField
 
 /**
  * Dialog components for ChatScreen
@@ -43,17 +44,11 @@ fun PasswordPromptDialog(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    OutlinedTextField(
+                    TerminalInputField(
                         value = passwordInput,
                         onValueChange = onPasswordChange,
-                        label = { Text("Password", style = MaterialTheme.typography.bodyMedium) },
-                        textStyle = MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = FontFamily.Monospace
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = colorScheme.primary,
-                            unfocusedBorderColor = colorScheme.outline
-                        )
+                        placeholder = "Enter password...",
+                        singleLine = true
                     )
                 }
             },

@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import android.util.Log
 import com.bitchat.android.ui.theme.BitchatTheme
+import com.bitchat.android.ui.TerminalInputField
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import kotlinx.coroutines.delay
 import java.text.NumberFormat
@@ -609,30 +610,15 @@ private fun CashuContent(
             modifier = Modifier.padding(bottom = 8.dp)
         )
         
-        // Ecash token input field - clean standalone input
-        OutlinedTextField(
+        // Ecash token input field - using standardized terminal input
+        TerminalInputField(
             value = tokenInput,
             onValueChange = { if (!isLoading) onTokenInputChange(it) },
+            placeholder = "cashuA...",
             enabled = !isLoading,
-            label = { Text("Ecash Token", style = MaterialTheme.typography.bodySmall) },
-            placeholder = { 
-                Text(
-                    "cashuA...", 
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-                ) 
-            },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            ),
-            modifier = Modifier.fillMaxWidth(),
             minLines = 3,
             maxLines = 5,
-            shape = RoundedCornerShape(4.dp),
-            textStyle = MaterialTheme.typography.bodyMedium
+            modifier = Modifier.fillMaxWidth()
         )
         
         // Show token details below input if token is decoded

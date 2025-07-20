@@ -29,6 +29,7 @@ import com.bitchat.android.wallet.ui.MintListItem
 import com.bitchat.android.wallet.ui.MintUrlInput
 import com.bitchat.android.wallet.ui.BitchatButton
 import com.bitchat.android.wallet.ui.BitchatButtonStyle
+import com.bitchat.android.ui.TerminalInputField
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -227,49 +228,20 @@ private fun AddMintDialog(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // URL input
-                OutlinedTextField(
+                TerminalInputField(
                     value = mintUrl,
                     onValueChange = { mintUrl = it },
-                    label = {
-                        Text(
-                            text = "Mint URL",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    },
-                    placeholder = {
-                        Text(
-                            text = "mint.example.com",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface
-                    ),
+                    placeholder = "mint.example.com",
                     modifier = Modifier.fillMaxWidth()
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // Nickname input
-                OutlinedTextField(
+                TerminalInputField(
                     value = nickname,
                     onValueChange = { nickname = it },
-                    label = {
-                        Text(
-                            text = "Nickname (optional)",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface
-                    ),
+                    placeholder = "Nickname (optional)",
                     modifier = Modifier.fillMaxWidth()
                 )
                 
@@ -320,21 +292,10 @@ private fun EditMintDialog(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                OutlinedTextField(
+                TerminalInputField(
                     value = nickname,
                     onValueChange = { nickname = it },
-                    label = {
-                        Text(
-                            text = "Nickname",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface
-                    ),
+                    placeholder = "Nickname",
                     modifier = Modifier.fillMaxWidth()
                 )
                 

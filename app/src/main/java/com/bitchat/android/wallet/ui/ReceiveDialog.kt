@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
+import com.bitchat.android.ui.TerminalInputField
 import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.util.*
@@ -165,15 +166,15 @@ fun ReceiveView(
                     )
                 },
                 text = {
-                    OutlinedTextField(
+                    TerminalInputField(
                         value = amountSats,
                         onValueChange = { newValue ->
                             if (newValue.all { it.isDigit() } && newValue.length <= 10) {
                                 amountSats = newValue
                             }
                         },
-                        label = { Text("Amount in sats") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        placeholder = "Enter amount in sats...",
+                        keyboardType = KeyboardType.Number,
                         singleLine = true,
                         modifier = Modifier
                             .fillMaxWidth()

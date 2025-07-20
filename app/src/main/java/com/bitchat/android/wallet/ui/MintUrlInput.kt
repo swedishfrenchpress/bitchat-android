@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bitchat.android.ui.theme.BitchatTheme
+import com.bitchat.android.ui.TerminalInputField
 
 /**
  * MintUrlInput component - input field for entering a mint URL with an add (+) button
@@ -28,29 +29,14 @@ fun MintUrlInput(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    // Clean standalone input field using proper theme styles
-    OutlinedTextField(
+    // Clean standalone input field using standardized terminal input
+    TerminalInputField(
         value = url,
         onValueChange = onUrlChange,
+        placeholder = "mint.example.com",
         enabled = enabled,
         singleLine = true,
-        label = { Text("Mint URL", style = MaterialTheme.typography.bodySmall) },
-        placeholder = { 
-            Text(
-                "mint.example.com", 
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-            ) 
-        },
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            focusedLabelColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-        ),
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(4.dp),
-        textStyle = MaterialTheme.typography.bodyMedium
+        modifier = modifier.fillMaxWidth()
     )
 }
 

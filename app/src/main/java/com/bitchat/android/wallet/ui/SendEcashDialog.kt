@@ -28,6 +28,7 @@ import com.bitchat.android.wallet.ui.WalletUtils
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import com.bitchat.android.wallet.ui.BitchatButton
 import com.bitchat.android.wallet.ui.BitchatButtonStyle
+import com.bitchat.android.ui.TerminalInputField
 
 /**
  * Ecash (Cashu) token send dialog content
@@ -269,33 +270,17 @@ fun SendEcashDialog(
             )
             
             // Amount input field
-            OutlinedTextField(
+            TerminalInputField(
                 value = amount,
                 onValueChange = { if (!isLoading) amount = it },
+                placeholder = "Enter amount in sats...",
                 enabled = !isLoading,
-                label = {
-                    Text(
-                        text = "Amount (₿)",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                ),
+                keyboardType = KeyboardType.Number,
+                singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 32.dp)
-                    .focusRequester(focusRequester),
-                shape = RoundedCornerShape(16.dp)
+                    .focusRequester(focusRequester)
             )
             
             // Memo section header
@@ -307,31 +292,15 @@ fun SendEcashDialog(
             )
             
             // Memo input field
-            OutlinedTextField(
+            TerminalInputField(
                 value = memo,
                 onValueChange = { if (!isLoading) memo = it },
+                placeholder = "Memo (optional)",
                 enabled = !isLoading,
-                label = {
-                    Text(
-                        text = "Memo (optional)",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                ),
+                singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp),
-                shape = RoundedCornerShape(16.dp)
+                    .padding(bottom = 32.dp)
             )
             
             // Create token button

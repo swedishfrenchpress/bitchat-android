@@ -26,6 +26,7 @@ import com.bitchat.android.wallet.data.CashuToken
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import com.bitchat.android.wallet.ui.BitchatButton
 import com.bitchat.android.wallet.ui.BitchatButtonStyle
+import com.bitchat.android.ui.TerminalInputField
 
 /**
  * Ecash (Cashu) token receive dialog content
@@ -178,56 +179,16 @@ fun ReceiveEcashDialog(
             )
             
             // Token input field
-            OutlinedTextField(
+            TerminalInputField(
                 value = token,
                 onValueChange = { if (!isLoading) viewModel.setTokenInput(it) },
+                placeholder = "cashuA...",
                 enabled = !isLoading,
-                label = {
-                    Text(
-                        text = "Cashu Token",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                placeholder = {
-                    Text(
-                        text = "cashuA...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp),
                 minLines = 3,
                 maxLines = 5,
-                shape = RoundedCornerShape(16.dp),
-                trailingIcon = {
-                    IconButton(
-                        onClick = {
-                            if (!isLoading) {
-                                // TODO: Implement QR code scanning
-                            }
-                        },
-                        enabled = !isLoading
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.QrCode,
-                            contentDescription = "Scan QR",
-                            tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
             )
             
             // Actions section header

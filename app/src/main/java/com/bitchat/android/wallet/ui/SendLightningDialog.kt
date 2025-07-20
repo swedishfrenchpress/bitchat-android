@@ -21,6 +21,7 @@ import com.bitchat.android.wallet.data.MeltQuote
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import com.bitchat.android.wallet.ui.BitchatButton
 import com.bitchat.android.wallet.ui.BitchatButtonStyle
+import com.bitchat.android.ui.TerminalInputField
 
 /**
  * Lightning payment send dialog content
@@ -170,49 +171,15 @@ fun SendLightningDialog(
             )
             
             // Invoice input field
-            OutlinedTextField(
+            TerminalInputField(
                 value = invoice,
                 onValueChange = { invoice = it },
-                label = {
-                    Text(
-                        text = "Lightning Invoice",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                placeholder = {
-                    Text(
-                        text = "lnbc...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp),
+                placeholder = "lnbc...",
                 minLines = 3,
                 maxLines = 4,
-                shape = RoundedCornerShape(16.dp),
-                trailingIcon = {
-                    IconButton(
-                        onClick = {
-                            // TODO: Implement QR code scanning
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.QrCode,
-                            contentDescription = "Scan QR",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
             )
             
             // Actions section header
