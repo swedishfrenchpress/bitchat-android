@@ -814,6 +814,12 @@ private fun AddMintBottomSheet(
     var nickname by remember { mutableStateOf("") }
     val isLoading by viewModel.isLoading.observeAsState(false)
     
+    // Reset local state when bottom sheet is shown
+    LaunchedEffect(Unit) {
+        mintUrl = ""
+        nickname = ""
+    }
+    
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.background,
@@ -837,7 +843,14 @@ private fun AddMintBottomSheet(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 
-                IconButton(onClick = onDismiss) {
+                IconButton(
+                    onClick = { 
+                        // Reset local state first, then dismiss
+                        mintUrl = ""
+                        nickname = ""
+                        onDismiss()
+                    }
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Close,
                         contentDescription = "Close",
@@ -884,8 +897,10 @@ private fun AddMintBottomSheet(
                 BitchatButton(
                     text = "Cancel",
                     onClick = { 
-                        onDismiss()
+                        // Reset local state first, then dismiss
                         mintUrl = ""
+                        nickname = ""
+                        onDismiss()
                     },
                     style = BitchatButtonStyle.Secondary,
                     modifier = Modifier.weight(1f)
