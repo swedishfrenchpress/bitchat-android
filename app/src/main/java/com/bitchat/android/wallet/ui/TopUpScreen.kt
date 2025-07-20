@@ -263,6 +263,12 @@ fun TopUpScreen(
                                 focusManager.clearFocus()
                                 viewModel.createMintQuote(finalAmount, null)
                             }
+                        },
+                        onGoBack = {
+                            // Reset the screen to default state
+                            amountSats = ""
+                            amountFiat = ""
+                            viewModel.hideReceiveDialog() // This clears the current mint quote
                         }
                     )
                 }
@@ -372,13 +378,15 @@ private fun LightningContent(
     onAmountFiatChange: (String) -> Unit,
     onShowSatsInputChange: (Boolean) -> Unit,
     onSwapCurrency: () -> Unit,
-    onCreateInvoice: () -> Unit
+    onCreateInvoice: () -> Unit,
+    onGoBack: () -> Unit
 ) {
     if (currentMintQuote != null) {
         // Show invoice and QR code
         LightningInvoiceView(
             mintQuote = currentMintQuote,
-            clipboardManager = clipboardManager
+            clipboardManager = clipboardManager,
+            onGoBack = onGoBack
         )
     } else {
         // Show amount input
@@ -504,7 +512,8 @@ private fun LightningContent(
 @Composable
 private fun LightningInvoiceView(
     mintQuote: com.bitchat.android.wallet.data.MintQuote,
-    clipboardManager: androidx.compose.ui.platform.ClipboardManager
+    clipboardManager: androidx.compose.ui.platform.ClipboardManager,
+    onGoBack: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -609,6 +618,16 @@ private fun LightningInvoiceView(
                 clipboardManager.setText(AnnotatedString(mintQuote.request))
             },
             style = BitchatButtonStyle.Primary,
+            modifier = Modifier.fillMaxWidth()
+        )
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        // Go back button
+        BitchatButton(
+            text = "Go back",
+            onClick = onGoBack,
+            style = BitchatButtonStyle.Secondary,
             modifier = Modifier.fillMaxWidth()
         )
     }
