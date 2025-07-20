@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -35,6 +37,7 @@ import com.bitchat.android.ui.TerminalInputField
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import com.bitchat.android.wallet.ui.BitchatButton
 import com.bitchat.android.wallet.ui.BitchatButtonStyle
+import com.bitchat.android.wallet.ui.MintUrlInput
 import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.util.*
@@ -76,6 +79,7 @@ fun TopUpScreen(
     val tokenInput by viewModel.tokenInput.observeAsState("")
     val activeMint by viewModel.activeMint.observeAsState()
     val showSuccessAnimation by viewModel.showSuccessAnimation.observeAsState(false)
+    val showAddMintDialog by viewModel.showAddMintDialog.observeAsState(false)
     
     // Track if we've shown a success animation to avoid premature navigation
     var hasShownSuccessAnimation by remember { mutableStateOf(false) }
@@ -295,6 +299,14 @@ fun TopUpScreen(
                 onDismiss = { viewModel.clearError() }
             )
         }
+    }
+    
+    // Add Mint Dialog
+    if (showAddMintDialog) {
+        AddMintBottomSheet(
+            viewModel = viewModel,
+            onDismiss = { viewModel.hideAddMintDialog() }
+        )
     }
 }
 
@@ -762,26 +774,149 @@ private fun ErrorCard(
 private fun LightningEmptyState(
     onAddMintClick: () -> Unit
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+    // Use Box with fillMaxSize to center the content vertically and horizontally
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        // Empty state message - matching the visual structure of other parts
-        Text(
-            text = "To top up connect to a mint first.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-        
-        // + New Mint button - styled to match other parts of the app
-        BitchatButton(
-            text = "+ New Mint",
-            onClick = onAddMintClick,
-            style = BitchatButtonStyle.Primary,
-            modifier = Modifier.fillMaxWidth()
-        )
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Empty state message - matching the visual structure of other parts
+            Text(
+                text = "To top up connect to a mint first.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+            
+            // + New Mint button - styled to match other parts of the app
+            BitchatButton(
+                text = "+ New Mint",
+                onClick = onAddMintClick,
+                style = BitchatButtonStyle.Primary,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddMintBottomSheet(
+    viewModel: WalletViewModel,
+    onDismiss: () -> Unit
+) {
+    var mintUrl by remember { mutableStateOf("") }
+    var nickname by remember { mutableStateOf("") }
+    val isLoading by viewModel.isLoading.observeAsState(false)
+    
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            // Header with close button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Add New Mint",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Close",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Description
+            Text(
+                text = "Enter the URL of a Cashu mint to add it to your wallet.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Mint URL Input
+            MintUrlInput(
+                url = mintUrl,
+                onUrlChange = { mintUrl = it },
+                onAddClick = {
+                    if (mintUrl.isNotBlank()) {
+                        val normalizedUrl = normalizeMintUrl(mintUrl)
+                        viewModel.addMint(normalizedUrl, "") // Use empty nickname for now
+                        // Note: viewModel.addMint() already calls hideAddMintDialog()
+                        mintUrl = ""
+                    }
+                },
+                enabled = true // Always enable the input field itself - internal logic handles add button state
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Action buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                BitchatButton(
+                    text = "Cancel",
+                    onClick = { 
+                        onDismiss()
+                        mintUrl = ""
+                    },
+                    style = BitchatButtonStyle.Secondary,
+                    modifier = Modifier.weight(1f)
+                )
+                BitchatButton(
+                    text = "Add Mint",
+                    onClick = {
+                        if (mintUrl.isNotBlank()) {
+                            val normalizedUrl = normalizeMintUrl(mintUrl)
+                            viewModel.addMint(normalizedUrl, "") // Use empty nickname for now
+                            // Note: viewModel.addMint() already calls hideAddMintDialog()
+                            mintUrl = ""
+                        }
+                    },
+                    style = BitchatButtonStyle.Primary,
+                    enabled = mintUrl.isNotBlank(),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Helper function to normalize mint URL (add https:// if missing)
+ */
+private fun normalizeMintUrl(url: String): String {
+    return if (url.isNotBlank() && !url.startsWith("http://") && !url.startsWith("https://")) {
+        "https://$url"
+    } else {
+        url
     }
 }
 
