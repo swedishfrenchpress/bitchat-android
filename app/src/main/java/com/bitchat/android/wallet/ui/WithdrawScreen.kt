@@ -117,15 +117,9 @@ fun WithdrawScreen(
         "You only have ${balance} sats available in this mint. Try reducing the amount or select a different mint."
     } else null
     
-    // Debug logging
-    LaunchedEffect(finalAmount, balance) {
-        Log.d("WithdrawScreen", "Balance validation: finalAmount=$finalAmount, balance=$balance, isAmountValid=$isAmountValid, errorMessage=$balanceErrorMessage")
-    }
-    
     // Update balance error when amount changes
     LaunchedEffect(finalAmount, balance) {
         balanceErrorHolder.value = balanceErrorMessage
-        Log.d("WithdrawScreen", "Setting balance error: ${balanceErrorHolder.value}")
     }
     
     // Lightning invoice validator
@@ -384,6 +378,8 @@ fun WithdrawScreen(
                     isParsingInvoice = isParsingInvoice,
                     paymentError = paymentError,
                     lightningInvoiceError = lightningInvoiceError,
+                    isAmountValid = isAmountValid,
+                    balanceError = balanceError,
                     paymentStateHolder = paymentStateHolder,
                     paymentErrorHolder = paymentErrorHolder,
                     lightningInvoiceErrorHolder = lightningInvoiceErrorHolder,
@@ -489,7 +485,7 @@ fun WithdrawScreen(
         // Error message
         paymentError?.let { message ->
             Spacer(modifier = Modifier.height(16.dp))
-            ErrorCard(
+            TerminalErrorCard(
                 message = message,
                 onDismiss = { paymentErrorHolder.value = null }
             )
@@ -559,6 +555,8 @@ private fun LightningWithdrawContent(
     isParsingInvoice: Boolean,
     paymentError: String?,
     lightningInvoiceError: String?,
+    isAmountValid: Boolean,
+    balanceError: String?,
     paymentStateHolder: androidx.compose.runtime.MutableState<PaymentState>,
     paymentErrorHolder: androidx.compose.runtime.MutableState<String?>,
     lightningInvoiceErrorHolder: androidx.compose.runtime.MutableState<String?>,
@@ -823,7 +821,7 @@ private fun LightningWithdrawContent(
                         BitchatButton(
                             text = "Pay",
                             onClick = onPayInvoice,
-                            enabled = !isLoading && lightningInvoice.isNotBlank(),
+                            enabled = !isLoading && lightningInvoice.isNotBlank() && isAmountValid,
                             style = BitchatButtonStyle.Primary,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -958,6 +956,12 @@ private fun LightningWithdrawContent(
             
             Spacer(modifier = Modifier.height(32.dp))
             
+            // Balance error message - display right after amount input
+            if (balanceError != null) {
+                TerminalBalanceErrorCard(message = balanceError!!)
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+            
             Text(
                 text = "LIGHTNING INVOICE / ADDRESS",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
@@ -1021,7 +1025,7 @@ private fun LightningWithdrawContent(
                     text = "Pay",
                     onClick = onPayInvoice,
                     enabled = !isLoading && !isParsingInvoice && lightningInvoice.isNotBlank() && 
-                             (amountSats.toLongOrNull() ?: 0L) > 0 && paymentState == PaymentState.IDLE,
+                             isAmountValid && paymentState == PaymentState.IDLE,
                     style = BitchatButtonStyle.Primary,
                     modifier = Modifier.weight(1f)
                 )
@@ -1266,11 +1270,7 @@ private fun EcashWithdrawContent(
             
             // Balance error message - display right after amount input
             if (balanceError != null) {
-                Log.d("WithdrawScreen", "Displaying balance error in EcashWithdrawContent: $balanceError")
-                ErrorCard(
-                    message = balanceError!!,
-                    onDismiss = { /* Error will be cleared when amount changes */ }
-                )
+                TerminalBalanceErrorCard(message = balanceError!!)
                 Spacer(modifier = Modifier.height(16.dp))
             }
             
@@ -1292,43 +1292,123 @@ private fun EcashWithdrawContent(
 }
 
 @Composable
-private fun ErrorCard(
+private fun TerminalErrorCard(
     message: String,
     onDismiss: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+    // Terminal-style error box - matching the app's aesthetic
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f), // Subtle red tint
+                shape = RoundedCornerShape(4.dp)
+            )
+            .border(
+                width = 0.25.dp,
+                color = MaterialTheme.colorScheme.error.copy(alpha = 0.3f), // Subtle red border
+                shape = RoundedCornerShape(4.dp)
+            )
+            .padding(16.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Filled.Warning,
-                contentDescription = "Error",
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(20.dp)
+            // Terminal-style error indicator
+            Text(
+                text = "ERROR:",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                ),
+                modifier = Modifier.padding(end = 8.dp)
             )
             
-            Spacer(modifier = Modifier.width(12.dp))
-            
+            // Error message
             Text(
                 text = message,
                 color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = FontFamily.Monospace
+                ),
                 modifier = Modifier.weight(1f)
             )
             
-            IconButton(onClick = onDismiss) {
+            // Close button
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.size(24.dp)
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Close,
                     contentDescription = "Close",
-                    tint = MaterialTheme.colorScheme.error,
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                     modifier = Modifier.size(16.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun TerminalBalanceErrorCard(
+    message: String
+) {
+    // Terminal-style balance error box - no close button, auto-clears
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f), // Subtle red tint
+                shape = RoundedCornerShape(4.dp)
+            )
+            .border(
+                width = 0.25.dp,
+                color = MaterialTheme.colorScheme.error.copy(alpha = 0.3f), // Subtle red border
+                shape = RoundedCornerShape(4.dp)
+            )
+            .padding(16.dp)
+    ) {
+        Column {
+            // Header row with warning triangle icon and title
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Warning triangle icon
+                Icon(
+                    imageVector = Icons.Filled.Warning,
+                    contentDescription = "Warning",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .padding(end = 8.dp)
+                )
+                
+                // Error title
+                Text(
+                    text = "INSUFFICIENT FUNDS",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Error message - left aligned
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = FontFamily.Monospace
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Start
+            )
         }
     }
 }
