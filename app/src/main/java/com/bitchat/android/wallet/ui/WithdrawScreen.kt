@@ -103,6 +103,13 @@ fun WithdrawScreen(
     val errorMessage by viewModel.errorMessage.observeAsState()
     val currentMeltQuote by viewModel.currentMeltQuote.observeAsState()
     val generatedToken by viewModel.generatedToken.observeAsState()
+    val activeMint by viewModel.activeMint.observeAsState()
+    val mints by viewModel.mints.observeAsState(emptyList())
+    
+    // Get active mint information
+    val activeMintInfo = mints.find { it.url == activeMint }
+    val mintName = activeMintInfo?.info?.name ?: activeMintInfo?.nickname ?: "Unknown Mint"
+    val mintUrl = activeMintInfo?.url ?: activeMint ?: ""
     
     // Conversion calculations
     val satsAmount = amountSats.toLongOrNull() ?: 0L
@@ -329,6 +336,14 @@ fun WithdrawScreen(
                 )
             }
         }
+        
+        // Mint Information Section - showing connected mint and balance
+        MintInfoCard(
+            mintName = mintName,
+            mintUrl = mintUrl,
+            balance = balance,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
         
         // Method Selection Tabs - matching TopUpScreen exactly
         Row(
@@ -1425,6 +1440,78 @@ private fun formatBitcoinAmount(sats: Long): String {
 private fun formatDollarAmount(sats: Long): String {
     val usdAmount = sats * 0.001
     return if (usdAmount > 0) String.format("$%.2f", usdAmount) else "$0.00"
+}
+
+@Composable
+private fun MintInfoCard(
+    mintName: String,
+    mintUrl: String,
+    balance: Long,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(4.dp)
+            )
+            .border(
+                width = 0.25.dp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(4.dp)
+            )
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Mint information
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = mintName,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = mintUrl,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    maxLines = 1
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            // Balance display
+            Text(
+                text = formatBitcoinAmount(balance),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                ),
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MintInfoCardPreview() {
+    BitchatTheme {
+        MintInfoCard(
+            mintName = "Antifiat Mint",
+            mintUrl = "https://antifiat.cash",
+            balance = 21000L
+        )
+    }
 }
 
 @Preview(showBackground = true)

@@ -78,8 +78,14 @@ fun TopUpScreen(
     val decodedToken by viewModel.decodedToken.observeAsState()
     val tokenInput by viewModel.tokenInput.observeAsState("")
     val activeMint by viewModel.activeMint.observeAsState()
+    val mints by viewModel.mints.observeAsState(emptyList())
     val showSuccessAnimation by viewModel.showSuccessAnimation.observeAsState(false)
     val showAddMintDialog by viewModel.showAddMintDialog.observeAsState(false)
+    
+    // Get active mint information
+    val activeMintInfo = mints.find { it.url == activeMint }
+    val mintName = activeMintInfo?.info?.name ?: activeMintInfo?.nickname ?: "Unknown Mint"
+    val mintUrl = activeMintInfo?.url ?: activeMint ?: ""
     
     // Track if we've shown a success animation to avoid premature navigation
     var hasShownSuccessAnimation by remember { mutableStateOf(false) }
@@ -185,6 +191,16 @@ fun TopUpScreen(
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
+        }
+        
+        // Mint Info Card - only show if there's an active mint
+        if (!activeMint.isNullOrEmpty()) {
+            MintInfoCard(
+                mintName = mintName,
+                mintUrl = mintUrl,
+                balance = balance,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
         }
         
         // Method Selection Tabs
@@ -953,6 +969,77 @@ private fun normalizeMintUrl(url: String): String {
         url
     }
 }
+
+// Formatting functions - matching WalletOverview and WithdrawScreen
+private fun formatBitcoinAmount(sats: Long): String {
+    return when {
+        sats >= 100_000_000 -> String.format("₿%.8f", sats / 100_000_000.0)
+        sats >= 1000 -> String.format("₿%,d", sats)
+        else -> "₿$sats"
+    }
+}
+
+@Composable
+private fun MintInfoCard(
+    mintName: String,
+    mintUrl: String,
+    balance: Long,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(4.dp)
+            )
+            .border(
+                width = 0.25.dp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(4.dp)
+            )
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Mint information
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = mintName,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = mintUrl,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    maxLines = 1
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            // Balance display
+            Text(
+                text = formatBitcoinAmount(balance),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                ),
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+
 
 @Preview(showBackground = true)
 @Composable
