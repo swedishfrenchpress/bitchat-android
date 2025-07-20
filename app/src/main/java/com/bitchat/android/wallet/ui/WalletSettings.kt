@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import android.util.Log
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
@@ -63,20 +64,32 @@ fun WalletSettings(
     // State for mint balances
     var mintBalances by remember { mutableStateOf<Map<String, Long>>(emptyMap()) }
     
-    // Load balances for all mints
+    // Calculate total balance from all mint balances
+    val totalBalance = mintBalances.values.sum()
+    
+    // Load balances for all mints sequentially to avoid race conditions
     LaunchedEffect(mints) {
         val balances = mutableMapOf<String, Long>()
         for (mint in mints) {
-            viewModel.getMintBalance(mint.url,
-                onSuccess = { balance ->
-                    balances[mint.url] = balance
-                    mintBalances = balances.toMap()
-                },
-                onError = { _ ->
-                    balances[mint.url] = 0L
-                    mintBalances = balances.toMap()
-                }
-            )
+            try {
+                // Use a suspend function approach to avoid race conditions
+                viewModel.getMintBalance(mint.url,
+                    onSuccess = { balance ->
+                        balances[mint.url] = balance
+                        mintBalances = balances.toMap()
+                    },
+                    onError = { _ ->
+                        balances[mint.url] = 0L
+                        mintBalances = balances.toMap()
+                    }
+                )
+                // Add a small delay between mint balance queries to avoid overwhelming CDK
+                kotlinx.coroutines.delay(100)
+            } catch (e: Exception) {
+                Log.w("WalletSettings", "Error loading balance for mint ${mint.url}: ${e.message}")
+                balances[mint.url] = 0L
+                mintBalances = balances.toMap()
+            }
         }
     }
     

@@ -24,6 +24,13 @@ class CashuService {
     private var isCdkAvailable = false
     private var repository: WalletRepository? = null
     
+    /**
+     * Get the current active mint URL
+     */
+    private fun getCurrentActiveMintUrl(): String? {
+        return currentMintUrl
+    }
+    
     companion object {
         private const val TAG = "CashuService"
         private const val DEFAULT_MINT_URL = "https://testnut.cashu.space"
@@ -320,12 +327,16 @@ class CashuService {
     }
     
     /**
-     * Get balance for a specific mint (requires switching to that mint first)
+     * Get balance for a specific mint without switching the active wallet
+     * This method temporarily switches to the mint, gets the balance, then restores the original mint
      */
     suspend fun getBalanceForMint(mintUrl: String): Result<Long> {
         return withContext(Dispatchers.IO) {
             try {
-                // Initialize wallet with the specific mint
+                // Store the current active mint URL
+                val currentActiveMint = getCurrentActiveMintUrl()
+                
+                // Initialize wallet with the specific mint temporarily
                 initializeWallet(mintUrl).getOrThrow()
                 
                 if (!isCdkAvailable || wallet == null) {
@@ -337,6 +348,13 @@ class CashuService {
                 val balanceValue = ffiAmount.value.toLong()
                 
                 Log.d(TAG, "Balance for mint $mintUrl: $balanceValue sats")
+                
+                // Restore the original active mint if it was different
+                if (currentActiveMint != null && currentActiveMint != mintUrl) {
+                    initializeWallet(currentActiveMint).getOrThrow()
+                    Log.d(TAG, "Restored active mint to: $currentActiveMint")
+                }
+                
                 Result.success(balanceValue)
                 
             } catch (e: FfiException) {

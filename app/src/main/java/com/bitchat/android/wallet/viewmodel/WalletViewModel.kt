@@ -441,6 +441,55 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
     fun getMintBalance(mintUrl: String, onSuccess: (Long) -> Unit, onError: (String) -> Unit) {
         mintManager.getMintBalance(mintUrl, onSuccess, onError)
     }
+    
+    /**
+     * Get total balance from all mints without switching active wallet
+     * This method calculates the sum of all mint balances without affecting the current active mint
+     */
+    fun getTotalBalanceFromAllMints(onSuccess: (Long) -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val mints = mintManager.getCurrentMints()
+                if (mints.isEmpty()) {
+                    onSuccess(0L)
+                    return@launch
+                }
+                
+                var totalBalance = 0L
+                var errorCount = 0
+                
+                for (mint in mints) {
+                    try {
+                        // Use a suspend function to get balance for each mint
+                        cashuService.getBalanceForMint(mint.url).onSuccess { balance ->
+                            totalBalance += balance
+                        }.onFailure { error ->
+                            Log.w(TAG, "Failed to get balance for mint ${mint.url}: ${error.message}")
+                            errorCount++
+                        }
+                        
+                        // Add a small delay between queries to avoid overwhelming CDK
+                        kotlinx.coroutines.delay(50)
+                        
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Error getting balance for mint ${mint.url}: ${e.message}")
+                        errorCount++
+                    }
+                }
+                
+                if (errorCount == mints.size) {
+                    // All mints failed
+                    onError("Failed to get balances from all mints")
+                } else {
+                    onSuccess(totalBalance)
+                }
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Error calculating total balance", e)
+                onError("Failed to calculate total balance: ${e.message}")
+            }
+        }
+    }
 
     /**
      * Sync all mints - refresh mint information and keysets
