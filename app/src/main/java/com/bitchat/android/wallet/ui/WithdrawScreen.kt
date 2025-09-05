@@ -46,6 +46,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import com.bitchat.android.ui.theme.BitchatTheme
 import com.bitchat.android.ui.TerminalInputField
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
@@ -279,6 +283,8 @@ fun WithdrawScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(16.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -300,10 +306,8 @@ fun WithdrawScreen(
                     containerColor = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.primary
                 ),
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .offset(x = (-8).dp)
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -323,10 +327,12 @@ fun WithdrawScreen(
                 }
             }
             
-            // Settings button - positioned exactly like TopUpScreen
+            // Settings button - positioned with proper spacing
             IconButton(
                 onClick = onSettingsClick,
-                modifier = Modifier.align(Alignment.CenterEnd)
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(4.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Settings,

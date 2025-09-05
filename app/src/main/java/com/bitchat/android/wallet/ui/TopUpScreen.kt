@@ -31,6 +31,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import android.util.Log
 import com.bitchat.android.ui.theme.BitchatTheme
 import com.bitchat.android.ui.TerminalInputField
@@ -135,6 +139,8 @@ fun TopUpScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(16.dp)
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
@@ -149,17 +155,15 @@ fun TopUpScreen(
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         ) {
-            // Back button - positioned exactly like WalletOverview
+            // Back button - positioned with proper spacing
             Button(
                 onClick = onBackClick,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.primary
                 ),
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .offset(x = (-8).dp)
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -179,10 +183,12 @@ fun TopUpScreen(
                 }
             }
             
-            // Settings button - positioned exactly like WalletOverview
+            // Settings button - positioned with proper spacing
             IconButton(
                 onClick = onSettingsClick,
-                modifier = Modifier.align(Alignment.CenterEnd)
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(4.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Settings,
