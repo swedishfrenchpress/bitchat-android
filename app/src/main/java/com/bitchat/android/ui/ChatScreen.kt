@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
@@ -79,16 +80,11 @@ fun ChatScreen(
     val showMentionSuggestions by viewModel.showMentionSuggestions.observeAsState(false)
     val mentionSuggestions by viewModel.mentionSuggestions.observeAsState(emptyList())
     val showAppInfo by viewModel.showAppInfo.observeAsState(false)
-<<<<<<< HEAD
     
     // Observe payment status
     val paymentStatus by viewModel.getPaymentStatus().collectAsState()
-    
-    var messageText by remember { mutableStateOf("") }
-=======
 
     var messageText by remember { mutableStateOf(TextFieldValue("")) }
->>>>>>> upstream/main
     var showPasswordPrompt by remember { mutableStateOf(false) }
     var showPasswordDialog by remember { mutableStateOf(false) }
     var passwordInput by remember { mutableStateOf("") }
@@ -137,7 +133,6 @@ fun ChatScreen(
             )
 
             // Messages area - takes up available space, will compress when keyboard appears
-<<<<<<< HEAD
             Box(modifier = Modifier.weight(1f)) {
                 // Track redeemed tokens
                 var redeemedTokens by remember { mutableStateOf(setOf<String>()) }
@@ -161,21 +156,12 @@ fun ChatScreen(
                             wallet.receiveCashuTokenInline(parsedToken)
                         }
                     },
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            
-=======
-            MessagesList(
-                messages = displayMessages,
-                currentUserNickname = nickname,
-                meshService = viewModel.meshService,
-                modifier = Modifier.weight(1f),
-                forceScrollToBottom = forceScrollToBottom,
-                onScrolledUpChanged = { isUp -> isScrolledUp = isUp },
-                onNicknameClick = { fullSenderName ->
-                    // Single click - mention user in text input
-                    val currentText = messageText.text
+                    modifier = Modifier.fillMaxSize(),
+                    forceScrollToBottom = forceScrollToBottom,
+                    onScrolledUpChanged = { isUp -> isScrolledUp = isUp },
+                    onNicknameClick = { fullSenderName ->
+                        // Single click - mention user in text input
+                        val currentText = messageText.text
                     
                     // Extract base nickname and hash suffix from full sender name
                     val (baseName, hashSuffix) = splitSuffix(fullSenderName)
@@ -209,8 +195,8 @@ fun ChatScreen(
                     selectedMessageForSheet = message
                     showUserSheet = true
                 }
-            )
->>>>>>> upstream/main
+                )
+            }
             // Input area - stays at bottom
             ChatInputSection(
                 messageText = messageText,
@@ -264,11 +250,8 @@ fun ChatScreen(
             onSidebarToggle = { viewModel.showSidebar() },
             onShowAppInfo = { viewModel.showAppInfo() },
             onPanicClear = { viewModel.panicClearAllData() },
-<<<<<<< HEAD
-            onWalletClick = onWalletClick
-=======
+            onWalletClick = onWalletClick,
             onLocationChannelsClick = { showLocationChannelsSheet = true }
->>>>>>> upstream/main
         )
 
         // Divider under header - positioned after status bar + header height
@@ -418,7 +401,6 @@ private fun ChatInputSection(
                 HorizontalDivider(color = colorScheme.outline.copy(alpha = 0.2f))
             }
             
-<<<<<<< HEAD
             // Payment status indicator
             PaymentStatusIndicator(
                 status = paymentStatus,
@@ -426,7 +408,6 @@ private fun ChatInputSection(
                 modifier = Modifier.fillMaxWidth()
             )
             
-=======
             // Mention suggestions box
             if (showMentionSuggestions && mentionSuggestions.isNotEmpty()) {
                 MentionSuggestionsBox(
@@ -437,8 +418,6 @@ private fun ChatInputSection(
 
                 HorizontalDivider(color = colorScheme.outline.copy(alpha = 0.2f))
             }
-
->>>>>>> upstream/main
             MessageInput(
                 value = messageText,
                 onValueChange = onMessageTextChange,
@@ -464,11 +443,8 @@ private fun ChatFloatingHeader(
     onSidebarToggle: () -> Unit,
     onShowAppInfo: () -> Unit,
     onPanicClear: () -> Unit,
-<<<<<<< HEAD
-    onWalletClick: () -> Unit = {}
-=======
+    onWalletClick: () -> Unit = {},
     onLocationChannelsClick: () -> Unit
->>>>>>> upstream/main
 ) {
     Surface(
         modifier = Modifier
@@ -493,11 +469,8 @@ private fun ChatFloatingHeader(
                     onSidebarClick = onSidebarToggle,
                     onTripleClick = onPanicClear,
                     onShowAppInfo = onShowAppInfo,
-<<<<<<< HEAD
-                    onWalletClick = onWalletClick
-=======
+                    onWalletClick = onWalletClick,
                     onLocationChannelsClick = onLocationChannelsClick
->>>>>>> upstream/main
                 )
             },
             colors = TopAppBarDefaults.topAppBarColors(

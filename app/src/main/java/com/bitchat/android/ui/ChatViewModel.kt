@@ -1,6 +1,7 @@
 package com.bitchat.android.ui
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
 import androidx.compose.ui.focus.FocusManager
 import androidx.core.app.NotificationManagerCompat
@@ -10,8 +11,6 @@ import androidx.lifecycle.viewModelScope
 import com.bitchat.android.mesh.BluetoothMeshService
 import com.bitchat.android.mesh.BluetoothMeshDelegate
 import com.bitchat.android.model.BitchatMessage
-import com.bitchat.android.model.DeliveryAck
-import com.bitchat.android.model.ReadReceipt
 import com.bitchat.android.model.RoutedPacket
 import com.bitchat.android.protocol.BitchatPacket
 import com.bitchat.android.nostr.NostrGeohashService

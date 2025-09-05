@@ -108,14 +108,11 @@ fun MessagesList(
                     message = message,
                     currentUserNickname = currentUserNickname,
                     meshService = meshService,
-<<<<<<< HEAD
                     onCashuPaymentClick = onCashuPaymentClick,
                     redeemedTokens = redeemedTokens,
-                    onRedeemClick = onRedeemClick
-=======
+                    onRedeemClick = onRedeemClick,
                     onNicknameClick = onNicknameClick,
                     onMessageLongPress = onMessageLongPress
->>>>>>> upstream/main
                 )
         }
     }
@@ -127,14 +124,11 @@ fun MessageItem(
     message: BitchatMessage,
     currentUserNickname: String,
     meshService: BluetoothMeshService,
-<<<<<<< HEAD
     onCashuPaymentClick: ((ParsedCashuToken) -> Unit)? = null,
     redeemedTokens: Set<String> = emptySet(),
-    onRedeemClick: ((ParsedCashuToken) -> Unit)? = null
-=======
+    onRedeemClick: ((ParsedCashuToken) -> Unit)? = null,
     onNicknameClick: ((String) -> Unit)? = null,
     onMessageLongPress: ((BitchatMessage) -> Unit)? = null
->>>>>>> upstream/main
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val timeFormatter = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
@@ -143,7 +137,6 @@ fun MessageItem(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-<<<<<<< HEAD
         // Check if message contains special content (like Cashu tokens)
         val parsedElements = parseMessageContent(message.content)
         val hasSpecialContent = parsedElements.any { it !is MessageElement.Text }
@@ -172,50 +165,30 @@ fun MessageItem(
                 )
             }
         } else {
-            // Use existing text-only layout
-            Text(
-                text = formatMessageAsAnnotatedString(
+            // Use existing text-only layout with new clickable features
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                // Create a custom layout that combines selectable text with clickable nickname areas
+                MessageTextWithClickableNicknames(
                     message = message,
                     currentUserNickname = currentUserNickname,
                     meshService = meshService,
                     colorScheme = colorScheme,
-                    timeFormatter = timeFormatter
-                ),
-                modifier = Modifier.weight(1f),
-                fontFamily = FontFamily.Monospace,
-                softWrap = true,
-                overflow = TextOverflow.Visible
-            )
-        }
-        
-        // Delivery status for private messages
-        if (message.isPrivate && message.sender == currentUserNickname) {
-            message.deliveryStatus?.let { status ->
-                DeliveryStatusIcon(status = status)
-=======
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            // Create a custom layout that combines selectable text with clickable nickname areas
-            MessageTextWithClickableNicknames(
-                message = message,
-                currentUserNickname = currentUserNickname,
-                meshService = meshService,
-                colorScheme = colorScheme,
-                timeFormatter = timeFormatter,
-                onNicknameClick = onNicknameClick,
-                onMessageLongPress = onMessageLongPress,
-                modifier = Modifier.weight(1f)
-            )
-            
-            // Delivery status for private messages
-            if (message.isPrivate && message.sender == currentUserNickname) {
-                message.deliveryStatus?.let { status ->
-                    DeliveryStatusIcon(status = status)
+                    timeFormatter = timeFormatter,
+                    onNicknameClick = onNicknameClick,
+                    onMessageLongPress = onMessageLongPress,
+                    modifier = Modifier.weight(1f)
+                )
+                
+                // Delivery status for private messages
+                if (message.isPrivate && message.sender == currentUserNickname) {
+                    message.deliveryStatus?.let { status ->
+                        DeliveryStatusIcon(status = status)
+                    }
                 }
->>>>>>> upstream/main
             }
         }
         
