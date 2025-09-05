@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bitchat.android.wallet.viewmodel.WalletViewModel
 import com.bitchat.android.wallet.ui.BitchatButton
@@ -64,6 +65,7 @@ fun WalletSettings(
     val activeMint by viewModel.activeMint.observeAsState()
     val transactions by viewModel.transactions.observeAsState(emptyList())
     val balance by viewModel.balance.observeAsState(0L)
+    val errorMessage by viewModel.errorMessage.observeAsState()
     
     // State for mint balances
     var mintBalances by remember { mutableStateOf<Map<String, Long>>(emptyMap()) }
@@ -222,6 +224,15 @@ fun WalletSettings(
                         }
                         .padding(vertical = 8.dp),
                     textAlign = TextAlign.Center
+                )
+            }
+            
+            // Error message display
+            errorMessage?.let { message ->
+                Spacer(modifier = Modifier.height(16.dp))
+                ErrorCard(
+                    message = message,
+                    onDismiss = { viewModel.clearError() }
                 )
             }
             
@@ -745,6 +756,46 @@ fun WalletSettings(
     }
 }
 
-
+@Composable
+private fun ErrorCard(
+    message: String,
+    onDismiss: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Warning,
+                contentDescription = "Error",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(20.dp)
+            )
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f)
+            )
+            
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = "Close",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+    }
+}
 
 

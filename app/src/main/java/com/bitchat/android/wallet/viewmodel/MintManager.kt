@@ -166,11 +166,13 @@ class MintManager(
         coroutineScope.launch {
             try {
                 uiStateManager.setLoading(true)
+                Log.d(TAG, "Starting to add mint: $mintUrl")
                 
                 // Clear reset flag when user manually adds a mint
                 clearResetFlag()
                 
                 cashuService.getMintInfo(mintUrl).onSuccess { mintInfo ->
+                    Log.d(TAG, "Successfully got mint info for: $mintUrl")
                     val mint = Mint(
                         url = mintUrl,
                         nickname = nickname.ifEmpty { mintInfo.name },
@@ -193,13 +195,19 @@ class MintManager(
                         
                         onSuccess()
                     }.onFailure { error ->
+                        Log.e(TAG, "Failed to save mint: $mintUrl", error)
                         _errorMessage.value = "Failed to save mint: ${error.message}"
                     }
                 }.onFailure { error ->
+                    Log.e(TAG, "Failed to connect to mint: $mintUrl", error)
                     _errorMessage.value = "Failed to connect to mint: ${error.message}"
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception in addMint: $mintUrl", e)
+                _errorMessage.value = "Failed to add mint: ${e.message}"
             } finally {
                 uiStateManager.setLoading(false)
+                Log.d(TAG, "Finished adding mint: $mintUrl")
             }
         }
     }
