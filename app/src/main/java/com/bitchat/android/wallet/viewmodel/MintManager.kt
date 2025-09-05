@@ -167,6 +167,8 @@ class MintManager(
             try {
                 uiStateManager.setLoading(true)
                 Log.d(TAG, "Starting to add mint: $mintUrl")
+                Log.d(TAG, "CDK available: ${cashuService.isCdkAvailable()}")
+                Log.d(TAG, "Wallet initialized: ${cashuService.isInitialized()}")
                 
                 // Clear reset flag when user manually adds a mint
                 clearResetFlag()

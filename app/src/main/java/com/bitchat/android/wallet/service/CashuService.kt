@@ -755,6 +755,10 @@ class CashuService {
         return isCdkAvailable
     }
     
+    fun isInitialized(): Boolean {
+        return isInitialized
+    }
+    
     // Helper functions
     
     private fun getApplicationContext(): Context {

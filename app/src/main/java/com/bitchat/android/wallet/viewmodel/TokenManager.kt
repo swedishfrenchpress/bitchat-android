@@ -178,6 +178,10 @@ class TokenManager(
         coroutineScope.launch {
             try {
                 uiStateManager.setLoading(true)
+                Log.d(TAG, "Starting to receive token: $token")
+                Log.d(TAG, "CDK available: ${cashuService.isCdkAvailable()}")
+                Log.d(TAG, "Wallet initialized: ${cashuService.isInitialized()}")
+                Log.d(TAG, "Current mints count: ${currentMints.size}")
                 
                 // Get decoded token
                 val decodedToken = _decodedToken.value
