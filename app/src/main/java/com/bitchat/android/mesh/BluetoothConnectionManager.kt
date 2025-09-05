@@ -41,6 +41,7 @@ class BluetoothConnectionManager(
     // Delegate for component managers to call back to main manager
     private val componentDelegate = object : BluetoothConnectionManagerDelegate {
         override fun onPacketReceived(packet: BitchatPacket, peerID: String, device: BluetoothDevice?) {
+            Log.d(TAG, "onPacketReceived: Packet received from ${device?.address} ($peerID)")
             device?.let { bluetoothDevice ->
                 // Get current RSSI for this device and update if available
                 val currentRSSI = connectionTracker.getBestRSSI(bluetoothDevice.address)
@@ -48,11 +49,18 @@ class BluetoothConnectionManager(
                     delegate?.onRSSIUpdated(bluetoothDevice.address, currentRSSI)
                 }
             }
+
+            if (peerID == myPeerID) return // Ignore messages from self
+
             delegate?.onPacketReceived(packet, peerID, device)
         }
         
         override fun onDeviceConnected(device: BluetoothDevice) {
             delegate?.onDeviceConnected(device)
+        }
+
+        override fun onDeviceDisconnected(device: BluetoothDevice) {
+            delegate?.onDeviceDisconnected(device)
         }
         
         override fun onRSSIUpdated(deviceAddress: String, rssi: Int) {
@@ -98,7 +106,17 @@ class BluetoothConnectionManager(
         
         try {
             isActive = true
-            
+
+        // set the adapter's name to our 8-character peerID for iOS privacy, TODO: Make this configurable
+        // try {
+        //     if (bluetoothAdapter?.name != myPeerID) {
+        //         bluetoothAdapter?.name = myPeerID
+        //         Log.d(TAG, "Set Bluetooth adapter name to peerID: $myPeerID for iOS compatibility.")
+        //     }
+        // } catch (se: SecurityException) {
+        //     Log.e(TAG, "Missing BLUETOOTH_CONNECT permission to set adapter name.", se)
+        // }
+
             // Start all component managers
             connectionScope.launch {
                 // Start connection tracker first
@@ -209,7 +227,7 @@ class BluetoothConnectionManager(
         Log.i(TAG, "Power mode changed to: $newMode")
         
         connectionScope.launch {
-            // CRITICAL FIX: Avoid rapid scan restarts by checking if we need to change scan behavior
+            // Avoid rapid scan restarts by checking if we need to change scan behavior
             val wasUsingDutyCycle = powerManager.shouldUseDutyCycle()
             
             // Update advertising with new power settings
@@ -242,5 +260,6 @@ class BluetoothConnectionManager(
 interface BluetoothConnectionManagerDelegate {
     fun onPacketReceived(packet: BitchatPacket, peerID: String, device: BluetoothDevice?)
     fun onDeviceConnected(device: BluetoothDevice)
+    fun onDeviceDisconnected(device: BluetoothDevice)
     fun onRSSIUpdated(deviceAddress: String, rssi: Int)
 }

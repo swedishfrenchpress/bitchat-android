@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.content.ContextCompat
 
@@ -40,6 +41,8 @@ class PermissionManager(private val context: Context) {
 
     /**
      * Get all permissions required by the app
+     * Note: Notification permission is optional and not included here,
+     * so the app works without notification access.
      */
     fun getRequiredPermissions(): List<String> {
         val permissions = mutableListOf<String>()
@@ -64,12 +67,21 @@ class PermissionManager(private val context: Context) {
             Manifest.permission.ACCESS_FINE_LOCATION
         ))
 
-        // Notification permission (Android 13+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
+        // Notification permission intentionally excluded to keep it optional
 
         return permissions
+    }
+
+    /**
+     * Get optional permissions that improve the experience but aren't required.
+     * Currently includes POST_NOTIFICATIONS on Android 13+.
+     */
+    fun getOptionalPermissions(): List<String> {
+        val optional = mutableListOf<String>()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            optional.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        return optional
     }
 
     /**
@@ -84,6 +96,31 @@ class PermissionManager(private val context: Context) {
      */
     fun areAllPermissionsGranted(): Boolean {
         return getRequiredPermissions().all { isPermissionGranted(it) }
+    }
+
+    /**
+     * Check if battery optimization is disabled for this app
+     */
+    fun isBatteryOptimizationDisabled(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+                powerManager.isIgnoringBatteryOptimizations(context.packageName)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking battery optimization status", e)
+                false
+            }
+        } else {
+            // Battery optimization doesn't exist on Android < 6.0
+            true
+        }
+    }
+
+    /**
+     * Check if battery optimization is supported on this device
+     */
+    fun isBatteryOptimizationSupported(): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
     }
 
     /**
@@ -152,6 +189,19 @@ class PermissionManager(private val context: Context) {
             )
         }
 
+        // Battery optimization category (if applicable)
+        if (isBatteryOptimizationSupported()) {
+            categories.add(
+                PermissionCategory(
+                    type = PermissionType.BATTERY_OPTIMIZATION,
+                    description = "Disable battery optimization to ensure bitchat runs reliably in the background and maintains mesh network connections",
+                    permissions = listOf("BATTERY_OPTIMIZATION"), // Custom identifier
+                    isGranted = isBatteryOptimizationDisabled(),
+                    systemDescription = "Allow bitchat to run without battery restrictions"
+                )
+            )
+        }
+
         return categories
     }
 
@@ -208,5 +258,6 @@ enum class PermissionType(val nameValue: String) {
     NEARBY_DEVICES("Nearby Devices"),
     PRECISE_LOCATION("Precise Location"),
     NOTIFICATIONS("Notifications"),
+    BATTERY_OPTIMIZATION("Battery Optimization"),
     OTHER("Other")
 }

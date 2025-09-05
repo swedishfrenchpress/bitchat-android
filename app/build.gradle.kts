@@ -10,16 +10,23 @@ android {
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.bitchat.android"
+        applicationId = "com.bitchat.droid"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 3
-        versionName = "0.7"
+        versionCode = 18
+        versionName = "1.2.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
+    }
+
+    dependenciesInfo {
+        // Disables dependency metadata when building APKs.
+        includeInApk = false
+        // Disables dependency metadata when building Android App Bundles.
+        includeInBundle = false
     }
 
     buildTypes {
@@ -89,10 +96,16 @@ dependencies {
     
     // Bluetooth
     implementation(libs.nordic.ble)
-    
-    // Compression
-    implementation(libs.lz4.java)
-    
+
+    // WebSocket
+    implementation(libs.okhttp)
+
+    // Arti (Tor in Rust) Android bridge - use published AAR with native libs
+    implementation("info.guardianproject:arti-mobile-ex:1.2.3")
+
+    // Google Play Services Location
+    implementation(libs.gms.location)
+
     // Security preferences
     implementation(libs.androidx.security.crypto)
     
