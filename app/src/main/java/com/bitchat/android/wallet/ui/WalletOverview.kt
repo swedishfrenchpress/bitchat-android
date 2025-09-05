@@ -17,6 +17,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import com.bitchat.android.wallet.data.WalletTransaction
 import com.bitchat.android.wallet.data.TransactionType
 import com.bitchat.android.wallet.data.TransactionStatus
@@ -53,6 +57,8 @@ fun WalletOverview(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(16.dp)
     ) {
         // Wallet Header Navigation (ChatHeader style)
@@ -61,17 +67,15 @@ fun WalletOverview(
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         ) {
-            // Back button - positioned all the way to the left with minimal margin
+            // Back button - positioned with proper spacing
             Button(
                 onClick = onBackToChat,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.primary
                 ),
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .offset(x = (-8).dp)
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -91,10 +95,12 @@ fun WalletOverview(
                 }
             }
             
-            // Settings button - positioned on the right
+            // Settings button - positioned on the right with proper spacing
             IconButton(
                 onClick = onSettingsClick,
-                modifier = Modifier.align(Alignment.CenterEnd)
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(4.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Settings,
@@ -167,7 +173,9 @@ fun WalletOverview(
         )
         
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             TopUpButton(
