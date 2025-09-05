@@ -1,5 +1,6 @@
 package com.bitchat.android.ui
 
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -42,7 +43,15 @@ fun getRSSIColor(rssi: Int): Color {
  * This replaces formatMessageAsAnnotatedString for messages that contain special content.
  */
 fun parseMessageContent(content: String): List<MessageElement> {
-    return MessageParser.instance.parseMessage(content)
+    val elements = MessageParser.instance.parseMessage(content)
+    Log.d("ChatUIUtils", "parseMessageContent: '$content' -> ${elements.size} elements")
+    elements.forEachIndexed { index, element ->
+        when (element) {
+            is MessageElement.Text -> Log.d("ChatUIUtils", "  Element $index: Text('${element.content.take(50)}...')")
+            is MessageElement.CashuPayment -> Log.d("ChatUIUtils", "  Element $index: CashuPayment(${element.token.amount} ${element.token.unit})")
+        }
+    }
+    return elements
 }
 
 /**

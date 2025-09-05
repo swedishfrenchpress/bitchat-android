@@ -39,6 +39,14 @@ fun ParsedMessageContent(
     redeemedTokens: Set<String> = emptySet(),
     onRedeemClick: ((ParsedCashuToken) -> Unit)? = null
 ) {
+    Log.d("ParsedMessageContent", "ParsedMessageContent called with ${elements.size} elements")
+    elements.forEachIndexed { index, element ->
+        when (element) {
+            is MessageElement.Text -> Log.d("ParsedMessageContent", "Element $index: Text('${element.content.take(50)}...')")
+            is MessageElement.CashuPayment -> Log.d("ParsedMessageContent", "Element $index: CashuPayment(${element.token.amount} ${element.token.unit})")
+        }
+    }
+    
     // Use a Column with proper text and special element rendering
     Column(
         modifier = modifier,
@@ -53,6 +61,7 @@ fun ParsedMessageContent(
                     currentTextRow.add(element)
                 }
                 is MessageElement.CashuPayment -> {
+                    Log.d("ParsedMessageContent", "Found CashuPayment element: ${element.token.amount} ${element.token.unit}")
                     // Flush any accumulated text first
                     if (currentTextRow.isNotEmpty()) {
                         TextRow(elements = currentTextRow.toList())
@@ -60,6 +69,7 @@ fun ParsedMessageContent(
                     }
                     
                     // Show the payment chip on its own row
+                    Log.d("ParsedMessageContent", "About to render CashuPaymentChip")
                     CashuPaymentChip(
                         token = element.token,
                         onPaymentClick = onCashuPaymentClick,
@@ -67,6 +77,7 @@ fun ParsedMessageContent(
                         onRedeemClick = onRedeemClick,
                         modifier = Modifier.padding(vertical = 2.dp)
                     )
+                    Log.d("ParsedMessageContent", "CashuPaymentChip rendered")
                 }
             }
         }
@@ -113,6 +124,10 @@ fun CashuPaymentChip(
     isRedeemed: Boolean = false,
     onRedeemClick: ((ParsedCashuToken) -> Unit)? = null
 ) {
+    Log.d("CashuPaymentChip", "Rendering CashuPaymentChip for token: ${token.amount} ${token.unit}")
+    Log.d("CashuPaymentChip", "Token memo: ${token.memo}")
+    Log.d("CashuPaymentChip", "Is redeemed: $isRedeemed")
+    
     // Animation states
     var isAnimating by remember { mutableStateOf(false) }
     var showSuccessAnimation by remember { mutableStateOf(false) }

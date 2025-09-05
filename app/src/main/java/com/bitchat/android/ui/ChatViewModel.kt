@@ -388,7 +388,23 @@ class ChatViewModel(
      * Handle payment request from /pay command
      */
     private fun handlePaymentRequest(amount: Long, memo: String? = null) {
+        Log.d(TAG, "handlePaymentRequest called with amount: $amount, memo: $memo")
+        Log.d(TAG, "paymentManager is null: ${paymentManager == null}")
+        
+        if (paymentManager == null) {
+            Log.e(TAG, "PaymentManager is null! Cannot create payment.")
+            val systemMessage = BitchatMessage(
+                sender = "system",
+                content = "Error: Wallet not available. Please ensure wallet is properly initialized.",
+                timestamp = Date(),
+                isRelay = false
+            )
+            messageManager.addMessage(systemMessage)
+            return
+        }
+        
         paymentManager?.createPayment(amount, memo) { token ->
+            Log.d(TAG, "Payment token created, sending to chat: ${token.take(20)}...")
             // Send the created token to the current chat
             sendCashuTokenToChat(token)
         }
@@ -398,8 +414,10 @@ class ChatViewModel(
      * Send a Cashu token to the current chat
      */
     private fun sendCashuTokenToChat(token: String) {
+        Log.d(TAG, "sendCashuTokenToChat called with token: ${token.take(20)}...")
         val selectedPeer = state.getSelectedPrivateChatPeerValue()
         val currentChannelValue = state.getCurrentChannelValue()
+        Log.d(TAG, "selectedPeer: $selectedPeer, currentChannel: $currentChannelValue")
         
         if (selectedPeer != null) {
             // Send token as private message
@@ -425,10 +443,16 @@ class ChatViewModel(
             )
             
             if (currentChannelValue != null) {
+                Log.d(TAG, "Sending token to channel: $currentChannelValue")
                 channelManager.addChannelMessage(currentChannelValue, message, meshService.myPeerID)
                 meshService.sendMessage(token, emptyList(), currentChannelValue)
             } else {
+                Log.d(TAG, "Sending token to general chat")
+                Log.d(TAG, "Message content: '${message.content.take(50)}...'")
+                Log.d(TAG, "Message sender: '${message.sender}'")
+                Log.d(TAG, "Message timestamp: ${message.timestamp}")
                 messageManager.addMessage(message)
+                Log.d(TAG, "Message added to messageManager")
                 meshService.sendMessage(token, emptyList(), null)
             }
         }

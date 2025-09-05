@@ -1,5 +1,6 @@
 package com.bitchat.android.ui
 
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -104,6 +105,7 @@ fun MessagesList(
         reverseLayout = true
     ) {
                     items(messages.asReversed()) { message ->
+                        Log.d("MessagesList", "Rendering message: '${message.content.take(50)}...' from ${message.sender}")
                 MessageItem(
                     message = message,
                     currentUserNickname = currentUserNickname,
@@ -140,6 +142,7 @@ fun MessageItem(
         // Check if message contains special content (like Cashu tokens)
         val parsedElements = parseMessageContent(message.content)
         val hasSpecialContent = parsedElements.any { it !is MessageElement.Text }
+        Log.d("MessageComponents", "Message: '${message.content.take(50)}...' -> hasSpecialContent: $hasSpecialContent, elements: ${parsedElements.size}")
         
         if (hasSpecialContent) {
             // Use new parsed message layout for special content
