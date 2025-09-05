@@ -2,8 +2,6 @@ package com.bitchat.android.wallet.service
 
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.TimeoutCancellationException
 import android.util.Log
 import android.content.Context
 import com.bitchat.android.wallet.data.*
@@ -256,15 +254,10 @@ class CashuService {
                 )
                 Log.d(TAG, "Created CDK wallet successfully")
                 
-                // Try to fetch mint info to verify connection with timeout
+                // Try to fetch mint info to verify connection
                 try {
-                    withTimeout(10000) { // 10 second timeout
-                        val info = wallet?.getMintInfo()
-                        Log.d(TAG, "Successfully connected to mint: ${info}")
-                    }
-                } catch (e: TimeoutCancellationException) {
-                    Log.w(TAG, "Mint connection timeout: ${e.message}")
-                    // Continue anyway - wallet can work offline
+                    val info = wallet?.getMintInfo()
+                    Log.d(TAG, "Successfully connected to mint: ${info}")
                 } catch (e: Exception) {
                     Log.w(TAG, "Could not fetch mint info: ${e.message}")
                     // Continue anyway - wallet can work offline
@@ -297,10 +290,8 @@ class CashuService {
                 
                 val mintInfo = if (isCdkAvailable && wallet != null) {
                     try {
-                        // Get real mint info from CDK with timeout
-                        val mintInfoData = withTimeout(10000) { // 10 second timeout
-                            wallet!!.getMintInfo()
-                        }
+                        // Get real mint info from CDK
+                        val mintInfoData = wallet!!.getMintInfo()
                         Log.d(TAG, "Retrieved real mint info from CDK")
                         
                         MintInfo(
@@ -320,9 +311,6 @@ class CashuService {
                             icon = null,
                             time = Date()
                         )
-                    } catch (e: TimeoutCancellationException) {
-                        Log.w(TAG, "Mint info fetch timeout: ${e.message}")
-                        throw Exception("Mint connection timeout. The mint may be unreachable.")
                     } catch (e: FfiException) {
                         Log.w(TAG, "CDK FFI error getting mint info: ${e.message}")
                         throw e
@@ -521,16 +509,11 @@ class CashuService {
                 }
                 
                 Log.d(TAG, "Receiving token with amount: $amount")
-                val ffiAmount = withTimeout(15000) { // 15 second timeout for token redemption
-                    wallet!!.receive(token)
-                }
+                val ffiAmount = wallet!!.receive(token)
                 
                 Log.d(TAG, "Successfully received token: ${ffiAmount.value}")
                 Result.success(ffiAmount.value.toLong())
                 
-            } catch (e: TimeoutCancellationException) {
-                Log.e(TAG, "Token redemption timeout: ${e.message}")
-                Result.failure(Exception("Token redemption timed out. The mint may be unreachable or the token may be invalid."))
             } catch (e: FfiException) {
                 Log.e(TAG, "CDK FFI error receiving token: ${e.message}")
                 Result.failure(e)
