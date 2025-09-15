@@ -13,7 +13,6 @@ import com.bitchat.android.mesh.BluetoothMeshDelegate
 import com.bitchat.android.model.BitchatMessage
 import com.bitchat.android.model.RoutedPacket
 import com.bitchat.android.protocol.BitchatPacket
-import com.bitchat.android.nostr.NostrGeohashService
 import com.bitchat.android.ui.payment.PaymentManager
 import com.bitchat.android.ui.payment.PaymentStatus
 import com.bitchat.android.wallet.viewmodel.WalletViewModel

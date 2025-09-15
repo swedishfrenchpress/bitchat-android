@@ -45,6 +45,8 @@ fun TransactionHistoryScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(16.dp)
     ) {
         // Header Navigation (ChatHeader style - consistent with other wallet screens)
