@@ -39,11 +39,12 @@ fun ParsedMessageContent(
     redeemedTokens: Set<String> = emptySet(),
     onRedeemClick: ((ParsedCashuToken) -> Unit)? = null
 ) {
-    Log.d("ParsedMessageContent", "ParsedMessageContent called with ${elements.size} elements")
+    // CRITICAL DEBUG: Check if ParsedMessageContent is being called
+    android.util.Log.e("CRITICAL_DEBUG", "🚨 ParsedMessageContent called with ${elements.size} elements")
     elements.forEachIndexed { index, element ->
         when (element) {
-            is MessageElement.Text -> Log.d("ParsedMessageContent", "Element $index: Text('${element.content.take(50)}...')")
-            is MessageElement.CashuPayment -> Log.d("ParsedMessageContent", "Element $index: CashuPayment(${element.token.amount} ${element.token.unit})")
+            is MessageElement.Text -> android.util.Log.e("CRITICAL_DEBUG", "  Element $index: Text('${element.content.take(20)}...')")
+            is MessageElement.CashuPayment -> android.util.Log.e("CRITICAL_DEBUG", "  🎯 Element $index: CashuPayment(${element.token.amount} ${element.token.unit})")
         }
     }
     
@@ -61,7 +62,7 @@ fun ParsedMessageContent(
                     currentTextRow.add(element)
                 }
                 is MessageElement.CashuPayment -> {
-                    Log.d("ParsedMessageContent", "Found CashuPayment element: ${element.token.amount} ${element.token.unit}")
+                    android.util.Log.e("CRITICAL_DEBUG", "🚨 Found CashuPayment element: ${element.token.amount} ${element.token.unit}")
                     // Flush any accumulated text first
                     if (currentTextRow.isNotEmpty()) {
                         TextRow(elements = currentTextRow.toList())
@@ -69,7 +70,7 @@ fun ParsedMessageContent(
                     }
                     
                     // Show the payment chip on its own row
-                    Log.d("ParsedMessageContent", "About to render CashuPaymentChip")
+                    android.util.Log.e("CRITICAL_DEBUG", "🚨 ABOUT TO RENDER CashuPaymentChip")
                     CashuPaymentChip(
                         token = element.token,
                         onPaymentClick = onCashuPaymentClick,
@@ -124,9 +125,11 @@ fun CashuPaymentChip(
     isRedeemed: Boolean = false,
     onRedeemClick: ((ParsedCashuToken) -> Unit)? = null
 ) {
-    Log.d("CashuPaymentChip", "Rendering CashuPaymentChip for token: ${token.amount} ${token.unit}")
-    Log.d("CashuPaymentChip", "Token memo: ${token.memo}")
-    Log.d("CashuPaymentChip", "Is redeemed: $isRedeemed")
+    android.util.Log.e("CRITICAL_DEBUG", "🚨🚨🚨 CashuPaymentChip COMPOSABLE IS BEING CALLED!")
+    android.util.Log.e("CRITICAL_DEBUG", "Token: ${token.amount} ${token.unit}")
+    android.util.Log.e("CRITICAL_DEBUG", "Token memo: ${token.memo}")
+    android.util.Log.e("CRITICAL_DEBUG", "Is redeemed: $isRedeemed")
+    android.util.Log.e("CRITICAL_DEBUG", "🔥🔥🔥 RENDERING RED CARD WITH BLUE BORDER - THIS SHOULD BE VERY VISIBLE! 🔥🔥🔥")
     
     // Animation states
     var isAnimating by remember { mutableStateOf(false) }
@@ -193,12 +196,12 @@ fun CashuPaymentChip(
             ),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = animatedBackgroundColor
+            containerColor = Color.Red // TEMPORARY TEST: Make it very visible!
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp), // TEMPORARY TEST: Add elevation
         border = androidx.compose.foundation.BorderStroke(
-            0.25.dp, 
-            animatedBorderColor
+            3.dp, // TEMPORARY TEST: Make border thicker
+            Color.Blue // TEMPORARY TEST: Bright blue border
         )
     ) {
         // Define all animated colors using MaterialTheme design tokens

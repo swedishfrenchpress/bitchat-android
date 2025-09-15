@@ -44,11 +44,11 @@ fun getRSSIColor(rssi: Int): Color {
  */
 fun parseMessageContent(content: String): List<MessageElement> {
     val elements = MessageParser.instance.parseMessage(content)
-    Log.d("ChatUIUtils", "parseMessageContent: '$content' -> ${elements.size} elements")
+    android.util.Log.e("CRITICAL_DEBUG", "🔍 PARSE MESSAGE CONTENT: '$content' -> ${elements.size} elements")
     elements.forEachIndexed { index, element ->
         when (element) {
-            is MessageElement.Text -> Log.d("ChatUIUtils", "  Element $index: Text('${element.content.take(50)}...')")
-            is MessageElement.CashuPayment -> Log.d("ChatUIUtils", "  Element $index: CashuPayment(${element.token.amount} ${element.token.unit})")
+            is MessageElement.Text -> android.util.Log.e("CRITICAL_DEBUG", "  Element $index: Text('${element.content.take(50)}...')")
+            is MessageElement.CashuPayment -> android.util.Log.e("CRITICAL_DEBUG", "  🎯 Element $index: CashuPayment(${element.token.amount} ${element.token.unit})")
         }
     }
     return elements

@@ -41,12 +41,16 @@ class PaymentManager(
         onTokenCreated: (String) -> Unit
     ) {
         Log.d(TAG, "Creating payment for $amount sats")
+        Log.d(TAG, "WalletViewModel is null: ${walletViewModel == null}")
         
         // Set creating status
         _paymentStatus.value = PaymentStatus.Creating(amount)
         
         coroutineScope.launch {
             try {
+                // Check if wallet is properly initialized first
+                Log.d(TAG, "Attempting to create payment token...")
+                
                 // Use WalletViewModel's createCashuToken method
                 walletViewModel.createCashuTokenForPayment(
                     amount = amount,
@@ -63,8 +67,19 @@ class PaymentManager(
                     onError = { error ->
                         Log.e(TAG, "Payment creation failed: $error")
                         
+                        // Check if it's a transport error and provide helpful message
+                        val userFriendlyError = when {
+                            error.contains("transport error") -> {
+                                "Network error: Unable to connect to mint. Please check your internet connection and try again. If the problem persists, try resetting your wallet in Settings."
+                            }
+                            error.contains("No active mint") -> {
+                                "No mint configured: Please add a mint in wallet settings first."
+                            }
+                            else -> error
+                        }
+                        
                         // Set error status
-                        _paymentStatus.value = PaymentStatus.Error(amount, error)
+                        _paymentStatus.value = PaymentStatus.Error(amount, userFriendlyError)
                     }
                 )
                 

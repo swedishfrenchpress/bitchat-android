@@ -432,6 +432,8 @@ class CashuService {
                 )
                 
                 Log.d(TAG, "Created real token successfully from active mint")
+                Log.d(TAG, "Generated token: '${ffiToken.tokenString.take(100)}...'")
+                Log.d(TAG, "Token starts with cashuB: ${ffiToken.tokenString.startsWith("cashuB")}")
                 Result.success(ffiToken.tokenString)
                 
             } catch (e: FfiException) {

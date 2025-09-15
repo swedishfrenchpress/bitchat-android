@@ -56,6 +56,7 @@ fun MessagesList(
 ) {
     val listState = rememberLazyListState()
     
+    
     // Track if this is the first time messages are being loaded
     var hasScrolledToInitialPosition by remember { mutableStateOf(false) }
     
@@ -105,7 +106,12 @@ fun MessagesList(
         reverseLayout = true
     ) {
                     items(messages.asReversed()) { message ->
-                        Log.d("MessagesList", "Rendering message: '${message.content.take(50)}...' from ${message.sender}")
+                        // CRITICAL DEBUG: Show what messages are actually being rendered
+                        android.util.Log.e("CRITICAL_DEBUG", "=== RENDERING MESSAGE ===")
+                        android.util.Log.e("CRITICAL_DEBUG", "Content: '${message.content}'")
+                        android.util.Log.e("CRITICAL_DEBUG", "Sender: '${message.sender}'")
+                        android.util.Log.e("CRITICAL_DEBUG", "Is Cashu Token: ${message.content.startsWith("cashu")}")
+                        android.util.Log.e("CRITICAL_DEBUG", "========================")
                 MessageItem(
                     message = message,
                     currentUserNickname = currentUserNickname,
@@ -142,12 +148,22 @@ fun MessageItem(
         // Check if message contains special content (like Cashu tokens)
         val parsedElements = parseMessageContent(message.content)
         val hasSpecialContent = parsedElements.any { it !is MessageElement.Text }
-        Log.d("MessageComponents", "Message: '${message.content.take(50)}...' -> hasSpecialContent: $hasSpecialContent, elements: ${parsedElements.size}")
+        
+        // CRITICAL DEBUG: Check if we're detecting Cashu tokens
+        android.util.Log.e("CRITICAL_DEBUG", "MessageItem parsing for: '${message.content.take(50)}...'")
+        android.util.Log.e("CRITICAL_DEBUG", "Parsed elements count: ${parsedElements.size}")
+        android.util.Log.e("CRITICAL_DEBUG", "Has special content: $hasSpecialContent")
+        parsedElements.forEachIndexed { index, element ->
+            when (element) {
+                is MessageElement.Text -> android.util.Log.e("CRITICAL_DEBUG", "Element $index: Text")
+                is MessageElement.CashuPayment -> android.util.Log.e("CRITICAL_DEBUG", "Element $index: CashuPayment!!!")
+            }
+        }
         
         if (hasSpecialContent) {
             // Use new parsed message layout for special content
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 // Timestamp and sender header
                 MessageHeader(

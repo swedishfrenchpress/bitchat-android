@@ -1,5 +1,6 @@
 package com.bitchat.android.ui
 
+import android.util.Log
 import com.bitchat.android.mesh.BluetoothMeshService
 import com.bitchat.android.model.BitchatMessage
 import java.util.Date

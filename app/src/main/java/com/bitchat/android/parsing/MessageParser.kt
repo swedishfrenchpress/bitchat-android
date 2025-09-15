@@ -65,6 +65,7 @@ class MessageParser {
         val elements = mutableListOf<MessageElement>()
         
         try {
+            logDebug("parseMessage called with content: '${content.take(100)}...'")
             // Start with the full content as a single text element
             var remainingContent = content
             var currentIndex = 0
@@ -72,6 +73,28 @@ class MessageParser {
             // Look for Cashu tokens (cashuB...)
             val cashuPattern = """cashuB[A-Za-z0-9+/=_-]+""".toRegex()
             val matches = cashuPattern.findAll(content).toList()
+            logDebug("Found ${matches.size} Cashu token matches in message")
+            
+            // Debug: Try a more flexible pattern to see what we're actually getting
+            val flexiblePattern = """cashu[A-Za-z0-9+/=_-]+""".toRegex()
+            val flexibleMatches = flexiblePattern.findAll(content).toList()
+            logDebug("Found ${flexibleMatches.size} flexible Cashu matches")
+            
+            if (flexibleMatches.isNotEmpty()) {
+                flexibleMatches.forEachIndexed { index, match ->
+                    logDebug("Flexible match $index: '${match.value.take(50)}...'")
+                }
+            }
+            
+            // Debug: Show what we're looking for
+            if (content.contains("cashu")) {
+                logDebug("Content contains 'cashu' - checking pattern matching")
+                val allCashuMatches = content.split("cashu")
+                logDebug("Content split by 'cashu': ${allCashuMatches.size} parts")
+                allCashuMatches.forEachIndexed { index, part ->
+                    logDebug("Part $index: '${part.take(20)}...'")
+                }
+            }
             
             for (match in matches) {
                 // Add text before the match

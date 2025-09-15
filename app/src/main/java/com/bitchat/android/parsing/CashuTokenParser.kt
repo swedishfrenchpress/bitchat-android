@@ -78,7 +78,7 @@ class CashuTokenParser {
             }
             
             // Decode base64 (URL-safe)
-            val cborBytes = try {
+            val decodedBytes = try {
                 // Use standard Java Base64 for unit tests compatibility
                 try {
                     Base64.decode(base64Part, Base64.URL_SAFE)
@@ -91,8 +91,8 @@ class CashuTokenParser {
                 return createFallbackToken(tokenString)
             }
             
-            // Parse CBOR
-            val tokenData = parseCborToken(cborBytes) ?: return createFallbackToken(tokenString)
+            // Try to parse as JSON first (V3 format), then CBOR (V4 format)
+            val tokenData = parseJsonToken(decodedBytes) ?: parseCborToken(decodedBytes) ?: return createFallbackToken(tokenString)
             
             // Extract token information
             val mintUrl = tokenData["m"] as? String ?: ""
@@ -155,6 +155,84 @@ class CashuTokenParser {
             memo = null,
             proofCount = 1
         )
+    }
+    
+    /**
+     * Parse JSON-encoded V3 token data according to specification.
+     * 
+     * V3 Token format:
+     * {
+     *   "token": [
+     *     {
+     *       "mint": "mint_url",
+     *       "proofs": [
+     *         {
+     *           "amount": int,
+     *           "id": "keyset_id", 
+     *           "secret": "secret",
+     *           "C": "signature"
+     *         }
+     *       ]
+     *     }
+     *   ],
+     *   "unit": "sat",
+     *   "memo": "optional_memo"
+     * }
+     */
+    private fun parseJsonToken(jsonBytes: ByteArray): Map<String, Any>? {
+        try {
+            val jsonString = String(jsonBytes, Charsets.UTF_8)
+            logDebug("Attempting to parse JSON token: ${jsonString.take(100)}...")
+            
+            // Simple JSON parsing for V3 format
+            // This is a basic implementation - in production you'd want a proper JSON library
+            if (!jsonString.contains("\"token\"") || !jsonString.contains("\"proofs\"")) {
+                logDebug("JSON doesn't contain expected V3 token structure")
+                return null
+            }
+            
+            // Extract mint URL
+            val mintMatch = """"mint"\s*:\s*"([^"]+)"""".toRegex().find(jsonString)
+            val mintUrl = mintMatch?.groupValues?.get(1) ?: ""
+            
+            // Extract unit
+            val unitMatch = """"unit"\s*:\s*"([^"]+)"""".toRegex().find(jsonString)
+            val unit = unitMatch?.groupValues?.get(1) ?: "sat"
+            
+            // Extract memo
+            val memoMatch = """"memo"\s*:\s*"([^"]+)"""".toRegex().find(jsonString)
+            val memo = memoMatch?.groupValues?.get(1)
+            
+            // Count proofs and calculate total amount
+            val proofMatches = """"amount"\s*:\s*(\d+)""".toRegex().findAll(jsonString)
+            var totalAmount = 0L
+            var proofCount = 0
+            
+            for (match in proofMatches) {
+                totalAmount += match.groupValues[1].toLong()
+                proofCount++
+            }
+            
+            if (totalAmount == 0L) {
+                logWarning("V3 token has zero amount")
+                return null
+            }
+            
+            logDebug("Successfully parsed V3 JSON token: $totalAmount $unit from $mintUrl")
+            
+            return mapOf(
+                "m" to mintUrl,
+                "u" to unit,
+                "d" to (memo ?: ""),
+                "t" to listOf(mapOf(
+                    "p" to (0 until proofCount).map { mapOf("a" to (totalAmount / proofCount)) }
+                ))
+            )
+            
+        } catch (e: Exception) {
+            logDebug("Failed to parse as JSON token: ${e.message}")
+            return null
+        }
     }
     
     /**

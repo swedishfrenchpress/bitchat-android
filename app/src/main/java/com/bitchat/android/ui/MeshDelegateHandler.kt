@@ -1,5 +1,6 @@
 package com.bitchat.android.ui
 
+import android.util.Log
 import com.bitchat.android.mesh.BluetoothMeshDelegate
 import com.bitchat.android.mesh.BluetoothMeshService
 import com.bitchat.android.model.BitchatMessage
@@ -68,6 +69,7 @@ class MeshDelegateHandler(
                 }
             } else {
                 // Public mesh message - always store to preserve message history
+                Log.d("MeshDelegateHandler", "Adding public mesh message: '${message.content.take(50)}...' from ${message.sender}")
                 messageManager.addMessage(message)
 
                 // Check for mentions in mesh chat
