@@ -16,6 +16,7 @@ import kotlinx.coroutines.channels.actor
  * from the same peer simultaneously, causing session management conflicts.
  */
 class PacketProcessor(private val myPeerID: String) {
+    private val debugManager by lazy { try { com.bitchat.android.ui.debug.DebugSettingsManager.getInstance() } catch (e: Exception) { null } }
     
     companion object {
         private const val TAG = "PacketProcessor"
@@ -128,8 +129,16 @@ class PacketProcessor(private val myPeerID: String) {
         }
 
         var validPacket = true
-        Log.d(TAG, "Processing packet type ${MessageType.fromValue(packet.type)} from ${formatPeerForLog(peerID)}")
         val messageType = MessageType.fromValue(packet.type)
+        Log.d(TAG, "Processing packet type ${messageType} from ${formatPeerForLog(peerID)}")
+        // Verbose logging to debug manager (and chat via ChatViewModel observer)
+        try {
+            val mt = messageType?.name ?: packet.type.toString()
+            val routeDevice = routed.relayAddress
+            val nick = delegate?.getPeerNickname(peerID)
+            debugManager?.logIncomingPacket(peerID, nick, mt, routeDevice)
+        } catch (_: Exception) { }
+        
         
         // Handle public packet types (no address check needed)
         when (messageType) {
@@ -137,6 +146,7 @@ class PacketProcessor(private val myPeerID: String) {
             MessageType.MESSAGE -> handleMessage(routed)
             MessageType.LEAVE -> handleLeave(routed)
             MessageType.FRAGMENT -> handleFragment(routed)
+            MessageType.REQUEST_SYNC -> handleRequestSync(routed)
             else -> {
                 // Handle private packet types (address check required)
                 if (packetRelayManager.isPacketAddressedToMe(packet)) {
@@ -223,6 +233,15 @@ class PacketProcessor(private val myPeerID: String) {
         
         // Fragment relay is now handled by centralized PacketRelayManager
     }
+
+    /**
+     * Handle REQUEST_SYNC packets (public, TTL=1)
+     */
+    private suspend fun handleRequestSync(routed: RoutedPacket) {
+        val peerID = routed.peerID ?: "unknown"
+        Log.d(TAG, "Processing REQUEST_SYNC from ${formatPeerForLog(peerID)}")
+        delegate?.handleRequestSync(routed)
+    }
     
     /**
      * Handle delivery acknowledgment
@@ -296,6 +315,7 @@ interface PacketProcessorDelegate {
     fun handleMessage(routed: RoutedPacket)
     fun handleLeave(routed: RoutedPacket)
     fun handleFragment(packet: BitchatPacket): BitchatPacket?
+    fun handleRequestSync(routed: RoutedPacket)
     
     // Communication
     fun sendAnnouncementToPeer(peerID: String)
