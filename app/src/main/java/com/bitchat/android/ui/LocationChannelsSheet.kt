@@ -13,6 +13,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PinDrop
 import androidx.compose.material.icons.outlined.BookmarkBorder
@@ -23,7 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -51,6 +54,7 @@ fun LocationChannelsSheet(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     val locationManager = LocationChannelManager.getInstance(context)
     val bookmarksStore = remember { GeohashBookmarksStore.getInstance(context) }
 
@@ -67,6 +71,10 @@ fun LocationChannelsSheet(
 
     // Observe reactive participant counts
     val geohashParticipantCounts by viewModel.geohashParticipantCounts.observeAsState(emptyMap())
+    
+    // Observe joined channels to show custom ones
+    val joinedChannels by viewModel.joinedChannels.observeAsState(emptySet())
+    val currentChannel by viewModel.currentChannel.observeAsState()
 
     // UI state
     var customGeohash by remember { mutableStateOf("") }
@@ -515,6 +523,71 @@ fun LocationChannelsSheet(
                                 .padding(horizontal = 24.dp)
                                 .padding(top = 16.dp, bottom = 4.dp)
                         )
+                    }
+
+                    // Show existing joined custom channels (filter out mesh and geohash channels)
+                    val customChannels = joinedChannels.filter { 
+                        it.startsWith("#") && 
+                        !it.startsWith("#mesh") && 
+                        !bookmarks.any { gh -> "#$gh" == it }
+                    }
+                    
+                    if (customChannels.isNotEmpty()) {
+                        items(customChannels) { channelTag ->
+                            val channelName = channelTag.removePrefix("#")
+                            val isCurrentlySelected = currentChannel == channelTag
+
+                            ChannelRow(
+                                title = channelName,
+                                subtitle = "$channelTag • private channel",
+                                isSelected = isCurrentlySelected,
+                                titleColor = null,
+                                titleBold = false,
+                                trailingContent = {
+                                    Row {
+                                        // Invite button
+                                        TextButton(
+                                            onClick = {
+                                                // Simple invite functionality - copy channel name to clipboard
+                                                clipboardManager.setText(
+                                                    AnnotatedString("Join my private channel: $channelName")
+                                                )
+                                                // Show a simple toast-like feedback
+                                                privateChannelError = "Invite copied to clipboard!"
+                                                // Clear the message after a delay
+                                                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                                                    kotlinx.coroutines.delay(2000)
+                                                    privateChannelError = null
+                                                }
+                                            }
+                                        ) {
+                                            Text(
+                                                text = "invite",
+                                                fontSize = 11.sp,
+                                                fontFamily = FontFamily.Monospace,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        
+                                        // Leave channel button
+                                        IconButton(onClick = { 
+                                            viewModel.leaveChannel(channelTag)
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Leave channel",
+                                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    viewModel.switchToChannel(channelTag)
+                                    onDismiss()
+                                }
+                            )
+                        }
                     }
 
                     // Create private channel input
