@@ -72,6 +72,10 @@ fun LocationChannelsSheet(
     var customGeohash by remember { mutableStateOf("") }
     var customError by remember { mutableStateOf<String?>(null) }
     var isInputFocused by remember { mutableStateOf(false) }
+    
+    // Private channel state
+    var privateChannelName by remember { mutableStateOf("") }
+    var privateChannelError by remember { mutableStateOf<String?>(null) }
 
     // Bottom sheet state
     val sheetState = rememberModalBottomSheetState(
@@ -489,6 +493,124 @@ fun LocationChannelsSheet(
                         item(key = "geohash_error") {
                             Text(
                                 text = customError!!,
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace,
+                                color = Color.Red,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp)
+                            )
+                        }
+                    }
+
+                    // Private channel section
+                    item(key = "private_channel_header") {
+                        Text(
+                            text = "private channels",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .padding(top = 16.dp, bottom = 4.dp)
+                        )
+                    }
+
+                    // Create private channel input
+                    item(key = "create_private_channel") {
+                        Surface(
+                            color = Color.Transparent,
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "#",
+                                    fontSize = BASE_FONT_SIZE.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+
+                                BasicTextField(
+                                    value = privateChannelName,
+                                    onValueChange = { newValue ->
+                                        // Simple filtering: alphanumeric, dash, underscore
+                                        val filtered = newValue
+                                            .lowercase()
+                                            .filter { it.isLetterOrDigit() || it == '-' || it == '_' }
+                                            .take(32)
+                                        
+                                        privateChannelName = filtered
+                                        privateChannelError = null
+                                    },
+                                    textStyle = androidx.compose.ui.text.TextStyle(
+                                        fontSize = BASE_FONT_SIZE.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    ),
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    decorationBox = { innerTextField ->
+                                        if (privateChannelName.isEmpty()) {
+                                            Text(
+                                                text = "channel name",
+                                                fontSize = BASE_FONT_SIZE.sp,
+                                                fontFamily = FontFamily.Monospace,
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
+                                )
+
+                                val isValid = privateChannelName.length >= 3
+
+                                Button(
+                                    onClick = {
+                                        if (isValid) {
+                                            val channelTag = "#$privateChannelName"
+                                            val success = viewModel.joinChannel(channelTag)
+                                            if (success) {
+                                                // Switch to the new channel
+                                                viewModel.switchToChannel(channelTag)
+                                                onDismiss()
+                                            } else {
+                                                privateChannelError = "failed to create channel"
+                                            }
+                                        } else {
+                                            privateChannelError = "channel name must be at least 3 characters"
+                                        }
+                                    },
+                                    enabled = isValid,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f),
+                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                    )
+                                ) {
+                                    Text(
+                                        text = "create",
+                                        fontSize = BASE_FONT_SIZE.sp,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Error message for private channel
+                    if (privateChannelError != null) {
+                        item(key = "private_channel_error") {
+                            Text(
+                                text = privateChannelError!!,
                                 fontSize = 12.sp,
                                 fontFamily = FontFamily.Monospace,
                                 color = Color.Red,
