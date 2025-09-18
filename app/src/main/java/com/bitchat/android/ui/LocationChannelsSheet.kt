@@ -84,6 +84,8 @@ fun LocationChannelsSheet(
     // Private channel state
     var privateChannelName by remember { mutableStateOf("") }
     var privateChannelError by remember { mutableStateOf<String?>(null) }
+    var showInviteSheet by remember { mutableStateOf(false) }
+    var selectedChannelForInvite by remember { mutableStateOf("") }
 
     // Bottom sheet state
     val sheetState = rememberModalBottomSheetState(
@@ -548,17 +550,8 @@ fun LocationChannelsSheet(
                                         // Invite button
                                         TextButton(
                                             onClick = {
-                                                // Simple invite functionality - copy channel name to clipboard
-                                                clipboardManager.setText(
-                                                    AnnotatedString("Join my private channel: $channelName")
-                                                )
-                                                // Show a simple toast-like feedback
-                                                privateChannelError = "Invite copied to clipboard!"
-                                                // Clear the message after a delay
-                                                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
-                                                    kotlinx.coroutines.delay(2000)
-                                                    privateChannelError = null
-                                                }
+                                                selectedChannelForInvite = channelName
+                                                showInviteSheet = true
                                             }
                                         ) {
                                             Text(
@@ -793,6 +786,13 @@ fun LocationChannelsSheet(
             locationManager.refreshChannels()
         }
     }
+    
+    // Apple Pay inspired invite sheet
+    InviteSheet(
+        isPresented = showInviteSheet,
+        channelName = selectedChannelForInvite,
+        onDismiss = { showInviteSheet = false }
+    )
 }
 
 @Composable
