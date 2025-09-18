@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.util.Log
 import kotlinx.coroutines.delay
+import androidx.compose.ui.tooling.preview.Preview
+import com.bitchat.android.ui.theme.BitchatTheme
 
 /**
  * Composable components for rendering parsed message elements
@@ -383,4 +385,63 @@ private fun handleCashuPayment(token: ParsedCashuToken) {
     Log.d("CashuPayment", "Proofs: ${token.proofCount}")
     
     // TODO: Implement wallet integration
+}
+
+/**
+ * Preview for CashuPaymentChip - shows the component in Android Studio
+ */
+@Preview(showBackground = true)
+@Composable
+fun CashuPaymentChipPreview() {
+    BitchatTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Active (unredeemed) token with memo
+            CashuPaymentChip(
+                token = ParsedCashuToken(
+                    originalString = "cashuBtest123...",
+                    amount = 21,
+                    unit = "sat",
+                    mintUrl = "https://mint.example.com",
+                    memo = "Test payment",
+                    proofCount = 1
+                ),
+                isRedeemed = false,
+                onPaymentClick = { },
+                onRedeemClick = { }
+            )
+            
+            // Redeemed token
+            CashuPaymentChip(
+                token = ParsedCashuToken(
+                    originalString = "cashuBtest456...",
+                    amount = 50,
+                    unit = "sat",
+                    mintUrl = "https://mint.example.com",
+                    memo = "Coffee payment",
+                    proofCount = 2
+                ),
+                isRedeemed = true,
+                onPaymentClick = { },
+                onRedeemClick = { }
+            )
+            
+            // Token without memo
+            CashuPaymentChip(
+                token = ParsedCashuToken(
+                    originalString = "cashuBtest789...",
+                    amount = 100,
+                    unit = "sat",
+                    mintUrl = "https://mint.example.com",
+                    memo = null,
+                    proofCount = 1
+                ),
+                isRedeemed = false,
+                onPaymentClick = { },
+                onRedeemClick = { }
+            )
+        }
+    }
 }
