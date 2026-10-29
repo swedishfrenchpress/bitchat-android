@@ -398,6 +398,8 @@ internal fun HistoryDetailScreen(vm: WalletViewModel, id: String) {
             WalletNotice(it.title + ". " + it.body, tone = if (it.pending) NoticeTone.Warning else NoticeTone.Danger)
             Spacer(Modifier.height(12.dp))
         }
+        HistoryTimeline(entry)
+        Spacer(Modifier.height(12.dp))
         if (showToken && entry.token != null) {
             TokenShareBlock(entry.token, entry.lockedToPeer, null, null)
             Spacer(Modifier.height(12.dp))
@@ -431,7 +433,8 @@ internal fun HistoryDetailScreen(vm: WalletViewModel, id: String) {
                 WalletValueRow(stringResource(R.string.wallet_detail_proof_of_payment), pre.take(12) + "…", onCopy = { copyToClipboard(context, "preimage", pre) })
             }
         }
-        if (entry.isPending) {
+        // Only worth saying once something has been pending for a while.
+        if (entry.isPending && System.currentTimeMillis() - entry.createdAt > 10 * 60_000) {
             Spacer(Modifier.height(12.dp))
             WalletNotice(stringResource(R.string.wallet_detail_waiting_since, formatRelative(entry.createdAt)), icon = Icons.Outlined.History)
         }

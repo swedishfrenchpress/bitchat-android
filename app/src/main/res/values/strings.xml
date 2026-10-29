@@ -955,12 +955,32 @@
     <string name="wallet_detail_proof_of_payment" tools:ignore="MissingTranslation">Proof of payment</string>
     <string name="wallet_detail_locked_until" tools:ignore="MissingTranslation">Locked until %1$s</string>
     <string name="wallet_detail_lock" tools:ignore="MissingTranslation">Lock</string>
+    <string name="wallet_step_token_created" tools:ignore="MissingTranslation">Token created</string>
+    <string name="wallet_step_waiting_claim" tools:ignore="MissingTranslation">Waiting to be claimed</string>
+    <string name="wallet_step_claimed" tools:ignore="MissingTranslation">Claimed</string>
+    <string name="wallet_step_taken_back" tools:ignore="MissingTranslation">Taken back</string>
+    <string name="wallet_step_quoted" tools:ignore="MissingTranslation">Fee quoted</string>
+    <string name="wallet_step_paying" tools:ignore="MissingTranslation">Paying</string>
+    <string name="wallet_step_paid" tools:ignore="MissingTranslation">Paid</string>
+    <string name="wallet_step_failed" tools:ignore="MissingTranslation">Didn\'t go through</string>
+    <string name="wallet_step_invoice" tools:ignore="MissingTranslation">Invoice created</string>
+    <string name="wallet_step_payment" tools:ignore="MissingTranslation">Payment received</string>
+    <string name="wallet_step_minted" tools:ignore="MissingTranslation">Ecash issued</string>
+    <string name="wallet_step_expired" tools:ignore="MissingTranslation">Expired</string>
+    <string name="wallet_step_token_received" tools:ignore="MissingTranslation">Token received</string>
+    <string name="wallet_step_swapped" tools:ignore="MissingTranslation">Claimed with the mint</string>
+    <string name="wallet_step_spent" tools:ignore="MissingTranslation">Already spent</string>
+    <string name="wallet_cd_step" tools:ignore="MissingTranslation">%1$s: %2$s</string>
+    <string name="wallet_step_state_done" tools:ignore="MissingTranslation">done</string>
+    <string name="wallet_step_state_current" tools:ignore="MissingTranslation">in progress</string>
+    <string name="wallet_step_state_failed" tools:ignore="MissingTranslation">did not happen</string>
+    <string name="wallet_step_state_next" tools:ignore="MissingTranslation">not yet</string>
     <string name="wallet_detail_reclaim" tools:ignore="MissingTranslation">Take back</string>
     <string name="wallet_detail_reclaim_confirm_title" tools:ignore="MissingTranslation">Take this back?</string>
     <string name="wallet_detail_reclaim_confirm_body" tools:ignore="MissingTranslation">If it hasn\'t been claimed, the ecash returns to your wallet and the token you shared stops working.</string>
     <string name="wallet_detail_check" tools:ignore="MissingTranslation">Check status</string>
     <string name="wallet_detail_reshare" tools:ignore="MissingTranslation">Show token</string>
-    <string name="wallet_detail_waiting_since" tools:ignore="MissingTranslation">Waiting %1$s</string>
+    <string name="wallet_detail_waiting_since" tools:ignore="MissingTranslation">Started %1$s. Bitchat keeps checking while the wallet is open.</string>
 
     <string name="wallet_settings_title" tools:ignore="MissingTranslation">Settings</string>
     <string name="wallet_settings_words" tools:ignore="MissingTranslation">Recovery words</string>
