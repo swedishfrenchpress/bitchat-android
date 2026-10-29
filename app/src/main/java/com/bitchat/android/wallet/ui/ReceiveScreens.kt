@@ -131,6 +131,7 @@ class ReceiveLightningFlow(
 
 @Composable
 internal fun ReceiveLightningScreen(vm: WalletViewModel, flow: ReceiveLightningFlow, onDismiss: () -> Unit) {
+    AdoptDefaultMint(vm, flow.mint)
     val step by flow.step.collectAsStateWithLifecycle()
     val state by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current

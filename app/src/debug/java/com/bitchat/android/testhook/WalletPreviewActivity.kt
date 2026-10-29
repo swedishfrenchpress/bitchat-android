@@ -24,6 +24,8 @@ import com.bitchat.android.wallet.ui.WalletSheet
  * `adb shell am start -n com.bitchat.droid/com.bitchat.android.testhook.WalletPreviewActivity`
  * Optional extra `token` opens the claim flow for that token. Extra `cards=true` shows chat
  * payment cards instead: a synthetic claimable token plus the wallet's own pending sends.
+ * Extra `chat=true` shows the real chat screen (optionally `dm=<peer id>`), so wallet entry
+ * points in chat can be exercised without mesh onboarding.
  */
 class WalletPreviewActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,6 +33,22 @@ class WalletPreviewActivity : ComponentActivity() {
         val launch = intent.getStringExtra("token")?.let { WalletLaunch.Claim(it, viaChat = false) } ?: WalletLaunch.Home
         if (intent.getBooleanExtra("cards", false)) {
             setContent { BitchatTheme { CardGallery() } }
+            return
+        }
+        if (intent.getBooleanExtra("chat", false)) {
+            // The real ChatScreen and ChatViewModel, built exactly as MainActivity does, minus
+            // the onboarding (which requires system location services). Mesh transports are
+            // not started here; nothing is broadcast. Extra `dm` opens a DM with that peer ID.
+            val mesh = com.bitchat.android.service.MeshServiceHolder.getOrCreate(applicationContext)
+            val unified = com.bitchat.android.service.MeshServiceHolder.getUnifiedOrCreate(applicationContext)
+            val chat = androidx.lifecycle.ViewModelProvider(this, object : androidx.lifecycle.ViewModelProvider.Factory {
+                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                    @Suppress("UNCHECKED_CAST")
+                    return com.bitchat.android.ui.ChatViewModel(application, mesh, unified) as T
+                }
+            })[com.bitchat.android.ui.ChatViewModel::class.java]
+            intent.getStringExtra("dm")?.let(chat::showPrivateChatSheet)
+            setContent { BitchatTheme { com.bitchat.android.ui.ChatScreen(viewModel = chat) } }
             return
         }
         setContent {

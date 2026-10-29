@@ -170,6 +170,7 @@ class SendEcashFlow(
 
 @Composable
 internal fun SendEcashScreen(vm: WalletViewModel, flow: SendEcashFlow, onDismiss: () -> Unit) {
+    AdoptDefaultMint(vm, flow.mint)
     val step by flow.step.collectAsStateWithLifecycle()
     val state by vm.state.collectAsStateWithLifecycle()
     AnimatedContent(step, contentKey = { it::class }, transitionSpec = { pageFade }, label = "ecashSend") { s ->
@@ -418,6 +419,7 @@ class SendLightningFlow(
 
 @Composable
 internal fun SendLightningScreen(vm: WalletViewModel, flow: SendLightningFlow, onDismiss: () -> Unit) {
+    AdoptDefaultMint(vm, flow.mint)
     val step by flow.step.collectAsStateWithLifecycle()
     val state by vm.state.collectAsStateWithLifecycle()
     AnimatedContent(step, contentKey = { it::class }, transitionSpec = { pageFade }, label = "lnSend") { s ->

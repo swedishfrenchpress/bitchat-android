@@ -1133,9 +1133,12 @@ private fun CashuMessageContent(
             .replace("cashu:$token", "", ignoreCase = true)
             .replace(token, "")
     }.trim()
+    // In bubbles mode the card sits on the sender's side, under its (timestamp-only) bubble.
+    val alignEnd = bubbles && message.isFromSelf(currentUserNickname, meshService.myPeerID)
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start
     ) {
         TextMessageLayout(
             message = message,

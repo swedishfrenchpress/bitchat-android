@@ -182,3 +182,16 @@ internal fun WalletPage(
         }
     }
 }
+
+/**
+ * Flows opened before the wallet finished loading (e.g. straight from a chat) start with no
+ * mint. Adopt the default once mints are known, so the picker and the flow always agree.
+ */
+@Composable
+internal fun AdoptDefaultMint(vm: WalletViewModel, mint: kotlinx.coroutines.flow.MutableStateFlow<String?>) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    val urls = state.mints.map { it.mint.url }
+    LaunchedEffect(urls) {
+        if (mint.value == null || mint.value !in urls) mint.value = vm.defaultMint()
+    }
+}
