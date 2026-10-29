@@ -114,4 +114,34 @@ means the opt-in testnut suite (`TestnutIntegrationTest`, run with
 | 66 | Mint reports a melt **PAID without change** signatures (found in review) | The unused fee reserve (8 of 10 sat in the test) was lost | Ask for the blank outputs' signatures via NUT-09 restore | `WalletEdgeCaseTest` · paid melt without change in the response recovers the change… |
 | 67 | **Add mint never closed** after saving (found on device; regression from in-flow back) | The flow finished by calling back, which the flow itself swallows while saving | Flows that finish on their own pop the page directly | `WalletNavigationRobolectricTest` · adding a mint closes the add page once it is saved |
 | 68 | **12-digit amount at 2× font scale** | Fits: the hero amount auto-sizes instead of clipping; the mint limit shows inline | Step-based text auto-size | On device |
+| 69 | **Send from a DM** before the wallet finished loading (found driving the real chat on device) | No mint was selected, so it showed "0 sat available" next to a picker reading 100 sat, and Continue was disabled | Flows adopt the default mint once mints are known | On device, real `ChatScreen` |
+| 70 | **Our own payment card on the wrong side** in bubbles mode (found on device) | The card sat left while our bubble sat right | Cards align to the sender's side in bubbles mode | On device, real `ChatScreen` |
+
+## Live coverage against testnut
+
+Every case in the brief, and where it runs against the live mint
+(`TestnutEdgeCaseTest` / `TestnutIntegrationTest`, `CASHU_TESTNUT=1`). Live faults
+are injected only at the transport (`FaultyMintApi`): testnut really acts, then
+its answer is lost, so recovery runs against testnut's own restore and state
+endpoints.
+
+| Brief item | Live test against testnut | Result |
+|---|---|---|
+| Network drop mid-mint | network drop mid-mint is recovered from testnut with restore | pass |
+| Network drop mid-swap | network drop mid-swap while claiming finishes after an app restart | pass |
+| Network drop mid-melt | network drop mid-melt settles as paid from the quote state | pass |
+| App killed mid-operation | app killed mid-send finishes the token on restart (plus the restarts above) | pass |
+| Double spends | double spend, unknown mint and malformed tokens are refused; partially double-spent token claims the unspent remainder | pass |
+| Spent / malformed / unknown-mint tokens | double spend, unknown mint and malformed tokens are refused | pass |
+| Mint offline | mint offline queues the claim and completes it when testnut is back | pass |
+| Unit mismatch | unit mismatch, dust and zero amounts are refused (real usd keyset) | pass |
+| Zero / dust amounts | same test; dust measured against testnut's real 100 ppk fee | pass |
+| Fees over amount | same test | pass |
+| Expired quotes (melt) | expired melt quote is refused before anything is spent | pass |
+| Double taps | double tap creates a single token | pass |
+| Wrong or partial seed restore | wrong seed and partial seed restore recover nothing; correct-seed restore in `TestnutIntegrationTest` | pass |
+| P2PK, DLEQ, melt change, reclaim | `TestnutIntegrationTest` | pass |
+| Keyset rotation | **Fake mint only**: rotation is an operator action on testnut | `CashuWalletTest`, `WalletEdgeCaseTest` |
+| Expired *mint* quote (unpaid) | **Fake mint only**: testnut pays every invoice within seconds | `CashuWalletTest`, `WalletEdgeCaseTest` |
+| Overflow amounts | **Local only**: rejected while decoding, before any mint call | `TokenCodecTest` |
 
