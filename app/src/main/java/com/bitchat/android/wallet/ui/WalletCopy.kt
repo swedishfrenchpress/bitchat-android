@@ -117,6 +117,20 @@ internal fun formatDateTime(context: Context, millis: Long): String =
 internal fun formatRelative(millis: Long, now: Long = System.currentTimeMillis()): String =
     DateUtils.getRelativeTimeSpanString(millis, now, DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE).toString()
 
+/**
+ * Runs [block] but takes at least [millis], so a fast mint does not flash a spinner and a
+ * result in the same instant (the loading state stays readable).
+ */
+internal suspend fun <T> atLeast(millis: Long = 500, block: suspend () -> T): T {
+    val started = System.currentTimeMillis()
+    try {
+        return block()
+    } finally {
+        val elapsed = System.currentTimeMillis() - started
+        if (elapsed < millis) kotlinx.coroutines.delay(millis - elapsed)
+    }
+}
+
 /** "4m 12s" style countdown for invoice and quote expiry. */
 internal fun formatCountdown(seconds: Long): String = when {
     seconds <= 0 -> "0s"

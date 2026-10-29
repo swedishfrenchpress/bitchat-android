@@ -279,8 +279,10 @@ class ReceiveEcashFlow(
         scope.launch {
             try {
                 // Adding an unknown mint was confirmed on the review screen.
-                if (!review.inspection.mintKnown) wallet.addMint(review.inspection.token.mint)
-                val entry = wallet.receive(token, historyId = historyId, viaChat = viaChat)
+                val entry = atLeast {
+                    if (!review.inspection.mintKnown) wallet.addMint(review.inspection.token.mint)
+                    wallet.receive(token, historyId = historyId, viaChat = viaChat)
+                }
                 _step.value = Step.Claimed(entry)
             } catch (e: WalletException) {
                 _step.value = when (e.error) {

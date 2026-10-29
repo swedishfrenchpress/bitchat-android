@@ -124,13 +124,15 @@ class SendEcashFlow(
         _step.value = review.copy(creating = true)
         scope.launch {
             try {
-                val entry = wallet.send(
-                    review.preview.mintUrl, review.preview.amount,
-                    lock = lockRequest(review.lock),
-                    memo = memo.value,
-                    viaChat = chat != null,
-                    historyId = historyId,
-                )
+                val entry = atLeast {
+                    wallet.send(
+                        review.preview.mintUrl, review.preview.amount,
+                        lock = lockRequest(review.lock),
+                        memo = memo.value,
+                        viaChat = chat != null,
+                        historyId = historyId,
+                    )
+                }
                 wallet.putSetting(WalletService.SETTING_LAST_MINT, review.preview.mintUrl)
                 _step.value = Step.Token(entry, sentToChat = false)
             } catch (e: WalletException) {
@@ -383,7 +385,7 @@ class SendLightningFlow(
         _step.value = Step.Input(invoice, invalid = false, scanning = false, quoting = true)
         scope.launch {
             _step.value = try {
-                Step.Review(wallet.previewMelt(url, invoice))
+                Step.Review(atLeast { wallet.previewMelt(url, invoice) })
             } catch (e: WalletException) {
                 Step.Failed(errorCopy(app, e.error), requote = e.error == WalletError.MintUnreachable)
             }
@@ -399,7 +401,7 @@ class SendLightningFlow(
                 if (_step.value is Step.Paying) _step.value = Step.Paying(slow = true)
             }
             _step.value = try {
-                Step.Paid(wallet.melt(review.preview, historyId))
+                Step.Paid(atLeast(800) { wallet.melt(review.preview, historyId) })
             } catch (e: WalletException) {
                 when (e.error) {
                     WalletError.PaymentPending, WalletError.OutcomeUnknown -> Step.Pending
