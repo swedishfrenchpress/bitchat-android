@@ -230,6 +230,9 @@ internal fun MintDetailScreen(vm: WalletViewModel, url: String) {
         })
         WalletButton(stringResource(R.string.wallet_mint_remove), onClick = { confirmRemove = true }, tone = WalletButtonTone.Destructive)
     }) {
+        if (vm.wallet.isSuspect(url)) {
+            WalletNotice(stringResource(R.string.wallet_mint_suspect), tone = NoticeTone.Danger, icon = Icons.Filled.WarningAmber)
+        }
         MintSummary(url, mint.info, mint.keysets.filter { it.active }.maxOfOrNull { it.inputFeePpk } ?: 0, mint.units)
         AboutSectionLabel(stringResource(R.string.wallet_mint_balance))
         WalletCard {

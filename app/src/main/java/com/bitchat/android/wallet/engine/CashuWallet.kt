@@ -299,7 +299,37 @@ class CashuWallet(
             commitLocked(WalletChanges(putOperations = listOf(op), putCounters = counters, putHistory = listOf(entry)))
             op
         }
-        return runOperation(op) { swapAndFinalize(op, HistoryStatus.COMPLETED) }
+        return try {
+            runOperation(op) { swapAndFinalize(op, HistoryStatus.COMPLETED) }
+        } catch (e: WalletException) {
+            if (e.error != WalletError.TokenAlreadySpent) throw e
+            salvage(token, historyId, viaChat) ?: throw e
+        }
+    }
+
+    /**
+     * After a claim failed because coins were spent, claims whatever is still unspent (the
+     * sender double-spent part of the token). The salvaged entry keeps the original token's
+     * fingerprint, so the chat card reads "Claimed" rather than offering a dead claim again.
+     */
+    private suspend fun salvage(token: Token, failedHistoryId: String, viaChat: Boolean): HistoryEntry? {
+        val mint = ledger.mints[token.mint] ?: return null
+        val proofs = runCatching { resolveKeysets(token.proofs, mint) }.getOrNull() ?: return null
+        val states = runCatching { call { api(mint.url).checkState(proofs.map { it.y() }) } }.getOrNull() ?: return null
+        val unspent = proofs.zip(states).filter { it.second.state == ProofState.UNSPENT }.map { it.first }
+        if (unspent.isEmpty() || unspent.size == proofs.size) return null
+        val partial = token.copy(proofs = unspent)
+        if (Amounts.inputFee(unspent, mint.feePpk) >= partial.amount) return null
+        val entry = try {
+            receive(encode(partial), historyId = newId(), viaChat = viaChat)
+        } catch (e: WalletException) {
+            return null
+        }
+        return mutex.withLock {
+            val marked = (ledger.history[entry.id] ?: entry).copy(note = HistoryNote.PARTIAL, tokenFingerprint = fingerprint(token))
+            commitLocked(WalletChanges(putHistory = listOf(marked), removeHistory = listOf(failedHistoryId)))
+            marked
+        }
     }
 
     // MARK: - Ecash send
@@ -848,6 +878,7 @@ class CashuWallet(
                 forSend.map { stored(it, op.mintUrl, op.unit, ProofStatus.SENT_PENDING, op.historyId) },
             removeOperations = listOf(op.id),
             putHistory = listOfNotNull(history),
+            putSettings = suspectFlags(op.mintUrl, proofs.map { it.keysetId }),
         ))
         history ?: throw WalletException(WalletError.Internal)
     }
@@ -1076,22 +1107,36 @@ class CashuWallet(
         }
     }
 
-    /** Unblinds and verifies DLEQ when present. Null means the signature is not acceptable. */
+    /**
+     * Unblinds a mint signature. A DLEQ proof that fails verification does not discard the
+     * coin (the mint already consumed our inputs); the coin is kept without the proof and the
+     * mint is flagged as suspect (decisions.md D-025). Null means no usable coin at all.
+     */
     private fun unblind(output: PendingOutput, signature: BlindSignature, keyset: Keyset): Proof? {
         val key = keyset.keyFor(signature.amount) ?: return null
         val blindSignature = runCatching { Secp256k1.decodePoint(signature.c) }.getOrNull() ?: return null
-        signature.dleq?.let { dleq ->
-            if (!Bdhke.verifyDleq(dleq.e, dleq.s, key, Secp256k1.decodePoint(output.b), blindSignature)) return null
+        val dleqValid = signature.dleq?.let { dleq ->
+            Bdhke.verifyDleq(dleq.e, dleq.s, key, Secp256k1.decodePoint(output.b), blindSignature)
         }
+        if (dleqValid == false) suspectMints += keyset.id
         val c = Bdhke.unblind(blindSignature, output.r, key)
         return Proof(
             amount = signature.amount,
             keysetId = signature.keysetId,
             secret = output.secret,
             c = Secp256k1.compressedHex(c),
-            dleq = signature.dleq?.let { DleqProof(it.e, it.s, Hex.encode(Secp256k1.scalarBytes(output.r))) },
+            dleq = signature.dleq?.takeIf { dleqValid == true }?.let { DleqProof(it.e, it.s, Hex.encode(Secp256k1.scalarBytes(output.r))) },
         )
     }
+
+    /** Keyset IDs whose mint returned a DLEQ proof that did not verify, pending a settings flag. */
+    private val suspectMints = ConcurrentHashMap.newKeySet<String>()
+
+    /** Moves suspect flags gathered during unblinding into persisted settings. */
+    private fun suspectFlags(mintUrl: String, keysetIds: Collection<String>): Map<String, String?> =
+        if (keysetIds.any { suspectMints.remove(it) }) mapOf(suspectKey(mintUrl) to "dleq") else emptyMap()
+
+    fun isSuspect(mintUrl: String): Boolean = ledger.settings[suspectKey(mintUrl)] != null
 
     /** Maps short keyset IDs to full ones and checks every amount exists in its keyset. */
     private fun resolveKeysets(proofs: List<Proof>, mint: MintRecord): List<Proof> = proofs.map { p ->
@@ -1295,6 +1340,7 @@ class CashuWallet(
 
     companion object {
         const val KEY_P2PK_COUNTER = "p2pk_refund_counter"
+        private fun suspectKey(mintUrl: String) = "suspect:$mintUrl"
         /** How far counters jump after colliding with outputs signed in a previous life of this seed. */
         private const val COUNTER_RESYNC_STEP = 1_000L
         private const val MAX_MEMO = 80

@@ -124,3 +124,43 @@ Adding a mint by URL or by claiming a token from an unknown mint shows the
 mint's info (name, host, supported features) and a clear warning that the
 mint holds the funds. Nothing is fetched from a mint until the person asks to
 add or claim.
+
+### D-020: Locking to a peer is opt-in per send
+The review screen offers "Lock to <peer>" whenever the peer's Nostr key is
+known and the mint enforces NUT-11, but it starts **off**. A locked token can
+only be claimed by a wallet that signs with the recipient's Nostr key. Bitchat
+Android does that automatically; iOS Bitchat and most standalone wallets do not
+yet, so a default lock would park the funds until the 7-day refund. Locking is
+the right choice for offline payments between two Bitchat Android users, and
+the copy says so.
+
+### D-021: Debug-only wallet host
+`app/src/debug/.../WalletPreviewActivity` hosts the wallet sheet without the
+mesh onboarding (which requires Bluetooth and system location services). It
+exists for on-device QA and PR screenshots, follows the existing debug-hook
+pattern, and is never in release builds.
+
+### D-022: Tokens carry DLEQ proofs
+Outgoing tokens include `e`, `s`, `r` per proof, so a recipient on the mesh can
+check the mint signature without internet. That makes a QR denser (about 3x per
+proof). Tokens above 1,800 characters skip the QR and offer copy/share.
+
+### D-023: Mint traffic follows Bitchat's Tor setting
+Bitchat defaults to Tor (Arti). Mint calls go through the same SOCKS route, so
+a mint sees a Tor exit, not the device. On a cold Tor circuit the first call
+can time out; the copy says "Can't reach the mint… check your connection or
+Tor" and Try again works once the circuit is up. Live testing on an emulator
+confirmed both the timeout and the retry.
+
+### D-024: Partially spent tokens are salvaged
+If a claim fails because some of the token's coins were already spent (the
+sender double-spent part of it), the wallet checks each coin's state and claims
+the unspent remainder. The person sees how much was salvaged instead of an
+all-or-nothing failure.
+
+### D-025: A mint that returns invalid DLEQ proofs is flagged, not trusted silently
+NUT-12 requires verifying DLEQ proofs from the mint. Failing the operation
+outright would strand coins the mint already swapped. Instead the wallet keeps
+the unblinded coins without the bad proof, marks the mint as suspect, and shows
+a warning on it. A bad DLEQ can be a tagging attempt, so the person should move
+their funds elsewhere.

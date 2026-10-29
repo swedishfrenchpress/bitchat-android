@@ -103,6 +103,8 @@ enum class HistoryNote {
     LOCK_ACTIVE,
     RESTORED,
     INVOICE_ALREADY_PAID,
+    /** Some of the token's coins were already spent; the rest was claimed. */
+    PARTIAL,
 }
 
 /**

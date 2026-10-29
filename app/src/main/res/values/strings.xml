@@ -953,6 +953,8 @@
     <string name="wallet_note_rejected" tools:ignore="MissingTranslation">Refused by the mint</string>
     <string name="wallet_note_via_chat" tools:ignore="MissingTranslation">via chat</string>
     <string name="wallet_note_invoice_paid" tools:ignore="MissingTranslation">Invoice was already paid, nothing spent</string>
+    <string name="wallet_note_partial" tools:ignore="MissingTranslation">Part was already spent; claimed the rest</string>
+    <string name="wallet_mint_suspect" tools:ignore="MissingTranslation">This mint sent signatures that don\'t check out, which can be an attempt to track you. Your coins were kept, but consider moving them to another mint.</string>
     <string name="wallet_detail_title" tools:ignore="MissingTranslation">Details</string>
     <string name="wallet_detail_amount" tools:ignore="MissingTranslation">Amount</string>
     <string name="wallet_detail_fee" tools:ignore="MissingTranslation">Fees</string>

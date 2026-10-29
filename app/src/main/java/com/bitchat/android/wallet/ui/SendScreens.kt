@@ -99,7 +99,11 @@ class SendEcashFlow(
         CashuWallet.LockRequest(chat!!.lockPubkey!!, System.currentTimeMillis() / 1000 + LOCK_SECONDS)
     } else null
 
-    fun review(lock: Boolean = lockAvailable()) {
+    /**
+     * Locking starts off: a recipient whose app cannot sign with their Nostr key (iOS Bitchat
+     * today, most other wallets) could not claim it for a week (decisions.md D-020).
+     */
+    fun review(lock: Boolean = (_step.value as? Step.Review)?.lock ?: false) {
         val url = mint.value ?: return
         problem.value = null
         try {

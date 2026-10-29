@@ -143,7 +143,11 @@ class BackupFlow(val words: List<String>, private val onFinished: () -> Unit) {
 
     private fun confirmStep(round: Int): Step.Confirm {
         val position = positions[round]
-        val decoys = words.filterIndexed { i, w -> i != position && w != words[position] }.distinct().shuffled().take(3)
+        // Decoys come from the same phrase (so order matters), topped up from the wordlist when
+        // the phrase repeats words.
+        val decoys = (words.filterIndexed { i, w -> i != position && w != words[position] }.distinct().shuffled() +
+            com.bitchat.android.wallet.cashu.Bip39Wordlist.words.shuffled().take(8))
+            .filter { it != words[position] }.distinct().take(3)
         return Step.Confirm(round, position, (decoys + words[position]).shuffled(), wrong = false)
     }
 
