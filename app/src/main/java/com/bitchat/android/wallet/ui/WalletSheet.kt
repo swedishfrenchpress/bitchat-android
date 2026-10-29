@@ -68,6 +68,9 @@ fun WalletSheet(launch: WalletLaunch, onDismiss: () -> Unit) {
                 navigationIcon = if (stack.size > 1 && terminal == 0) {
                     { WalletBackIcon { vm.back() } }
                 } else null,
+                actions = {
+                    if (stack.last() == WalletRoute.Home) WalletSettingsIcon { vm.push(WalletRoute.Settings) }
+                },
             )
             val distance = with(LocalDensity.current) { 28.dp.roundToPx() }
             AnimatedContent(

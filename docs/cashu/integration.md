@@ -23,7 +23,7 @@ So **a token posted publicly belongs to the fastest claimer**. Bitchat already
 required `/pay <token> public` for this, and the wallet keeps that stance: its
 send-in-chat entry exists only in DMs. Posting a token publicly stays a
 deliberate `/pay … public`. The send flow also carries a last-chance dialog
-("whoever claims this token first gets it") for any future public entry point.
+("Whoever claims it first gets it.") for any future public entry point.
 DMs are the place for money.
 
 Tokens travel as plain message text (`cashuB…`, or legacy `cashuA…`). No new
@@ -43,15 +43,17 @@ results are cached per wallet snapshot, so long chats scroll cheaply.
 
 | Status | When | Line |
 |---|---|---|
-| Claimable | A token we have no record of | Tap to claim |
-| Locked to us | P2PK lock we can sign | Locked to you · tap to claim |
-| Locked to someone else | P2PK lock we cannot sign | Locked to someone else (muted) |
-| Claimed by us | We swapped it | Claimed (muted) |
-| Claim queued | Claim journaled, mint not reached yet | Claim queued · waiting for the mint |
-| Spent | Our claim found it spent | Already claimed (muted) |
-| Our pending send | We sent it, not yet claimed | Your token · waiting to be claimed |
-| Our send claimed | The recipient swapped it | Claimed by recipient (muted) |
-| Our send reclaimed | We took it back | You took it back (muted) |
+| Claimable | A token we have no record of | tap to claim |
+| Locked to us | P2PK lock we can sign | locked to you · tap to claim |
+| Locked to someone else | P2PK lock we cannot sign | locked to someone else (muted) |
+| Claimed by us | We swapped it | claimed (muted) |
+| Claim queued | Claim journaled, mint not reached yet | claim queued · waiting for the mint |
+| Spent | Our claim found it spent | already claimed (muted) |
+| Our pending send | We sent it, not yet claimed | your token · unclaimed |
+| Our send claimed | The recipient swapped it | claimed by recipient (muted) |
+| Our send reclaimed | We took it back | you took it back (muted) |
+
+Status lines are lowercase, like Bitchat's own chat system lines (D-026).
 
 Tapping opens the claim review inside the wallet sheet, after onboarding if no
 wallet exists yet; the claim then resumes automatically. Long-press keeps the
@@ -62,36 +64,36 @@ pending sends. Tokens are detected with the existing `CashuTokenDecoder`
 ## 3. Offline and the double-spend problem
 
 The mesh works without internet, but a mint is a server. Without the mint,
-nobody can know whether a token is already spent. The wallet is explicit about
-three levels of assurance, and the claim review shows the matching notes:
+nobody can know whether a token is already spent. There are three levels of
+assurance. The claim review states the one that matters in a single line: who
+can spend the token right now.
 
-1. **Bearer token, no DLEQ.** Nothing can be verified offline. Copy: "Not yours
-   yet. Until you claim it, whoever had this token can still spend it." and
-   "No signature proof included, so it can only be checked with the mint."
+1. **Bearer token, no DLEQ.** Nothing can be verified offline. Line: "unlocked ·
+   claim it before the sender spends it".
 2. **Bearer token with DLEQ (NUT-12).** The mint's signature is checked on the
    device, so the token is not counterfeit, but the sender may still have spent
-   it elsewhere. Copy: "Mint signature checked on this device." plus the
-   bearer warning.
+   it elsewhere. Same line as above. A passing check is the quiet default; a
+   failing one replaces it with "signatures don't match the mint · don't accept
+   it" and hides Claim.
 3. **Locked to the recipient (NUT-11) with DLEQ.** Genuine, and only the
    recipient can spend it until the lock time. The sender cannot double-spend
    because they cannot produce the recipient's signature. This is the strongest
-   offline guarantee Cashu offers. Copy: "Locked to you until … After that the
-   sender can take it back if you haven't claimed it."
+   offline guarantee Cashu offers. Line: "locked to you until …".
 
 Bitchat-sent tokens always include DLEQ proofs (`e`, `s`, `r`) so level 2 is
 available to every recipient (D-022).
 
 **Sending offline.** Without the mint, only coins we already hold can be sent,
 and only if some subset sums exactly to the amount plus the recipient's claim
-fee. The review says "Ready offline: uses coins you already hold." If no subset
-fits, the failure screen offers the nearest amounts that *can* be sent offline
-("Without the mint, you can send exactly 64 sat or 128 sat."). Locking needs a
+fee. While the mint is down, the review says "offline · uses coins you already
+hold". If no subset fits, the failure screen offers the nearest amounts that
+*can* be sent offline ("offline, you can send exactly 64 sat or 128 sat"). Locking needs a
 swap, so a lock is never offered while the mint is unreachable.
 
 **Receiving offline.** Claiming needs the mint. If it is unreachable the claim
 is journaled ("Claim queued") and retried automatically on the next sync: on
 wallet open and every 30 s while the wallet is open. The card shows the queued
-state, and the copy repeats that the sender could still spend it until then.
+state, and the result line repeats that the sender can still spend it until then.
 
 ## 4. Locking to a peer (P2PK)
 
@@ -126,7 +128,7 @@ identity**, the review offers "Lock to <name>":
 - A locked send can be taken back after its lock time ("You can take this back
   after …").
 - Pending sends are checked against the mint (NUT-07) on sync, so the sender's
-  history and card turn into "Claimed by recipient" once the token is redeemed.
+  history and card turn into "claimed by recipient" once the token is redeemed.
 
 ## 6. Panic wipe
 

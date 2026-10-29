@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -76,33 +77,23 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun OnboardingScreen(vm: WalletViewModel) {
     val colorScheme = MaterialTheme.colorScheme
-    WalletPage(bottom = {
+    WalletPage(centered = true, bottom = {
         WalletButton(stringResource(R.string.wallet_onboarding_create), onClick = vm::createWallet)
         WalletButton(stringResource(R.string.wallet_onboarding_restore), onClick = vm::startRestore, tone = WalletButtonTone.Neutral)
     }) {
-        Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        // What a mint is, what bearer means, and why the words matter are each said once, on
+        // the screen where they apply, rather than all up front.
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(painterResource(R.drawable.ic_spec_ecash), contentDescription = null, tint = colorScheme.primary, modifier = Modifier.size(56.dp))
             Spacer(Modifier.height(16.dp))
             Text(stringResource(R.string.wallet_onboarding_title), fontFamily = BitchatFontFamily, fontWeight = FontWeight.Bold, fontSize = 24.sp, color = colorScheme.primary)
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 stringResource(R.string.wallet_onboarding_body),
-                fontFamily = BitchatFontFamily, fontSize = 14.sp, lineHeight = 20.sp,
-                color = colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 28.dp),
+                fontFamily = BitchatFontFamily, fontSize = 12.sp, lineHeight = 17.sp,
+                color = LocalBitchatPalette.current.textTertiary, textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 32.dp),
             )
-        }
-        Spacer(Modifier.height(16.dp))
-        WalletCard {
-            listOf(
-                R.string.wallet_onboarding_point_bearer,
-                R.string.wallet_onboarding_point_mint,
-                R.string.wallet_onboarding_point_words,
-                R.string.wallet_onboarding_point_panic,
-            ).forEachIndexed { i, res ->
-                if (i > 0) WalletCardDivider()
-                WalletRow(title = stringResource(res), painter = painterResource(if (i == 3) R.drawable.ic_spec_panic else R.drawable.ic_spec_check))
-            }
         }
     }
 }
@@ -211,11 +202,7 @@ private fun ShowWords(flow: BackupFlow, revealed: Boolean, onLater: () -> Unit) 
         WalletButton(stringResource(R.string.wallet_words_written), onClick = flow::written, enabled = revealed)
         WalletButton(stringResource(R.string.wallet_words_later), onClick = onLater, tone = WalletButtonTone.Neutral)
     }) {
-        Text(
-            stringResource(R.string.wallet_words_intro),
-            fontFamily = BitchatFontFamily, fontSize = 13.sp, lineHeight = 19.sp, color = colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = AboutHorizontalPadding, vertical = 12.dp),
-        )
+        Spacer(Modifier.height(8.dp))
         Box(contentAlignment = Alignment.Center) {
             WalletCard(
                 Modifier
@@ -245,8 +232,8 @@ private fun ShowWords(flow: BackupFlow, revealed: Boolean, onLater: () -> Unit) 
                 )
             }
         }
-        Spacer(Modifier.height(12.dp))
-        WalletNotice(stringResource(R.string.wallet_onboarding_point_panic), tone = NoticeTone.Warning)
+        Spacer(Modifier.height(8.dp))
+        WalletNotice(stringResource(R.string.wallet_words_intro), tone = NoticeTone.Warning, icon = Icons.Filled.WarningAmber)
     }
 }
 
@@ -378,11 +365,7 @@ internal fun RestoreScreen(vm: WalletViewModel, flow: RestoreFlow) {
             is RestoreFlow.Step.Words -> {
                 val count = Bip39.normalize(s.text).size
                 WalletPage(bottom = { WalletButton(stringResource(R.string.wallet_continue), onClick = flow::submitWords, enabled = count >= 12) }) {
-                    Text(
-                        stringResource(R.string.wallet_restore_words_prompt),
-                        fontFamily = BitchatFontFamily, fontSize = 13.sp, lineHeight = 19.sp, color = colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = AboutHorizontalPadding, vertical = 12.dp),
-                    )
+                    Spacer(Modifier.height(12.dp))
                     WalletTextField(
                         value = s.text,
                         onValueChange = flow::updateWords,
@@ -396,18 +379,15 @@ internal fun RestoreScreen(vm: WalletViewModel, flow: RestoreFlow) {
                             imeAction = ImeAction.Done,
                         ),
                     )
-                    Text(
-                        stringResource(R.string.wallet_restore_count, count),
-                        fontFamily = BitchatFontFamily, fontSize = 12.sp, color = LocalBitchatPalette.current.textTertiary,
-                        modifier = Modifier.padding(horizontal = AboutHorizontalPadding + 4.dp, vertical = 8.dp),
-                    )
+                    // One line under the field: the word count, or what's wrong with the words.
                     val problem = when (val p = s.problem) {
                         null -> null
                         is RestoreFlow.Problem.Count -> stringResource(R.string.wallet_restore_count, p.count)
                         is RestoreFlow.Problem.Unknown -> stringResource(R.string.wallet_restore_unknown_words, p.positions.joinToString(", "))
                         RestoreFlow.Problem.Checksum -> stringResource(R.string.wallet_restore_bad_checksum)
                     }
-                    if (problem != null) WalletNotice(problem, tone = NoticeTone.Danger)
+                    Spacer(Modifier.height(4.dp))
+                    WalletNotice(problem ?: stringResource(R.string.wallet_restore_count, count), tone = if (problem != null) NoticeTone.Danger else NoticeTone.Info)
                 }
             }
             RestoreFlow.Step.Searching -> WalletPage(centered = true) {
@@ -419,12 +399,6 @@ internal fun RestoreScreen(vm: WalletViewModel, flow: RestoreFlow) {
                 WalletNotice(
                     stringResource(if (s.foundBackup) R.string.wallet_restore_backup_found else R.string.wallet_restore_backup_none),
                     tone = if (s.foundBackup) NoticeTone.Positive else NoticeTone.Info,
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    stringResource(R.string.wallet_restore_mints_body),
-                    fontFamily = BitchatFontFamily, fontSize = 13.sp, lineHeight = 19.sp, color = colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = AboutHorizontalPadding, vertical = 8.dp),
                 )
                 if (s.mints.isNotEmpty()) {
                     AboutSectionLabel(stringResource(R.string.wallet_restore_mints_title))
@@ -475,8 +449,7 @@ internal fun RestoreScreen(vm: WalletViewModel, flow: RestoreFlow) {
                         else stringResource(R.string.wallet_restore_done_found, totals.entries.joinToString(" · ") { formatAmount(it.value, it.key) }),
                     )
                     failed.forEach { result ->
-                        WalletNotice(stringResource(R.string.wallet_restore_mint_failed, MintUrl.host(result.mintUrl)), tone = NoticeTone.Warning)
-                        Spacer(Modifier.height(8.dp))
+                        WalletNotice(stringResource(R.string.wallet_restore_mint_failed, MintUrl.host(result.mintUrl)), tone = NoticeTone.Warning, centered = true)
                     }
                 }
             }

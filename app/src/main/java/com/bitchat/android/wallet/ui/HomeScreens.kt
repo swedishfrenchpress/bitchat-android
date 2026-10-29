@@ -17,11 +17,9 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.outlined.CloudUpload
-import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -78,19 +76,8 @@ internal fun HomeScreen(vm: WalletViewModel) {
     val pendingCount = state.history.count { it.isPending && it.kind != HistoryKind.ECASH_SEND }
 
     WalletPage {
-        if (unreachable.isNotEmpty() && state.mints.isNotEmpty()) {
-            WalletNotice(stringResource(R.string.wallet_offline_banner), tone = NoticeTone.Warning, icon = Icons.Filled.CloudOff)
-            Spacer(Modifier.height(12.dp))
-        }
-
         // Balance
-        Column(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                stringResource(R.string.wallet_balance_label).uppercase(),
-                fontFamily = BitchatFontFamily, fontSize = 11.sp, fontWeight = FontWeight.Medium,
-                letterSpacing = 0.8.sp, color = palette.textTertiary,
-            )
-            Spacer(Modifier.height(6.dp))
+        Column(Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             AmountHero(
                 amount = sat,
                 unit = "sat",
@@ -116,39 +103,16 @@ internal fun HomeScreen(vm: WalletViewModel) {
                     Text(parts.joinToString(" · "), fontFamily = BitchatFontFamily, fontSize = 12.sp, color = palette.accentOrange)
                 }
             }
-        }
-
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            WalletButton(
-                stringResource(R.string.wallet_receive), onClick = { vm.push(WalletRoute.ReceiveChoice) },
-                modifier = Modifier.weight(1f), enabled = state.mints.isNotEmpty(),
-            )
-            WalletButton(
-                stringResource(R.string.wallet_send), onClick = { vm.push(WalletRoute.SendChoice) },
-                modifier = Modifier.weight(1f), enabled = hasFunds,
-            )
-        }
-
-        if (!vm.backedUp && hasFunds) {
-            Spacer(Modifier.height(4.dp))
-            WalletCard {
-                WalletRow(
-                    title = stringResource(R.string.wallet_backup_nudge_title),
-                    subtitle = stringResource(R.string.wallet_backup_nudge_body),
-                    icon = Icons.Filled.WarningAmber,
-                    iconTint = palette.accentOrange,
-                    onClick = vm::showBackup,
-                    trailing = { Chevron() },
-                )
+            if (unreachable.isNotEmpty() && state.mints.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                WalletNotice(stringResource(R.string.wallet_offline_banner), tone = NoticeTone.Warning, icon = Icons.Filled.CloudOff, centered = true)
             }
         }
 
+        // Without a mint there is nothing to receive or send: adding one is the only action.
         if (state.mints.isEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            WalletEmptyState(stringResource(R.string.wallet_empty_title), stringResource(R.string.wallet_no_mints_body))
+            WalletNotice(stringResource(R.string.wallet_no_mints_body), centered = true)
+            Spacer(Modifier.height(12.dp))
             Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 WalletButton(stringResource(R.string.wallet_add_mint), onClick = { vm.startAddMint() })
                 if (WalletService.suggestTestMint) {
@@ -162,12 +126,35 @@ internal fun HomeScreen(vm: WalletViewModel) {
             return@WalletPage
         }
 
-        AboutSectionLabel(stringResource(R.string.wallet_section_recent))
-        if (state.history.isEmpty()) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            WalletButton(
+                stringResource(R.string.wallet_receive), onClick = { vm.push(WalletRoute.ReceiveChoice) },
+                modifier = Modifier.weight(1f),
+            )
+            WalletButton(
+                stringResource(R.string.wallet_send), onClick = { vm.push(WalletRoute.SendChoice) },
+                modifier = Modifier.weight(1f), enabled = hasFunds,
+            )
+        }
+
+        if (!vm.backedUp && hasFunds) {
+            Spacer(Modifier.height(4.dp))
             WalletCard {
-                WalletRow(title = stringResource(R.string.wallet_empty_title), subtitle = stringResource(R.string.wallet_empty_body), icon = Icons.Outlined.History, iconTint = palette.textTertiary)
+                WalletRow(
+                    title = stringResource(R.string.wallet_backup_nudge_title),
+                    icon = Icons.Filled.WarningAmber,
+                    iconTint = palette.accentOrange,
+                    onClick = vm::showBackup,
+                    trailing = { Chevron() },
+                )
             }
-        } else {
+        }
+
+        if (state.history.isNotEmpty()) {
+            AboutSectionLabel(stringResource(R.string.wallet_section_recent))
             WalletCard {
                 state.history.take(4).forEachIndexed { i, entry ->
                     if (i > 0) WalletCardDivider()
@@ -188,16 +175,6 @@ internal fun HomeScreen(vm: WalletViewModel) {
             }
             WalletCardDivider()
             WalletRow(title = stringResource(R.string.wallet_add_mint), icon = Icons.Filled.Add, titleColor = colorScheme.primary, onClick = { vm.startAddMint() })
-        }
-
-        Spacer(Modifier.height(20.dp))
-        WalletCard {
-            WalletRow(
-                title = stringResource(R.string.wallet_settings_title),
-                icon = Icons.Filled.Settings,
-                onClick = { vm.push(WalletRoute.Settings) },
-                trailing = { Chevron() },
-            )
         }
     }
 }
@@ -282,13 +259,11 @@ internal fun HistoryRow(entry: HistoryEntry, hidden: Boolean, onClick: () -> Uni
 
 @Composable
 internal fun ReceiveChoiceScreen(vm: WalletViewModel) {
-    val state by vm.state.collectAsStateWithLifecycle()
     WalletPage {
         Spacer(Modifier.height(8.dp))
         WalletCard {
             WalletRow(
                 title = stringResource(R.string.wallet_receive_lightning),
-                subtitle = stringResource(R.string.wallet_receive_lightning_desc),
                 icon = Icons.Filled.Bolt,
                 onClick = { vm.startReceiveLightning() },
                 trailing = { Chevron() },
@@ -296,15 +271,10 @@ internal fun ReceiveChoiceScreen(vm: WalletViewModel) {
             WalletCardDivider()
             WalletRow(
                 title = stringResource(R.string.wallet_receive_ecash),
-                subtitle = stringResource(R.string.wallet_receive_ecash_desc),
                 painter = painterResource(R.drawable.ic_spec_ecash),
                 onClick = { vm.startClaim() },
                 trailing = { Chevron() },
             )
-        }
-        if (state.mints.isEmpty()) {
-            Spacer(Modifier.height(12.dp))
-            WalletNotice(stringResource(R.string.wallet_no_mints_body))
         }
     }
 }
@@ -316,7 +286,6 @@ internal fun SendChoiceScreen(vm: WalletViewModel) {
         WalletCard {
             WalletRow(
                 title = stringResource(R.string.wallet_send_ecash),
-                subtitle = stringResource(R.string.wallet_send_ecash_desc),
                 painter = painterResource(R.drawable.ic_spec_ecash),
                 onClick = { vm.startSendEcash() },
                 trailing = { Chevron() },
@@ -324,7 +293,6 @@ internal fun SendChoiceScreen(vm: WalletViewModel) {
             WalletCardDivider()
             WalletRow(
                 title = stringResource(R.string.wallet_send_lightning),
-                subtitle = stringResource(R.string.wallet_send_lightning_desc),
                 icon = Icons.Filled.Bolt,
                 onClick = { vm.startSendLightning() },
                 trailing = { Chevron() },
@@ -342,7 +310,8 @@ internal fun HistoryScreen(vm: WalletViewModel) {
     val hidden = state.settings[WalletService.SETTING_HIDE_BALANCE] == "true" && !revealed
     WalletPage {
         if (state.history.isEmpty()) {
-            WalletEmptyState(stringResource(R.string.wallet_history_empty), stringResource(R.string.wallet_empty_body))
+            Spacer(Modifier.height(8.dp))
+            WalletNotice(stringResource(R.string.wallet_history_empty))
             return@WalletPage
         }
         Spacer(Modifier.height(8.dp))
@@ -395,25 +364,22 @@ internal fun HistoryDetailScreen(vm: WalletViewModel, id: String) {
             Text(historyTitle(context, entry) + " · " + historyStatus(context, entry), fontFamily = BitchatFontFamily, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
         }
         error?.let {
-            WalletNotice(it.title + ". " + it.body, tone = if (it.pending) NoticeTone.Warning else NoticeTone.Danger)
-            Spacer(Modifier.height(12.dp))
+            WalletNotice(it.line(), tone = if (it.pending) NoticeTone.Warning else NoticeTone.Danger)
+            Spacer(Modifier.height(8.dp))
         }
         HistoryTimeline(entry)
         Spacer(Modifier.height(12.dp))
         if (showToken && entry.token != null) {
-            TokenShareBlock(entry.token, entry.lockedToPeer, null, null)
+            TokenShareBlock(entry.token)
             Spacer(Modifier.height(12.dp))
         }
+        // Amount and status are already in the header above.
         WalletCard {
-            WalletValueRow(stringResource(R.string.wallet_detail_status), historyStatus(context, entry))
-            WalletCardDivider(plain = true)
-            WalletValueRow(stringResource(R.string.wallet_detail_amount), formatAmount(entry.amount, entry.unit))
+            WalletValueRow(stringResource(R.string.wallet_detail_mint), mint?.displayName ?: entry.mintUrl)
             if (entry.fee > 0) {
                 WalletCardDivider(plain = true)
                 WalletValueRow(stringResource(R.string.wallet_detail_fee), formatAmount(entry.fee, entry.unit))
             }
-            WalletCardDivider(plain = true)
-            WalletValueRow(stringResource(R.string.wallet_detail_mint), mint?.displayName ?: entry.mintUrl)
             WalletCardDivider(plain = true)
             WalletValueRow(stringResource(R.string.wallet_detail_date), formatDateTime(context, entry.createdAt))
             entry.memo?.let {
@@ -432,11 +398,6 @@ internal fun HistoryDetailScreen(vm: WalletViewModel, id: String) {
                 WalletCardDivider(plain = true)
                 WalletValueRow(stringResource(R.string.wallet_detail_proof_of_payment), pre.take(12) + "…", onCopy = { copyToClipboard(context, "preimage", pre) })
             }
-        }
-        // Only worth saying once something has been pending for a while.
-        if (entry.isPending && System.currentTimeMillis() - entry.createdAt > 10 * 60_000) {
-            Spacer(Modifier.height(12.dp))
-            WalletNotice(stringResource(R.string.wallet_detail_waiting_since, formatRelative(entry.createdAt)), icon = Icons.Outlined.History)
         }
     }
 
@@ -504,8 +465,6 @@ internal fun SettingsScreen(vm: WalletViewModel) {
                 onChange = { vm.setSetting(WalletService.SETTING_HIDE_BALANCE, it.toString()) },
             )
         }
-        Spacer(Modifier.height(12.dp))
-        WalletNotice(stringResource(R.string.wallet_onboarding_point_panic), tone = NoticeTone.Warning, icon = Icons.Filled.WarningAmber)
     }
     if (confirmWords) {
         AlertDialog(

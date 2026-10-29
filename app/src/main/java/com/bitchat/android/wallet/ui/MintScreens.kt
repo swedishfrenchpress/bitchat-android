@@ -100,7 +100,10 @@ class AddMintFlow(
             _step.value = try {
                 Step.Preview(wallet.previewMint(input.text), adding = false)
             } catch (e: WalletException) {
-                input.copy(checking = false, error = errorCopy(app, if (e.error is WalletError.MintRejected) WalletError.MintNotFound else e.error))
+                val copy = errorCopy(app, if (e.error is WalletError.MintRejected) WalletError.MintNotFound else e.error)
+                // No money moves when adding a mint, so "nothing was spent" would only be noise.
+                val body = if (e.error == WalletError.MintUnreachable) app.getString(R.string.wallet_error_mint_check_unreachable_body) else copy.body
+                input.copy(checking = false, error = copy.copy(body = body))
             }
         }
     }
@@ -146,18 +149,16 @@ internal fun AddMintScreen(vm: WalletViewModel, flow: AddMintFlow) {
                     }
                 }
                 s.error?.let {
-                    Spacer(Modifier.height(8.dp))
-                    WalletNotice(it.title + ". " + it.body, tone = NoticeTone.Danger)
+                    Spacer(Modifier.height(4.dp))
+                    WalletNotice(it.line(), tone = NoticeTone.Danger)
                 }
-                Spacer(Modifier.height(12.dp))
-                WalletNotice(stringResource(R.string.wallet_add_mint_warning), tone = NoticeTone.Warning, icon = Icons.Filled.WarningAmber)
             }
             is AddMintFlow.Step.Preview -> WalletPage(bottom = {
+                // Back (arrow or gesture) returns to the address; no separate Cancel.
                 WalletButton(stringResource(R.string.wallet_add_mint_confirm), onClick = flow::confirm, loading = s.adding)
-                WalletButton(stringResource(R.string.wallet_cancel), onClick = flow::edit, tone = WalletButtonTone.Neutral)
             }) {
                 MintSummary(s.preview.url, s.preview.info, s.preview.keysets.filter { it.active }.maxOfOrNull { it.inputFeePpk } ?: 0, s.preview.units)
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
                 WalletNotice(stringResource(R.string.wallet_add_mint_warning), tone = NoticeTone.Warning, icon = Icons.Filled.WarningAmber)
             }
         }
@@ -176,26 +177,19 @@ private fun MintSummary(url: String, info: MintInfo?, feePpk: Long, units: Set<S
             Text(it.take(200), fontFamily = BitchatFontFamily, fontSize = 13.sp, color = colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 28.dp))
         }
     }
-    AboutSectionLabel(stringResource(R.string.wallet_mint_supports))
-    val yesText = stringResource(R.string.wallet_yes)
-    val noText = stringResource(R.string.wallet_no)
+    // What the mint can do, as one dot-separated line; anything missing is simply absent.
+    val features = listOfNotNull(
+        stringResource(R.string.wallet_mint_feature_lightning).takeIf { info?.mintMethods?.any { it.method == "bolt11" } == true },
+        stringResource(R.string.wallet_mint_feature_restore).takeIf { info?.supports(9) == true },
+        stringResource(R.string.wallet_mint_feature_lock).takeIf { info?.supports(11) == true },
+        stringResource(R.string.wallet_mint_feature_offline).takeIf { info?.supports(12) == true },
+    )
     WalletCard {
-        fun yes(b: Boolean) = if (b) yesText else noText
-        WalletValueRow(stringResource(R.string.wallet_mint_feature_lightning), yes(info?.mintMethods?.any { it.method == "bolt11" } == true))
-        WalletCardDivider(plain = true)
-        WalletValueRow(stringResource(R.string.wallet_mint_feature_restore), yes(info?.supports(9) == true))
-        WalletCardDivider(plain = true)
-        WalletValueRow(stringResource(R.string.wallet_mint_feature_lock), yes(info?.supports(11) == true))
-        WalletCardDivider(plain = true)
-        WalletValueRow(stringResource(R.string.wallet_mint_feature_offline), yes(info?.supports(12) == true))
+        WalletValueRow(stringResource(R.string.wallet_mint_supports), features.joinToString(" · ").ifEmpty { "–" }, maxLines = 2)
         WalletCardDivider(plain = true)
         WalletValueRow(stringResource(R.string.wallet_mint_fee), if (feePpk == 0L) stringResource(R.string.wallet_mint_fee_none) else stringResource(R.string.wallet_mint_fee_value, feePpk.toString()))
         WalletCardDivider(plain = true)
-        WalletValueRow(stringResource(R.string.wallet_mint_units), units.sorted().joinToString(", "))
-        info?.version?.let {
-            WalletCardDivider(plain = true)
-            WalletValueRow(stringResource(R.string.wallet_mint_software), it.take(40))
-        }
+        WalletValueRow(stringResource(R.string.wallet_mint_units), units.sorted().joinToString(" · "))
     }
     info?.motd?.takeIf { it.isNotBlank() }?.let {
         AboutSectionLabel(stringResource(R.string.wallet_mint_motd))
@@ -225,7 +219,7 @@ internal fun MintDetailScreen(vm: WalletViewModel, url: String) {
                     val removed = vm.wallet.checkProofStates(url)
                     if (removed == 0) allUnspent else resources.getString(R.string.wallet_mint_checked, removed)
                 } catch (e: WalletException) {
-                    errorCopy(context, e.error).let { it.title + ". " + it.body }
+                    errorCopy(context, e.error).line()
                 }
                 checking = false
             }
@@ -249,7 +243,7 @@ internal fun MintDetailScreen(vm: WalletViewModel, url: String) {
             }
         }
         checkResult?.let {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(4.dp))
             WalletNotice(it)
         }
     }
@@ -272,7 +266,7 @@ internal fun MintDetailScreen(vm: WalletViewModel, url: String) {
                             vm.wallet.removeMint(url, force = true)
                             vm.popRoute()
                         } catch (e: WalletException) {
-                            checkResult = errorCopy(context, e.error).let { it.title + ". " + it.body }
+                            checkResult = errorCopy(context, e.error).line()
                         }
                     }
                 }) { Text(stringResource(R.string.wallet_mint_remove_confirm), fontFamily = BitchatFontFamily, color = MaterialTheme.colorScheme.error) }

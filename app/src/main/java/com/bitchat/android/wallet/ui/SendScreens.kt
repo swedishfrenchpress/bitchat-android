@@ -16,11 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -215,7 +213,7 @@ internal fun SendEcashScreen(vm: WalletViewModel, flow: SendEcashFlow, onDismiss
                         lower != null || higher != null -> stringResource(R.string.wallet_offline_suggest_one, formatAmount((lower ?: higher)!!, "sat"))
                         else -> null
                     }
-                    if (hint != null) WalletNotice(hint, icon = Icons.Filled.CloudOff)
+                    if (hint != null) WalletNotice(hint, icon = Icons.Filled.CloudOff, centered = true)
                 }
             }
         }
@@ -233,7 +231,6 @@ private fun SendReview(step: SendEcashFlow.Step.Review, flow: SendEcashFlow) {
     }) {
         Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             AmountHero(p.amount, p.unit)
-            Text(stringResource(R.string.wallet_review_they_receive), fontFamily = BitchatFontFamily, fontSize = 12.sp, color = LocalBitchatPalette.current.textTertiary)
         }
         WalletCard {
             WalletValueRow(stringResource(R.string.wallet_review_mint), flow.mint.value?.let { com.bitchat.android.wallet.cashu.MintUrl.host(it) } ?: "")
@@ -263,14 +260,10 @@ private fun SendReview(step: SendEcashFlow.Step.Review, flow: SendEcashFlow) {
             placeholder = stringResource(R.string.wallet_review_memo_hint), singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         )
-        Spacer(Modifier.height(12.dp))
-        WalletNotice(
-            stringResource(if (p.offline) R.string.wallet_review_offline_ready else R.string.wallet_review_needs_mint),
-            icon = if (p.offline) Icons.Filled.CloudOff else Icons.Outlined.Info,
-        )
-        if (!step.lock) {
+        // Only worth a line when the mint is down and this still works.
+        if (flow.mintOffline && p.offline) {
             Spacer(Modifier.height(8.dp))
-            WalletNotice(stringResource(R.string.wallet_token_body_bearer), tone = NoticeTone.Warning, icon = Icons.Filled.LockOpen)
+            WalletNotice(stringResource(R.string.wallet_review_offline_ready), icon = Icons.Filled.CloudOff)
         }
     }
 }
@@ -294,9 +287,10 @@ private fun TokenStep(step: SendEcashFlow.Step.Token, flow: SendEcashFlow, onDon
         WalletStatusPanel(
             StatusKind.Success,
             stringResource(if (step.sentToChat) R.string.wallet_token_sent_chat else R.string.wallet_token_title),
-            stringResource(R.string.wallet_token_pending_note),
+            if (step.entry.lockedToPeer) stringResource(R.string.wallet_token_body_locked, flow.chat?.peerLabel ?: stringResource(R.string.wallet_peer_fallback))
+            else stringResource(R.string.wallet_token_body_bearer),
         )
-        TokenShareBlock(token, step.entry.lockedToPeer, flow.chat?.peerLabel, null)
+        TokenShareBlock(token)
     }
     if (confirmPublic) {
         AlertDialog(
@@ -311,18 +305,15 @@ private fun TokenStep(step: SendEcashFlow.Step.Token, flow: SendEcashFlow, onDon
 
 /** QR (when it fits), plus copy and the system share sheet. */
 @Composable
-internal fun TokenShareBlock(token: String, locked: Boolean, peerLabel: String?, extra: (@Composable () -> Unit)?) {
+internal fun TokenShareBlock(token: String) {
     val context = LocalContext.current
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         if (token.length <= MAX_QR_LENGTH) {
             WalletQrCode(token, stringResource(R.string.wallet_cd_token_qr), size = 220.dp)
         } else {
-            WalletNotice(stringResource(R.string.wallet_token_too_long_qr))
+            WalletNotice(stringResource(R.string.wallet_token_too_long_qr), centered = true)
         }
         Spacer(Modifier.height(12.dp))
-        if (locked) {
-            WalletNotice(stringResource(R.string.wallet_token_body_locked, peerLabel ?: stringResource(R.string.wallet_peer_fallback)), tone = NoticeTone.Positive, icon = Icons.Filled.Lock)
-        }
         Row(Modifier.fillMaxWidth().padding(horizontal = AboutHorizontalPadding, vertical = 8.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)) {
             WalletButton(stringResource(R.string.wallet_token_copy), onClick = { copyToClipboard(context, "Cashu token", token) }, tone = WalletButtonTone.Neutral, modifier = Modifier.weight(1f))
             WalletButton(stringResource(R.string.wallet_share), onClick = {
@@ -330,7 +321,6 @@ internal fun TokenShareBlock(token: String, locked: Boolean, peerLabel: String?,
                 runCatching { context.startActivity(Intent.createChooser(send, null)) }
             }, tone = WalletButtonTone.Neutral, modifier = Modifier.weight(1f))
         }
-        extra?.invoke()
     }
 }
 
@@ -491,10 +481,8 @@ private fun MeltReview(preview: CashuWallet.MeltPreview, flow: SendLightningFlow
             WalletCardDivider(plain = true)
             WalletValueRow(stringResource(R.string.wallet_melt_max_total), formatAmount(preview.maxTotal, q.unit), emphasized = true)
         }
-        Spacer(Modifier.height(12.dp))
-        WalletNotice(stringResource(R.string.wallet_melt_reserve_note), icon = Icons.Filled.Bolt)
         if (remaining != null) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
             Text(
                 if (expired) stringResource(R.string.wallet_error_quote_expired_title) else stringResource(R.string.wallet_melt_quote_expires, formatCountdown(remaining)),
                 fontFamily = BitchatFontFamily, fontSize = 12.sp, textAlign = TextAlign.Center,

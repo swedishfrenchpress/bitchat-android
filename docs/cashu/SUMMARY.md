@@ -51,10 +51,10 @@ seed-derived key, with no client tag. On by default with a toggle.
 **UI** (`wallet/ui`): one full-height Bitchat sheet with a page stack.
 - Onboarding, recovery words (blurred, screenshot-blocked) with a 3-word check.
 - Restore, with the Nostr mint-list lookup and manual mints.
-- Home: balance, per-mint balances, recent history, backup nudge, offline
-  banner.
+- Home: balance, Receive/Send, recent history, mints, a backup nudge, and an
+  offline line. Settings sit in the top bar.
 - Receive: Lightning keypad, invoice QR, auto-polling; ecash paste, scan, or
-  tap in chat, then a review with trust notes, then claim.
+  tap in chat, then a review with a one-line trust status, then claim.
 - Send: ecash keypad, review with fees and an optional lock, then a token card
   with QR, copy, share, and send-in-chat. Lightning: invoice, review with fee
   reserve and quote countdown, then paying, then the result.
@@ -67,6 +67,10 @@ seed-derived key, with no client tag. On by default with a toggle.
   and amounts that auto-size at large font scales.
 - Every error has calm copy in string resources: what happened, whether funds
   are safe, and what to do next.
+- Copy is minimal and in Bitchat's two registers (D-026): sentence case for
+  titles and buttons, lowercase fragments for status ("unlocked · claim it
+  before the sender spends it"). There are no explainer boxes: a warning gets
+  one line, only where money is at risk.
 
 **Chat integration**:
 - Existing payment chips show the token's status from local state and open
@@ -79,7 +83,7 @@ seed-derived key, with no client tag. On by default with a toggle.
 - Tokens stay plain `cashuB` text, so iOS and other wallets keep working.
 
 The thinking behind the chat behavior is in `integration.md`; individual
-calls are in `decisions.md` (D-001 to D-025).
+calls are in `decisions.md` (D-001 to D-026).
 
 ## How it was tested
 
@@ -114,7 +118,7 @@ but without the onboarding that requires system location. Verified there:
 - the DM header coin action, through send, review, and "Send in chat";
 - the token arriving as a card in the DM transcript and persisting across restart;
 - tapping our own card, which offers "Take back";
-- taking it back, after which the card updates in place to "You took it back".
+- taking it back, after which the card updates in place to "you took it back".
 
 Two bugs surfaced on that path and were fixed: a send started from a DM before
 the wallet loaded had no mint selected, and our own cards sat on the wrong side

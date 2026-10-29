@@ -41,7 +41,7 @@ class WalletUiInstrumentedTest {
     fun chatCardShowsAmountMintAndAClaimCallToAction() {
         compose.setContent { BitchatTheme { CashuPaymentChip(token) } }
         compose.onNodeWithText("21 sat · mint.example").assertIsDisplayed()
-        compose.onNodeWithText("Tap to claim").assertIsDisplayed()
+        compose.onNodeWithText("tap to claim").assertIsDisplayed()
         compose.onNodeWithText("lunch").assertIsDisplayed()
     }
 
@@ -49,7 +49,7 @@ class WalletUiInstrumentedTest {
     fun tappingAChatCardAsksTheWalletToClaimThatToken() {
         WalletLauncher.close()
         compose.setContent { BitchatTheme { CashuPaymentChip(token) } }
-        compose.onNodeWithText("Tap to claim").performClick()
+        compose.onNodeWithText("tap to claim").performClick()
         assertEquals(WalletLaunch.Claim(token), WalletLauncher.request.value)
         WalletLauncher.close()
     }
@@ -58,7 +58,7 @@ class WalletUiInstrumentedTest {
     fun composerPreviewChipHasNoStatusLine() {
         compose.setContent { BitchatTheme { CashuPaymentChip(token, onClick = {}, showActions = false) } }
         compose.onNodeWithText("21 sat · mint.example").assertIsDisplayed()
-        compose.onAllNodesWithTextCount("Tap to claim", 0)
+        compose.onAllNodesWithTextCount("tap to claim", 0)
     }
 
     @Test
@@ -89,15 +89,26 @@ class WalletUiInstrumentedTest {
     }
 
     @Test
-    fun trustNotesTellAnOfflineReceiverWhatIsAndIsNotVerified() {
+    fun trustNoteWarnsThatAnUnlockedTokenIsNotYoursYet() {
         val inspection = CashuWallet.TokenInspection(
             raw = token, token = TokenCodec.decode(token), mintKnown = true,
             dleq = CashuWallet.DleqStatus.VERIFIED, lock = CashuWallet.LockStatus.None,
             alreadyClaimed = false, isOurPendingSend = false, fee = 0,
         )
         compose.setContent { BitchatTheme { TrustNotes(inspection) } }
-        compose.onNodeWithText("Not yours yet. Until you claim it, whoever had this token can still spend it.").assertIsDisplayed()
-        compose.onNodeWithText("Mint signature checked on this device.").assertIsDisplayed()
+        compose.onNodeWithText("unlocked · claim it before the sender spends it").assertIsDisplayed()
+    }
+
+    @Test
+    fun trustNoteFlagsAForgedSignatureInsteadOfTheLockLine() {
+        val inspection = CashuWallet.TokenInspection(
+            raw = token, token = TokenCodec.decode(token), mintKnown = true,
+            dleq = CashuWallet.DleqStatus.INVALID, lock = CashuWallet.LockStatus.None,
+            alreadyClaimed = false, isOurPendingSend = false, fee = 0,
+        )
+        compose.setContent { BitchatTheme { TrustNotes(inspection) } }
+        compose.onNodeWithText("signatures don't match the mint · don't accept it").assertIsDisplayed()
+        compose.onAllNodesWithTextCount("unlocked · claim it before the sender spends it", 0)
     }
 
     private fun androidx.compose.ui.test.junit4.ComposeContentTestRule.onAllNodesWithTextCount(text: String, count: Int) {

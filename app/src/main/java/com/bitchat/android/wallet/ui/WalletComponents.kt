@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -388,15 +389,24 @@ private fun CopyIcon(onCopy: () -> Unit) {
     }
 }
 
-/** Inline explainer used for trust, bearer, and lock notes. Tone sets the tint only. */
+/**
+ * A one-line status, written like Bitchat's own system lines ("mint offline · …"). No box:
+ * the tone tints the text, and only lines about money at risk carry an icon.
+ */
 internal enum class NoticeTone { Info, Positive, Warning, Danger }
 
 @Composable
-internal fun WalletNotice(text: String, modifier: Modifier = Modifier, tone: NoticeTone = NoticeTone.Info, icon: ImageVector? = null) {
+internal fun WalletNotice(
+    text: String,
+    modifier: Modifier = Modifier,
+    tone: NoticeTone = NoticeTone.Info,
+    icon: ImageVector? = null,
+    centered: Boolean = false,
+) {
     val colorScheme = MaterialTheme.colorScheme
     val palette = LocalBitchatPalette.current
     val accent = when (tone) {
-        NoticeTone.Info -> colorScheme.onSurfaceVariant
+        NoticeTone.Info -> palette.textTertiary
         NoticeTone.Positive -> colorScheme.primary
         NoticeTone.Warning -> palette.accentOrange
         NoticeTone.Danger -> colorScheme.error
@@ -404,13 +414,11 @@ internal fun WalletNotice(text: String, modifier: Modifier = Modifier, tone: Not
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = AboutHorizontalPadding)
-            .background(accent.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(horizontal = AboutHorizontalPadding + 4.dp, vertical = 4.dp),
+        horizontalArrangement = if (centered) Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally) else Arrangement.spacedBy(6.dp),
     ) {
-        if (icon != null) Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp).offset(y = 1.dp))
-        Text(text, fontFamily = BitchatFontFamily, fontSize = 12.sp, lineHeight = 17.sp, color = if (tone == NoticeTone.Info) colorScheme.onSurfaceVariant else accent)
+        if (icon != null) Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(14.dp).offset(y = 1.dp))
+        Text(text, fontFamily = BitchatFontFamily, fontSize = 12.sp, lineHeight = 17.sp, color = accent, textAlign = if (centered) TextAlign.Center else TextAlign.Start)
     }
 }
 
@@ -593,22 +601,6 @@ internal fun WalletStatusPanel(kind: StatusKind, title: String, body: String?, m
     }
 }
 
-/** Neutral empty state: the ecash glyph, a title, one line, nothing alarming. */
-@Composable
-internal fun WalletEmptyState(title: String, body: String, modifier: Modifier = Modifier) {
-    val colorScheme = MaterialTheme.colorScheme
-    Column(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 24.dp).semantics(mergeDescendants = true) {},
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_spec_ecash), contentDescription = null, tint = LocalBitchatPalette.current.textTertiary, modifier = Modifier.size(40.dp))
-        Spacer(Modifier.height(14.dp))
-        Text(title, fontFamily = BitchatFontFamily, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = colorScheme.onSurface, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(6.dp))
-        Text(body, fontFamily = BitchatFontFamily, fontSize = 13.sp, lineHeight = 19.sp, color = colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-    }
-}
-
 // MARK: - Text input
 
 /** Single field styled like the composer: neutral fill and outline from [LocalBitchatPalette]. */
@@ -693,22 +685,27 @@ internal const val MAX_QR_LENGTH = 1_800
 
 @Composable
 internal fun WalletBackIcon(onClick: () -> Unit) {
+    WalletBarIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), onClick, Modifier.padding(start = 4.dp))
+}
+
+/** Settings sit in the home page's top bar, so the page itself is balance, actions, lists. */
+@Composable
+internal fun WalletSettingsIcon(onClick: () -> Unit) {
+    WalletBarIcon(Icons.Filled.Settings, stringResource(R.string.wallet_settings_title), onClick)
+}
+
+@Composable
+private fun WalletBarIcon(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val interaction = remember { MutableInteractionSource() }
     val scale = rememberPressScale(interaction)
     Box(
-        modifier = Modifier
-            .padding(start = 4.dp)
+        modifier = modifier
             .size(44.dp)
             .clip(CircleShape)
-            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClickLabel = stringResource(R.string.back), onClick = onClick),
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClickLabel = label, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = stringResource(R.string.back),
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp).scale(scale),
-        )
+        Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp).scale(scale))
     }
 }
 

@@ -20,6 +20,9 @@ data class ErrorCopy(
     val pending: Boolean = false,
 )
 
+/** The error as one status line ("can't reach the mint · nothing was spent · …"). */
+internal fun ErrorCopy.line(): String = title.replaceFirstChar { it.lowercase() } + " · " + body
+
 internal fun Throwable.walletError(): WalletError = (this as? WalletException)?.error ?: WalletError.Internal
 
 internal fun errorCopy(context: Context, error: WalletError, unit: String = "sat"): ErrorCopy {

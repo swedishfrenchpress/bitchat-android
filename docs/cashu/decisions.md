@@ -27,7 +27,7 @@ Bitchat components.
 - About → Settings → **Wallet** row.
 - `/wallet` command.
 - Tapping a payment card in chat.
-- A "send ecash" action in the DM composer menu (only once a wallet exists).
+- A "send ecash" coin action in the DM header (only once a wallet exists).
 
 There is no header icon. The header has no free slot, and a permanently
 visible wallet glyph is a tell in hostile environments.
@@ -165,3 +165,27 @@ outright would strand coins the mint already swapped. Instead the wallet keeps
 the unblinded coins without the bad proof, marks the mint as suspect, and shows
 a warning on it. A bad DLEQ can be a tagging attempt, so the person should move
 their funds elsewhere.
+
+### D-026: Hybrid voice and one-line warnings
+After a first on-device look, the developer judged the wallet too explanatory.
+It now speaks in two registers, both taken from Bitchat itself:
+- **Sentence case** for titles, buttons, and row names, as in Bitchat's About
+  sheet.
+- **Lowercase, dot-separated fragments** for everything that describes state:
+  hints, status lines, value labels, result-panel bodies, chat card lines. This
+  matches Bitchat's chat system lines ("all data wiped — new identity created").
+
+Explainer boxes are gone. The rules that replaced them:
+- A safety fact gets one line, only on the screen where money is at risk:
+  - claiming an unlocked token or one from a new mint;
+  - sharing a token;
+  - the recovery words (and the panic-wipe consequence when the backup is done);
+  - adding a mint;
+  - removing a mint that holds funds.
+- Onboarding is a mark, a title, one line, and two buttons.
+- A passing DLEQ check is silent; only a failing one gets a line.
+- Settings moved to the home page's top bar.
+- Home hides Receive/Send until a mint exists, and hides Recent until there is
+  history.
+- Error bodies still say whether funds are safe and what to do next, as
+  fragments ("nothing was spent · try again").

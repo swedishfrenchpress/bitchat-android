@@ -6,7 +6,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,9 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.WarningAmber
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -150,7 +147,7 @@ internal fun ReceiveLightningScreen(vm: WalletViewModel, flow: ReceiveLightningF
                 }
                 AmountStep(
                     amount = amount, unit = "sat",
-                    contextLine = problem ?: stringResource(R.string.wallet_amount_title_receive),
+                    contextLine = problem,
                     contextIsError = problem != null,
                     mints = state.mints, selectedMint = mintUrl, onMint = { flow.mint.value = it },
                     onChange = { flow.amount.value = it },
@@ -198,13 +195,12 @@ private fun InvoiceStep(entry: HistoryEntry) {
             Spacer(Modifier.height(16.dp))
             WalletQrCode("lightning:${invoice.uppercase()}", stringResource(R.string.wallet_cd_invoice_qr))
             Spacer(Modifier.height(16.dp))
-            Text(stringResource(R.string.wallet_invoice_waiting), fontFamily = BitchatFontFamily, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-            if (remaining != null) {
-                Text(stringResource(R.string.wallet_invoice_expires, formatCountdown(remaining)), fontFamily = BitchatFontFamily, fontSize = 12.sp, color = LocalBitchatPalette.current.textTertiary)
-            }
+            val waiting = stringResource(R.string.wallet_invoice_waiting)
+            Text(
+                if (remaining != null) waiting + " · " + stringResource(R.string.wallet_invoice_expires, formatCountdown(remaining)) else waiting,
+                fontFamily = BitchatFontFamily, fontSize = 12.sp, color = LocalBitchatPalette.current.textTertiary,
+            )
         }
-        Spacer(Modifier.height(16.dp))
-        WalletNotice(stringResource(R.string.wallet_invoice_background), icon = Icons.Outlined.Info)
     }
 }
 
@@ -372,11 +368,6 @@ private fun ClaimReview(step: ReceiveEcashFlow.Step.Review, flow: ReceiveEcashFl
     }) {
         Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             AmountHero(i.receiveAmount ?: token.amount, token.unit)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                stringResource(if (i.receiveAmount != null) R.string.wallet_review_you_receive else R.string.wallet_review_token_value),
-                fontFamily = BitchatFontFamily, fontSize = 12.sp, color = LocalBitchatPalette.current.textTertiary,
-            )
         }
         WalletCard {
             WalletValueRow(stringResource(R.string.wallet_review_mint), host)
@@ -389,43 +380,39 @@ private fun ClaimReview(step: ReceiveEcashFlow.Step.Review, flow: ReceiveEcashFl
                 WalletValueRow(stringResource(R.string.wallet_review_memo), it, maxLines = 3)
             }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
         TrustNotes(i)
         if (!i.mintKnown && canClaim) {
-            Spacer(Modifier.height(8.dp))
             WalletNotice(stringResource(R.string.wallet_unknown_mint_body, host), tone = NoticeTone.Warning, icon = Icons.Filled.WarningAmber)
         }
     }
 }
 
 /**
- * The honest part of a claim: who can spend this right now, and what has been verified
- * without the mint. Never says "received" for a token that has not been swapped yet.
+ * The honest part of a claim, in one line: who can spend this right now. Never says
+ * "received" for a token that has not been swapped yet. A signature that fails the offline
+ * check is the only verification result worth a line; a passing one is the quiet default.
  */
 @Composable
 internal fun TrustNotes(i: CashuWallet.TokenInspection) {
     val context = LocalContext.current
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        when {
-            i.alreadyClaimed -> WalletNotice(stringResource(R.string.wallet_trust_already_claimed), tone = NoticeTone.Positive)
-            i.isOurPendingSend -> WalletNotice(stringResource(R.string.wallet_trust_own_send), tone = NoticeTone.Info)
-            else -> when (val lock = i.lock) {
-                CashuWallet.LockStatus.None -> WalletNotice(stringResource(R.string.wallet_trust_bearer), tone = NoticeTone.Warning, icon = Icons.Filled.LockOpen)
-                is CashuWallet.LockStatus.ToUs -> WalletNotice(
-                    if (lock.locktime != null) stringResource(R.string.wallet_trust_locked_you_until, formatDateTime(context, lock.locktime * 1000))
-                    else stringResource(R.string.wallet_trust_locked_you),
-                    tone = NoticeTone.Positive, icon = Icons.Filled.Lock,
-                )
-                is CashuWallet.LockStatus.RefundableByUs -> WalletNotice(stringResource(R.string.wallet_trust_refundable, formatDateTime(context, lock.locktime * 1000)), icon = Icons.Filled.Lock)
-                is CashuWallet.LockStatus.ToSomeoneElse -> WalletNotice(stringResource(R.string.wallet_trust_locked_other), tone = NoticeTone.Danger, icon = Icons.Filled.Lock)
-                CashuWallet.LockStatus.Unsupported -> WalletNotice(stringResource(R.string.wallet_trust_unsupported), tone = NoticeTone.Danger)
-            }
-        }
-        when (i.dleq) {
-            CashuWallet.DleqStatus.VERIFIED -> WalletNotice(stringResource(R.string.wallet_trust_dleq), tone = NoticeTone.Positive, icon = Icons.Filled.Verified)
-            CashuWallet.DleqStatus.ABSENT -> WalletNotice(stringResource(R.string.wallet_trust_dleq_absent))
-            CashuWallet.DleqStatus.UNCHECKED -> WalletNotice(stringResource(R.string.wallet_trust_dleq_unchecked))
-            CashuWallet.DleqStatus.INVALID -> WalletNotice(stringResource(R.string.wallet_error_signature_body), tone = NoticeTone.Danger)
+    if (i.dleq == CashuWallet.DleqStatus.INVALID) {
+        WalletNotice(stringResource(R.string.wallet_error_signature_body), tone = NoticeTone.Danger, icon = Icons.Filled.WarningAmber)
+        return
+    }
+    when {
+        i.alreadyClaimed -> WalletNotice(stringResource(R.string.wallet_trust_already_claimed), tone = NoticeTone.Positive)
+        i.isOurPendingSend -> WalletNotice(stringResource(R.string.wallet_trust_own_send))
+        else -> when (val lock = i.lock) {
+            CashuWallet.LockStatus.None -> WalletNotice(stringResource(R.string.wallet_trust_bearer), tone = NoticeTone.Warning, icon = Icons.Filled.LockOpen)
+            is CashuWallet.LockStatus.ToUs -> WalletNotice(
+                if (lock.locktime != null) stringResource(R.string.wallet_trust_locked_you_until, formatDateTime(context, lock.locktime * 1000))
+                else stringResource(R.string.wallet_trust_locked_you),
+                tone = NoticeTone.Positive, icon = Icons.Filled.Lock,
+            )
+            is CashuWallet.LockStatus.RefundableByUs -> WalletNotice(stringResource(R.string.wallet_trust_refundable, formatDateTime(context, lock.locktime * 1000)), icon = Icons.Filled.Lock)
+            is CashuWallet.LockStatus.ToSomeoneElse -> WalletNotice(stringResource(R.string.wallet_trust_locked_other), tone = NoticeTone.Danger, icon = Icons.Filled.Lock)
+            CashuWallet.LockStatus.Unsupported -> WalletNotice(stringResource(R.string.wallet_trust_unsupported), tone = NoticeTone.Danger)
         }
     }
 }
