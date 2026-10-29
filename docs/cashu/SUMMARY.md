@@ -103,7 +103,7 @@ Four bugs found only on the device were fixed: the screenshot leak, sats with
 decimals, the clipboard preview, and the false wallet detection. All are in
 `edge-cases.md`.
 
-All 64 edge cases (network drops mid-mint, mid-melt, and mid-swap; app kills;
+All 66 edge cases (network drops mid-mint, mid-melt, and mid-swap; app kills;
 double spends; malformed, spent, and unknown-mint tokens; offline mint; keyset
 rotation; unit mismatch; zero, dust, and overflow; fees over amount; expired
 quotes; double taps; wrong and partial seeds; plus what the hunt turned up) are

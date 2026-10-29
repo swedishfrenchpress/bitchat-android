@@ -278,7 +278,12 @@ class CashuWallet(
             if (sendEntry != null) return reclaim(sendEntry.id)
         }
         val token = inspection.token
-        val mint = ledger.mints[token.mint] ?: throw WalletException(WalletError.UnknownMint)
+        var mint = ledger.mints[token.mint] ?: throw WalletException(WalletError.UnknownMint)
+        // A token from a keyset we have not seen yet usually means the mint rotated keys:
+        // refresh before deciding the token is bad.
+        if (runCatching { resolveKeysets(token.proofs, mint) }.isFailure) {
+            mint = refreshMint(mint.url) ?: throw WalletException(WalletError.MintUnreachable)
+        }
         val op = mutex.withLock {
             val inputs = signForSpend(resolveKeysets(token.proofs, mint), allowRefund = false)
             if (inputs.any { mint.keyset(it.keysetId)?.unit != token.unit }) throw WalletException(WalletError.UnitUnsupported)
@@ -903,7 +908,13 @@ class CashuWallet(
             }
             MeltQuoteState.PAID -> Unit
         }
-        val change = changeOverride ?: result.change.pairWith(op.outputs, blank = true)
+        var change = changeOverride ?: result.change.pairWith(op.outputs, blank = true)
+        if (change.isEmpty() && op.outputs.isNotEmpty()) {
+            // Some mints report PAID without the change signatures; they still signed our
+            // blank outputs, so ask for them back (NUT-09) rather than lose the unused reserve.
+            change = runCatching { api(op.mintUrl).restore(op.outputs.map(::blinded)) }.getOrDefault(emptyList())
+                .let { pairs -> val byB = op.outputs.associateBy { it.b.lowercase() }; pairs.mapNotNull { (m, s) -> byB[m.b.lowercase()]?.let { s to it } } }
+        }
         return mutex.withLock {
             val mint = requireMint(op.mintUrl)
             val changeProofs = change.mapNotNull { (sig, out) -> mint.keyset(sig.keysetId)?.let { unblind(out, sig, it) } }

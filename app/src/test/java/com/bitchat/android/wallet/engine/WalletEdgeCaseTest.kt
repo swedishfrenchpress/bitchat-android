@@ -166,6 +166,32 @@ class WalletEdgeCaseTest {
     }
 
     @Test
+    fun `token from a keyset the receiver has not seen yet triggers a refresh, not a refusal`() = runTest {
+        val m = mint()
+        val alice = harness(m, m.url)
+        val bob = harness(m, m.url, TestSeeds.BOB)
+        bob.wallet.addMint(m.url)
+        m.rotateKeysets()
+        alice.fund(m, 16)
+        val token = alice.wallet.send(m.url, 16).token!!
+        assertEquals(16L, bob.wallet.receive(token).amount)
+    }
+
+    @Test
+    fun `paid melt without change in the response recovers the change through restore`() = runTest {
+        val m = mint().apply { meltFeeReserve = 10; meltActualFee = 2 }
+        val stingy = object : MintApi by m {
+            override suspend fun melt(quote: String, inputs: List<Proof>, outputs: List<BlindedMessage>) =
+                m.melt(quote, inputs, outputs).copy(change = emptyList())
+        }
+        val alice = harness(stingy, m.url)
+        alice.fund(m, 1000)
+        val paid = alice.wallet.melt(alice.wallet.previewMelt(m.url, FakeMint.invoice(200, 7)))
+        assertEquals(HistoryStatus.COMPLETED, paid.status)
+        assertEquals(798L, alice.balance())
+    }
+
+    @Test
     fun `amount digits refuse leading zeros and absurd lengths`() {
         var a = AmountDigits()
         assertNull(a.push(0))

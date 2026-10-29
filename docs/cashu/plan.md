@@ -1,7 +1,7 @@
 # Cashu wallet: milestone plan
 
 Each milestone ends with `./gradlew :app:testDebugUnitTest` green and a
-commit. Live testnut checks run with `-Pcashu.testnut=true`.
+commit. Live testnut checks run with `CASHU_TESTNUT=1` (see `SUMMARY.md`).
 
 Status at hand-off: every milestone is done; see `SUMMARY.md` for what was
 verified and how.

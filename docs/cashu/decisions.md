@@ -72,7 +72,8 @@ it off.
 `FakeMint` in test sources implements the mint side with real BDHKE/DLEQ
 crypto and fault injection (drop the response after committing, return 5xx,
 rotate keysets, expire quotes). Live tests against `testnut.cashu.space` run
-with `-Pcashu.testnut=true`.
+with `CASHU_TESTNUT=1` set in the environment (`--rerun` to bypass Gradle's
+cache).
 
 ### D-011: Send V4 (`cashuB`) tokens, decode both
 V3 is deprecated but still common, so it is decoded but never produced.
