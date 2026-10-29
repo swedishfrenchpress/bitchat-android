@@ -102,6 +102,7 @@ enum class HistoryNote {
     MINT_REJECTED,
     LOCK_ACTIVE,
     RESTORED,
+    INVOICE_ALREADY_PAID,
 }
 
 /**

@@ -978,6 +978,7 @@ class CashuWallet(
                 val (status, note) = when (e.code) {
                     CashuErrorCode.QUOTE_EXPIRED -> HistoryStatus.EXPIRED to HistoryNote.QUOTE_EXPIRED
                     CashuErrorCode.LIGHTNING_PAYMENT_FAILED -> HistoryStatus.FAILED to HistoryNote.PAYMENT_FAILED
+                    CashuErrorCode.INVOICE_ALREADY_PAID -> HistoryStatus.FAILED to HistoryNote.INVOICE_ALREADY_PAID
                     else -> HistoryStatus.FAILED to HistoryNote.MINT_REJECTED
                 }
                 if (op.kind == OperationKind.MINT && e.code == CashuErrorCode.QUOTE_NOT_PAID) {

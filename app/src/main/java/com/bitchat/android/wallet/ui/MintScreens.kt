@@ -115,6 +115,11 @@ class AddMintFlow(
         }
     }
 
+    fun stepBack(): Boolean = when (val s = _step.value) {
+        is Step.Preview -> if (s.adding) true else { edit(); true }
+        else -> false
+    }
+
     fun edit() {
         val preview = _step.value as? Step.Preview ?: return
         _step.value = Step.Input(preview.preview.url, checking = false, error = null)
@@ -177,18 +182,18 @@ private fun MintSummary(url: String, info: MintInfo?, feePpk: Long, units: Set<S
     WalletCard {
         fun yes(b: Boolean) = if (b) yesText else noText
         WalletValueRow(stringResource(R.string.wallet_mint_feature_lightning), yes(info?.mintMethods?.any { it.method == "bolt11" } == true))
-        WalletCardDivider()
+        WalletCardDivider(plain = true)
         WalletValueRow(stringResource(R.string.wallet_mint_feature_restore), yes(info?.supports(9) == true))
-        WalletCardDivider()
+        WalletCardDivider(plain = true)
         WalletValueRow(stringResource(R.string.wallet_mint_feature_lock), yes(info?.supports(11) == true))
-        WalletCardDivider()
+        WalletCardDivider(plain = true)
         WalletValueRow(stringResource(R.string.wallet_mint_feature_offline), yes(info?.supports(12) == true))
-        WalletCardDivider()
+        WalletCardDivider(plain = true)
         WalletValueRow(stringResource(R.string.wallet_mint_fee), if (feePpk == 0L) stringResource(R.string.wallet_mint_fee_none) else stringResource(R.string.wallet_mint_fee_value, feePpk.toString()))
-        WalletCardDivider()
+        WalletCardDivider(plain = true)
         WalletValueRow(stringResource(R.string.wallet_mint_units), units.sorted().joinToString(", "))
         info?.version?.let {
-            WalletCardDivider()
+            WalletCardDivider(plain = true)
             WalletValueRow(stringResource(R.string.wallet_mint_software), it.take(40))
         }
     }
@@ -234,7 +239,7 @@ internal fun MintDetailScreen(vm: WalletViewModel, url: String) {
                 WalletValueRow(unit, formatAmount(amount, unit), emphasized = true)
             }
             balance.pendingOut.entries.filter { it.value > 0 }.forEach { (unit, amount) ->
-                WalletCardDivider()
+                WalletCardDivider(plain = true)
                 WalletValueRow(stringResource(R.string.wallet_note_waiting_claim), formatAmount(amount, unit))
             }
         }

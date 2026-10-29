@@ -2,6 +2,9 @@ package com.bitchat.android.wallet.ui
 
 import android.app.Activity
 import android.app.Application
+import android.view.View
+import android.view.ViewParent
+import android.view.Window
 import android.view.WindowManager
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
@@ -41,6 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -123,6 +128,11 @@ class BackupFlow(val words: List<String>, private val onFinished: () -> Unit) {
     private val _step = MutableStateFlow<Step>(Step.Show(revealed = false))
     val step: StateFlow<Step> = _step.asStateFlow()
 
+    fun stepBack(): Boolean = if (_step.value is Step.Confirm) {
+        _step.value = Step.Show(revealed = true)
+        true
+    } else false
+
     fun reveal() {
         _step.value = Step.Show(revealed = true)
     }
@@ -159,21 +169,37 @@ internal fun BackupScreen(vm: WalletViewModel, flow: BackupFlow) {
         when (s) {
             is BackupFlow.Step.Show -> ShowWords(flow, s.revealed, onLater = vm::skipBackup)
             is BackupFlow.Step.Confirm -> ConfirmWords(flow, s)
-            BackupFlow.Step.Done -> WalletPage(bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = flow::finish) }) {
+            BackupFlow.Step.Done -> WalletPage(centered = true, terminal = true, bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = flow::finish) }) {
                 WalletStatusPanel(StatusKind.Success, stringResource(R.string.wallet_confirm_done_title), stringResource(R.string.wallet_confirm_done_body))
             }
         }
     }
 }
 
-/** Blocks screenshots and the recents thumbnail while recovery words are on screen. */
+/**
+ * Blocks screenshots, screen recording and the recents thumbnail while recovery words are on
+ * screen. The wallet is a bottom sheet, which lives in its own dialog window, so the flag has
+ * to go on that window: securing only the activity would leave the words capturable.
+ */
 @Composable
 private fun SecureWindow() {
+    val view = LocalView.current
     val activity = LocalContext.current as? Activity
-    DisposableEffect(activity) {
-        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        onDispose { activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+    DisposableEffect(view, activity) {
+        val windows = listOfNotNull(sheetWindow(view), activity?.window).distinct()
+        windows.forEach { it.addFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+        onDispose { windows.forEach { it.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) } }
     }
+}
+
+/** The dialog window hosting [view], found by walking up to the dialog's window provider. */
+private fun sheetWindow(view: View): Window? {
+    var parent: ViewParent? = view.parent
+    while (parent != null) {
+        if (parent is DialogWindowProvider) return parent.window
+        parent = parent.parent
+    }
+    return null
 }
 
 @Composable
@@ -384,7 +410,7 @@ internal fun RestoreScreen(vm: WalletViewModel, flow: RestoreFlow) {
                     if (problem != null) WalletNotice(problem, tone = NoticeTone.Danger)
                 }
             }
-            RestoreFlow.Step.Searching -> WalletPage {
+            RestoreFlow.Step.Searching -> WalletPage(centered = true) {
                 WalletStatusPanel(StatusKind.Loading, stringResource(R.string.wallet_restore_searching), null)
             }
             is RestoreFlow.Step.Mints -> WalletPage(bottom = {
@@ -435,13 +461,13 @@ internal fun RestoreScreen(vm: WalletViewModel, flow: RestoreFlow) {
                 }
                 if (s.inputInvalid) WalletNotice(stringResource(R.string.wallet_error_mint_not_found_body), tone = NoticeTone.Danger)
             }
-            is RestoreFlow.Step.Restoring -> WalletPage {
+            is RestoreFlow.Step.Restoring -> WalletPage(centered = true) {
                 WalletStatusPanel(StatusKind.Loading, stringResource(R.string.wallet_restore_progress, s.mint), "${s.index} / ${s.total}")
             }
             is RestoreFlow.Step.Done -> {
                 val totals = s.results.flatMap { it.recovered.entries }.groupBy({ it.key }, { it.value }).mapValues { it.value.sum() }
                 val failed = s.results.filter { it.error != null }
-                WalletPage(bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = flow::finish) }) {
+                WalletPage(centered = true, terminal = true, bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = flow::finish) }) {
                     WalletStatusPanel(
                         if (totals.isEmpty()) StatusKind.Pending else StatusKind.Success,
                         stringResource(R.string.wallet_restore_done_title),

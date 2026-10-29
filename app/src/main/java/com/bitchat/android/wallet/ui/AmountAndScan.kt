@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -105,12 +107,12 @@ internal fun AmountStep(
         haptics.reject()
         scope.launch { shake.shake(reduced) }
     }
-    WalletPage(bottom = {
-        WalletButton(continueLabel, onClick = onContinue, enabled = continueEnabled, loading = loading)
-    }) {
+    // Not a scrolling page: the amount floats in the space above, and the keypad sits right
+    // above the button where the thumb already is.
+    Column(Modifier.fillMaxSize().navigationBarsPadding()) {
         Spacer(Modifier.height(12.dp))
         MintPicker(mints, selectedMint, unit, onMint)
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.weight(1f))
         AmountHero(amount.value, unit, shake = shake, modifier = Modifier.fillMaxWidth())
         Box(Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -121,18 +123,24 @@ internal fun AmountStep(
                         color = if (contextIsError) colorScheme.error else palette.textTertiary,
                     )
                 }
-                // The max pill only appears once the entry reaches the balance; its slot is the
+                // The max pill only appears once the entry passes the balance; it lives in the
                 // context line, so nothing reflows when it shows.
                 if (maxAmount != null && maxAmount > 0 && amount.value > maxAmount) {
                     WalletTextAction(stringResource(R.string.wallet_max), onClick = { onChange(AmountDigits.of(maxAmount)); haptics.tick() })
                 }
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.weight(1f))
         AmountKeypad(
             onDigit = { d -> amount.push(d)?.let { onChange(it); haptics.tick() } ?: reject() },
             onDelete = { amount.pop()?.let { onChange(it); haptics.tick() } ?: reject() },
         )
+        Spacer(Modifier.height(8.dp))
+        WalletButton(
+            continueLabel, onClick = onContinue, enabled = continueEnabled, loading = loading,
+            modifier = Modifier.padding(horizontal = AboutHorizontalPadding),
+        )
+        Spacer(Modifier.height(12.dp))
     }
 }
 

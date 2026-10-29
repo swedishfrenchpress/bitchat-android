@@ -82,6 +82,17 @@ class WalletViewModel(app: Application) : AndroidViewModel(app) {
     private val _unreachable = MutableStateFlow<Set<String>>(emptySet())
     val unreachable: StateFlow<Set<String>> = _unreachable.asStateFlow()
 
+    /**
+     * Number of terminal pages (success, failure, pending) on screen. A counter rather than a
+     * flag because the incoming page appears before the outgoing one leaves during transitions.
+     */
+    private val _terminalPages = MutableStateFlow(0)
+    val terminal: StateFlow<Int> = _terminalPages.asStateFlow()
+
+    fun terminalPage(entered: Boolean) {
+        _terminalPages.value = (_terminalPages.value + if (entered) 1 else -1).coerceAtLeast(0)
+    }
+
     private val _balanceRevealed = MutableStateFlow(false)
     val balanceRevealed: StateFlow<Boolean> = _balanceRevealed.asStateFlow()
 
@@ -123,9 +134,21 @@ class WalletViewModel(app: Application) : AndroidViewModel(app) {
         _stack.value = _stack.value + route
     }
 
-    /** Returns false when already at the root, so the sheet should close instead. */
+    /**
+     * Steps back inside the current flow first (review back to amount keeps the amount), then
+     * pops the page. Returns false when already at the root, so the sheet should close instead.
+     */
     fun back(): Boolean {
         val current = _stack.value
+        val handled = when (val top = current.lastOrNull()) {
+            is WalletRoute.SendEcash -> top.flow.stepBack()
+            is WalletRoute.SendLightning -> top.flow.stepBack()
+            is WalletRoute.ReceiveEcash -> top.flow.stepBack()
+            is WalletRoute.AddMint -> top.flow.stepBack()
+            is WalletRoute.Backup -> top.flow.stepBack()
+            else -> false
+        }
+        if (handled) return true
         if (current.size <= 1) return false
         _stack.value = current.dropLast(1)
         return true

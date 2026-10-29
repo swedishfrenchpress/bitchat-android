@@ -166,10 +166,10 @@ internal fun ReceiveLightningScreen(vm: WalletViewModel, flow: ReceiveLightningF
                 val entry = state.history.firstOrNull { it.id == s.entryId } ?: return@AnimatedContent
                 InvoiceStep(entry)
             }
-            is ReceiveLightningFlow.Step.Done -> WalletPage(bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = { vm.home() }) }) {
+            is ReceiveLightningFlow.Step.Done -> WalletPage(centered = true, terminal = true, bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = { vm.home() }) }) {
                 WalletStatusPanel(StatusKind.Success, stringResource(R.string.wallet_received_title), stringResource(R.string.wallet_received_body, formatAmount(s.entry.amount, s.entry.unit)))
             }
-            ReceiveLightningFlow.Step.Expired -> WalletPage(bottom = {
+            ReceiveLightningFlow.Step.Expired -> WalletPage(centered = true, terminal = true, bottom = {
                 WalletButton(stringResource(R.string.wallet_invoice_new), onClick = flow::restart)
                 WalletButton(stringResource(R.string.wallet_done), onClick = { vm.home() }, tone = WalletButtonTone.Neutral)
             }) {
@@ -212,7 +212,7 @@ private fun InvoiceStep(entry: HistoryEntry) {
 
 @Composable
 internal fun ErrorStep(copy: ErrorCopy, onRetry: (() -> Unit)?, onClose: () -> Unit) {
-    WalletPage(bottom = {
+    WalletPage(centered = true, terminal = true, bottom = {
         if (copy.retryable && onRetry != null) WalletButton(stringResource(R.string.wallet_retry), onClick = onRetry)
         WalletButton(stringResource(R.string.wallet_done), onClick = onClose, tone = WalletButtonTone.Neutral)
     }) {
@@ -248,6 +248,12 @@ class ReceiveEcashFlow(
 
     fun update(text: String) {
         _step.value = Step.Input(text, invalid = false, scanning = false)
+    }
+
+    fun stepBack(): Boolean = when (val s = _step.value) {
+        is Step.Review -> if (s.claiming || viaChat) s.claiming else { update(raw.orEmpty()); true }
+        is Step.Input -> if (s.scanning) { scan(false); true } else false
+        else -> false
     }
 
     fun scan(on: Boolean) {
@@ -292,6 +298,9 @@ class ReceiveEcashFlow(
     fun retry() {
         raw?.let(::submit) ?: update("")
     }
+
+    /** A claim started from a chat card closes the sheet when done; from the wallet, go home. */
+    fun finish(vm: WalletViewModel, close: () -> Unit) = if (viaChat) close() else vm.home()
 }
 
 @Composable
@@ -319,7 +328,7 @@ internal fun ReceiveEcashScreen(vm: WalletViewModel, flow: ReceiveEcashFlow, onD
                 }
             }
             is ReceiveEcashFlow.Step.Review -> ClaimReview(s, flow)
-            is ReceiveEcashFlow.Step.Claimed -> WalletPage(bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = { if (vm.back().not()) onDismiss() }) }) {
+            is ReceiveEcashFlow.Step.Claimed -> WalletPage(centered = true, terminal = true, bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = { flow.finish(vm, onDismiss) }) }) {
                 val reclaimed = s.entry.status == HistoryStatus.RECLAIMED
                 WalletStatusPanel(
                     StatusKind.Success,
@@ -327,10 +336,10 @@ internal fun ReceiveEcashScreen(vm: WalletViewModel, flow: ReceiveEcashFlow, onD
                     stringResource(if (reclaimed) R.string.wallet_taken_back_body else R.string.wallet_claimed_body, formatAmount(s.entry.amount, s.entry.unit)),
                 )
             }
-            ReceiveEcashFlow.Step.Queued -> WalletPage(bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = { if (vm.back().not()) onDismiss() }) }) {
+            ReceiveEcashFlow.Step.Queued -> WalletPage(centered = true, terminal = true, bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = { flow.finish(vm, onDismiss) }) }) {
                 WalletStatusPanel(StatusKind.Pending, stringResource(R.string.wallet_claim_queued_title), stringResource(R.string.wallet_claim_queued_body))
             }
-            is ReceiveEcashFlow.Step.Failed -> ErrorStep(s.copy, onRetry = if (s.retry) flow::retry else null, onClose = { if (vm.back().not()) onDismiss() })
+            is ReceiveEcashFlow.Step.Failed -> ErrorStep(s.copy, onRetry = if (s.retry) flow::retry else null, onClose = { flow.finish(vm, onDismiss) })
         }
     }
 }
@@ -372,11 +381,11 @@ private fun ClaimReview(step: ReceiveEcashFlow.Step.Review, flow: ReceiveEcashFl
         WalletCard {
             WalletValueRow(stringResource(R.string.wallet_review_mint), host)
             if ((i.fee ?: 0) > 0) {
-                WalletCardDivider()
+                WalletCardDivider(plain = true)
                 WalletValueRow(stringResource(R.string.wallet_review_fee), formatAmount(i.fee!!, token.unit))
             }
             token.memo?.let {
-                WalletCardDivider()
+                WalletCardDivider(plain = true)
                 WalletValueRow(stringResource(R.string.wallet_review_memo), it, maxLines = 3)
             }
         }

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.WarningAmber
@@ -150,7 +151,7 @@ internal fun HomeScreen(vm: WalletViewModel) {
 
         if (state.mints.isEmpty()) {
             Spacer(Modifier.height(8.dp))
-            WalletStatusPanel(StatusKind.Pending, stringResource(R.string.wallet_empty_title), stringResource(R.string.wallet_no_mints_body))
+            WalletEmptyState(stringResource(R.string.wallet_empty_title), stringResource(R.string.wallet_no_mints_body))
             Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 WalletButton(stringResource(R.string.wallet_add_mint), onClick = { vm.startAddMint() })
                 if (WalletService.suggestTestMint) {
@@ -192,7 +193,7 @@ internal fun HomeScreen(vm: WalletViewModel) {
             WalletRow(title = stringResource(R.string.wallet_add_mint), icon = Icons.Filled.Add, titleColor = colorScheme.primary, onClick = { vm.startAddMint() })
         }
 
-        AboutSectionLabel(stringResource(R.string.wallet_section_settings))
+        Spacer(Modifier.height(20.dp))
         WalletCard {
             WalletRow(
                 title = stringResource(R.string.wallet_settings_title),
@@ -267,7 +268,7 @@ internal fun HistoryRow(entry: HistoryEntry, hidden: Boolean, onClick: () -> Uni
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (entry.isPending) {
-                    CircularProgressIndicator(color = palette.accentOrange, strokeWidth = 1.5.dp, modifier = Modifier.padding(end = 8.dp).size(12.dp))
+                    Icon(Icons.Filled.Schedule, contentDescription = null, tint = palette.accentOrange, modifier = Modifier.padding(end = 6.dp).size(14.dp))
                 }
                 Text(
                     if (hidden) stringResource(R.string.wallet_balance_hidden)
@@ -344,7 +345,7 @@ internal fun HistoryScreen(vm: WalletViewModel) {
     val hidden = state.settings[WalletService.SETTING_HIDE_BALANCE] == "true" && !revealed
     WalletPage {
         if (state.history.isEmpty()) {
-            WalletStatusPanel(StatusKind.Pending, stringResource(R.string.wallet_history_empty), stringResource(R.string.wallet_empty_body))
+            WalletEmptyState(stringResource(R.string.wallet_history_empty), stringResource(R.string.wallet_empty_body))
             return@WalletPage
         }
         Spacer(Modifier.height(8.dp))
@@ -406,30 +407,30 @@ internal fun HistoryDetailScreen(vm: WalletViewModel, id: String) {
         }
         WalletCard {
             WalletValueRow(stringResource(R.string.wallet_detail_status), historyStatus(context, entry))
-            WalletCardDivider()
+            WalletCardDivider(plain = true)
             WalletValueRow(stringResource(R.string.wallet_detail_amount), formatAmount(entry.amount, entry.unit))
             if (entry.fee > 0) {
-                WalletCardDivider()
+                WalletCardDivider(plain = true)
                 WalletValueRow(stringResource(R.string.wallet_detail_fee), formatAmount(entry.fee, entry.unit))
             }
-            WalletCardDivider()
+            WalletCardDivider(plain = true)
             WalletValueRow(stringResource(R.string.wallet_detail_mint), mint?.displayName ?: entry.mintUrl)
-            WalletCardDivider()
+            WalletCardDivider(plain = true)
             WalletValueRow(stringResource(R.string.wallet_detail_date), formatDateTime(context, entry.createdAt))
             entry.memo?.let {
-                WalletCardDivider()
+                WalletCardDivider(plain = true)
                 WalletValueRow(stringResource(R.string.wallet_detail_memo), it, maxLines = 3)
             }
             entry.lockedUntil?.let {
-                WalletCardDivider()
+                WalletCardDivider(plain = true)
                 WalletValueRow(stringResource(R.string.wallet_detail_lock), stringResource(R.string.wallet_detail_locked_until, formatDateTime(context, it * 1000)), maxLines = 2)
             }
             entry.invoice?.takeIf { entry.kind == HistoryKind.LIGHTNING_SEND }?.let { invoice ->
-                WalletCardDivider()
+                WalletCardDivider(plain = true)
                 WalletValueRow(stringResource(R.string.wallet_detail_invoice), invoice.take(14) + "…", onCopy = { copyToClipboard(context, "invoice", invoice) })
             }
             entry.preimage?.let { pre ->
-                WalletCardDivider()
+                WalletCardDivider(plain = true)
                 WalletValueRow(stringResource(R.string.wallet_detail_proof_of_payment), pre.take(12) + "…", onCopy = { copyToClipboard(context, "preimage", pre) })
             }
         }

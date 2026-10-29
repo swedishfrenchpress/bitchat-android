@@ -15,5 +15,12 @@
                 <action android:name="com.bitchat.droid.TEST_HOOK" />
             </intent-filter>
         </receiver>
+
+        <!-- Debug-only wallet host for exercising wallet flows without mesh onboarding. -->
+        <activity
+            android:name="com.bitchat.android.testhook.WalletPreviewActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Material.NoActionBar"
+            tools:ignore="ExportedActivity" />
     </application>
 </manifest>

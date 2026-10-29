@@ -145,6 +145,12 @@ class SendEcashFlow(
         _step.value = token.copy(sentToChat = true)
     }
 
+    fun stepBack(): Boolean = when (val s = _step.value) {
+        is Step.Review -> if (s.creating) true else { _step.value = Step.Amount; true }
+        is Step.Failed -> { _step.value = Step.Amount; true }
+        else -> false
+    }
+
     fun backToAmount(suggested: Long? = null) {
         suggested?.let { amount.value = AmountDigits.of(it) }
         _step.value = Step.Amount
@@ -191,7 +197,7 @@ internal fun SendEcashScreen(vm: WalletViewModel, flow: SendEcashFlow, onDismiss
             is SendEcashFlow.Step.Failed -> {
                 val context = LocalContext.current
                 val (lower, higher) = s.offlineHint ?: (null to null)
-                WalletPage(bottom = {
+                WalletPage(centered = true, terminal = true, bottom = {
                     if (lower != null) WalletButton(formatAmount(lower, "sat"), onClick = { flow.backToAmount(lower); flow.review() })
                     if (higher != null) WalletButton(formatAmount(higher, "sat"), onClick = { flow.backToAmount(higher); flow.review() }, tone = WalletButtonTone.Neutral)
                     WalletButton(stringResource(R.string.wallet_done), onClick = { flow.backToAmount() }, tone = WalletButtonTone.Neutral)
@@ -224,9 +230,9 @@ private fun SendReview(step: SendEcashFlow.Step.Review, flow: SendEcashFlow) {
         }
         WalletCard {
             WalletValueRow(stringResource(R.string.wallet_review_mint), flow.mint.value?.let { com.bitchat.android.wallet.cashu.MintUrl.host(it) } ?: "")
-            WalletCardDivider()
+            WalletCardDivider(plain = true)
             WalletValueRow(stringResource(R.string.wallet_review_fees), formatAmount(p.fee, p.unit))
-            WalletCardDivider()
+            WalletCardDivider(plain = true)
             WalletValueRow(stringResource(R.string.wallet_review_total), formatAmount(p.total, p.unit), emphasized = true)
             if (flow.lockAvailable()) {
                 WalletCardDivider()
@@ -266,7 +272,7 @@ private fun SendReview(step: SendEcashFlow.Step.Review, flow: SendEcashFlow) {
 private fun TokenStep(step: SendEcashFlow.Step.Token, flow: SendEcashFlow, onDone: () -> Unit) {
     val token = step.entry.token ?: return
     var confirmPublic by remember { mutableStateOf(false) }
-    WalletPage(bottom = {
+    WalletPage(centered = true, terminal = true, bottom = {
         if (flow.chat != null && !step.sentToChat) {
             WalletButton(stringResource(R.string.wallet_token_send_chat), onClick = {
                 if (flow.chat.isPublic && !step.entry.lockedToPeer) confirmPublic = true else flow.deliverToChat()
@@ -348,6 +354,12 @@ class SendLightningFlow(
         _step.value = Step.Input(text, invalid = false, scanning = false, quoting = false)
     }
 
+    fun stepBack(): Boolean = when (val s = _step.value) {
+        is Step.Review -> { update(invoice); true }
+        is Step.Input -> if (s.scanning) { scan(false); true } else false
+        else -> false
+    }
+
     fun scan(on: Boolean) {
         (_step.value as? Step.Input)?.let { _step.value = it.copy(scanning = on) }
     }
@@ -424,16 +436,16 @@ internal fun SendLightningScreen(vm: WalletViewModel, flow: SendLightningFlow, o
                 }
             }
             is SendLightningFlow.Step.Review -> MeltReview(s.preview, flow)
-            is SendLightningFlow.Step.Paying -> WalletPage {
+            is SendLightningFlow.Step.Paying -> WalletPage(centered = true) {
                 WalletStatusPanel(StatusKind.Loading, stringResource(R.string.wallet_paying), if (s.slow) stringResource(R.string.wallet_paying_slow) else null)
             }
-            is SendLightningFlow.Step.Paid -> WalletPage(bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = { vm.home() }) }) {
+            is SendLightningFlow.Step.Paid -> WalletPage(centered = true, terminal = true, bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = { vm.home() }) }) {
                 WalletStatusPanel(
                     StatusKind.Success, stringResource(R.string.wallet_paid_title),
                     stringResource(R.string.wallet_paid_body, formatAmount(s.entry.amount, s.entry.unit), formatAmount(s.entry.fee, s.entry.unit)),
                 )
             }
-            SendLightningFlow.Step.Pending -> WalletPage(bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = { vm.home() }) }) {
+            SendLightningFlow.Step.Pending -> WalletPage(centered = true, terminal = true, bottom = { WalletButton(stringResource(R.string.wallet_done), onClick = { vm.home() }) }) {
                 WalletStatusPanel(StatusKind.Pending, stringResource(R.string.wallet_payment_pending_title), stringResource(R.string.wallet_payment_pending_body))
             }
             is SendLightningFlow.Step.Failed -> ErrorStep(s.copy, onRetry = if (s.requote) flow::quote else null, onClose = { vm.home() })
@@ -462,13 +474,13 @@ private fun MeltReview(preview: CashuWallet.MeltPreview, flow: SendLightningFlow
         }
         WalletCard {
             WalletValueRow(stringResource(R.string.wallet_melt_amount), formatAmount(q.amount, q.unit))
-            WalletCardDivider()
+            WalletCardDivider(plain = true)
             WalletValueRow(stringResource(R.string.wallet_melt_fee_reserve), formatAmount(q.feeReserve, q.unit))
             if (preview.inputFee > 0) {
-                WalletCardDivider()
+                WalletCardDivider(plain = true)
                 WalletValueRow(stringResource(R.string.wallet_melt_mint_fee), formatAmount(preview.inputFee, q.unit))
             }
-            WalletCardDivider()
+            WalletCardDivider(plain = true)
             WalletValueRow(stringResource(R.string.wallet_melt_max_total), formatAmount(preview.maxTotal, q.unit), emphasized = true)
         }
         Spacer(Modifier.height(12.dp))

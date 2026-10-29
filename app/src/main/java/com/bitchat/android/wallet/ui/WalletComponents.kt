@@ -1,6 +1,7 @@
 package com.bitchat.android.wallet.ui
 
 import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Bitmap
@@ -112,14 +113,18 @@ import java.util.Locale
  * and currency units scaled by their minor digits ("1.25 usd").
  */
 internal fun formatAmount(amount: Long, unit: String): String {
-    val minor = runCatching { Currency.getInstance(unit.uppercase(Locale.ROOT)).defaultFractionDigits }
-        .getOrNull()?.takeIf { it > 0 }
+    // Only real ISO currencies get minor digits; Android happily invents a 2-digit "SAT".
+    val minor = minorDigits[unit.uppercase(Locale.ROOT)]?.takeIf { it > 0 }
     val format = NumberFormat.getNumberInstance(Locale.getDefault()).apply {
         minimumFractionDigits = minor ?: 0
         maximumFractionDigits = minor ?: 0
     }
     val value = if (minor == null) BigDecimal.valueOf(amount) else BigDecimal.valueOf(amount, minor)
     return "${format.format(value)} $unit"
+}
+
+private val minorDigits: Map<String, Int> by lazy {
+    Currency.getAvailableCurrencies().associate { it.currencyCode to it.defaultFractionDigits }
 }
 
 /** The number alone, for the big amount display where the unit is set separately. */
@@ -151,9 +156,18 @@ internal fun rememberReducedMotion(): Boolean {
     }
 }
 
+/**
+ * Copies wallet data marked as sensitive, so Android 13+ hides it from the clipboard preview
+ * overlay and keyboard suggestions: a token on the clipboard is spendable money.
+ */
 internal fun copyToClipboard(context: Context, label: String, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
+    val clip = ClipData.newPlainText(label, text).apply {
+        description.extras = android.os.PersistableBundle().apply {
+            putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
+        }
+    }
+    clipboard.setPrimaryClip(clip)
 }
 
 // MARK: - Buttons
@@ -248,10 +262,11 @@ internal fun WalletCard(modifier: Modifier = Modifier, content: @Composable Colu
     }
 }
 
+/** Inset to the text column after a 22dp glyph; [plain] rows without a glyph inset 16dp. */
 @Composable
-internal fun WalletCardDivider() {
+internal fun WalletCardDivider(plain: Boolean = false) {
     HorizontalDivider(
-        modifier = Modifier.padding(start = 54.dp),
+        modifier = Modifier.padding(start = if (plain) 16.dp else 54.dp),
         thickness = 1.dp,
         color = MaterialTheme.colorScheme.outlineVariant,
     )
@@ -322,8 +337,8 @@ internal fun WalletValueRow(
             .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, fontFamily = BitchatFontFamily, fontSize = 13.sp, color = palette.textTertiary, modifier = Modifier.padding(end = 12.dp))
-        Spacer(Modifier.weight(1f))
+        Text(label, fontFamily = BitchatFontFamily, fontSize = 13.sp, color = palette.textTertiary)
+        Spacer(Modifier.width(12.dp))
         Text(
             value,
             fontFamily = BitchatFontFamily,
@@ -333,7 +348,7 @@ internal fun WalletValueRow(
             maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f, fill = false),
+            modifier = Modifier.weight(1f),
         )
         if (onCopy != null) CopyIcon(onCopy)
     }
@@ -566,6 +581,22 @@ internal fun WalletStatusPanel(kind: StatusKind, title: String, body: String?, m
             Spacer(Modifier.height(8.dp))
             Text(body, fontFamily = BitchatFontFamily, fontSize = 13.sp, lineHeight = 19.sp, color = colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
         }
+    }
+}
+
+/** Neutral empty state: the ecash glyph, a title, one line, nothing alarming. */
+@Composable
+internal fun WalletEmptyState(title: String, body: String, modifier: Modifier = Modifier) {
+    val colorScheme = MaterialTheme.colorScheme
+    Column(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 24.dp).semantics(mergeDescendants = true) {},
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_spec_ecash), contentDescription = null, tint = LocalBitchatPalette.current.textTertiary, modifier = Modifier.size(40.dp))
+        Spacer(Modifier.height(14.dp))
+        Text(title, fontFamily = BitchatFontFamily, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = colorScheme.onSurface, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(6.dp))
+        Text(body, fontFamily = BitchatFontFamily, fontSize = 13.sp, lineHeight = 19.sp, color = colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
     }
 }
 

@@ -11,6 +11,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
@@ -24,9 +25,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -52,14 +56,16 @@ fun WalletSheet(launch: WalletLaunch, onDismiss: () -> Unit) {
     LaunchedEffect(launch) { vm.open(launch) }
     DisposableEffect(Unit) { onDispose { vm.closed() } }
     val stack by vm.stack.collectAsStateWithLifecycle()
+    val terminal by vm.terminal.collectAsStateWithLifecycle()
 
     BitchatBottomSheet(onDismissRequest = onDismiss) {
-        BackHandler(enabled = stack.size > 1) { vm.back() }
+        // A finished flow has nothing to go back to: back (or Done) returns home instead.
+        BackHandler(enabled = stack.size > 1) { if (terminal > 0) vm.home() else vm.back() }
         Column(Modifier.fillMaxSize()) {
             BitchatSheetTopBar(
                 onClose = onDismiss,
                 title = { BitchatSheetTitle(routeTitle(stack.last())) },
-                navigationIcon = if (stack.size > 1) {
+                navigationIcon = if (stack.size > 1 && terminal == 0) {
                     { WalletBackIcon { vm.back() } }
                 } else null,
             )
@@ -80,7 +86,9 @@ fun WalletSheet(launch: WalletLaunch, onDismiss: () -> Unit) {
                 label = "walletPage",
                 modifier = Modifier.fillMaxSize(),
             ) { pages ->
-                RouteContent(pages.last(), vm, onDismiss)
+                CompositionLocalProvider(LocalTerminalPage provides vm::terminalPage) {
+                    RouteContent(pages.last(), vm, onDismiss)
+                }
             }
         }
     }
@@ -126,26 +134,40 @@ private fun routeTitle(route: WalletRoute): String = stringResource(
     }
 )
 
+private val LocalTerminalPage = staticCompositionLocalOf<(Boolean) -> Unit> { {} }
+
 /**
  * Page scaffold: scrolling content, with primary actions pinned at the bottom above the
  * keyboard and navigation bar, so the main button sits in the same place on every step.
+ * [centered] pages (status results) sit in the vertical middle; [terminal] pages end a flow
+ * and hide the back arrow.
  */
 @Composable
 internal fun WalletPage(
     modifier: Modifier = Modifier,
     scrollState: ScrollState = rememberScrollState(),
+    centered: Boolean = false,
+    terminal: Boolean = false,
     bottom: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    if (terminal) {
+        val mark = LocalTerminalPage.current
+        DisposableEffect(Unit) {
+            mark(true)
+            onDispose { mark(false) }
+        }
+    }
     Column(modifier.fillMaxSize().imePadding()) {
-        Column(
-            Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(scrollState)
-                .padding(top = 8.dp, bottom = 16.dp),
-            content = content,
-        )
+        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = if (centered) Alignment.Center else Alignment.TopCenter) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(scrollState)
+                    .padding(top = 8.dp, bottom = if (centered) 48.dp else 16.dp),
+                content = content,
+            )
+        }
         if (bottom != null) {
             Column(
                 Modifier

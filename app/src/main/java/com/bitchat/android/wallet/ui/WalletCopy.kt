@@ -93,6 +93,7 @@ internal fun historyStatus(context: Context, entry: HistoryEntry): String {
         HistoryNote.PAYMENT_PENDING -> R.string.wallet_note_payment_pending
         HistoryNote.QUOTE_EXPIRED -> R.string.wallet_note_quote_expired
         HistoryNote.MINT_REJECTED -> R.string.wallet_note_rejected
+        HistoryNote.INVOICE_ALREADY_PAID -> R.string.wallet_note_invoice_paid
         else -> null
     }
     val status = when (entry.status) {

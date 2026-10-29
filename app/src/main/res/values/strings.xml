@@ -722,7 +722,6 @@
     <string name="wallet_send" tools:ignore="MissingTranslation">Send</string>
     <string name="wallet_section_recent" tools:ignore="MissingTranslation">Recent</string>
     <string name="wallet_section_mints" tools:ignore="MissingTranslation">Mints</string>
-    <string name="wallet_section_settings" tools:ignore="MissingTranslation">Settings</string>
     <string name="wallet_see_all" tools:ignore="MissingTranslation">See all</string>
     <string name="wallet_add_mint" tools:ignore="MissingTranslation">Add mint</string>
     <string name="wallet_empty_title" tools:ignore="MissingTranslation">No ecash yet</string>
@@ -953,6 +952,7 @@
     <string name="wallet_note_quote_expired" tools:ignore="MissingTranslation">Expired unpaid</string>
     <string name="wallet_note_rejected" tools:ignore="MissingTranslation">Refused by the mint</string>
     <string name="wallet_note_via_chat" tools:ignore="MissingTranslation">via chat</string>
+    <string name="wallet_note_invoice_paid" tools:ignore="MissingTranslation">Invoice was already paid, nothing spent</string>
     <string name="wallet_detail_title" tools:ignore="MissingTranslation">Details</string>
     <string name="wallet_detail_amount" tools:ignore="MissingTranslation">Amount</string>
     <string name="wallet_detail_fee" tools:ignore="MissingTranslation">Fees</string>
