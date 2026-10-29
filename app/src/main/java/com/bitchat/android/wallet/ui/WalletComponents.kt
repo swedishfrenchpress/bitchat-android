@@ -44,7 +44,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
@@ -85,7 +84,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -316,75 +314,6 @@ internal fun WalletRow(
         if (trailing != null) {
             Spacer(Modifier.width(12.dp))
             trailing()
-        }
-    }
-}
-
-/** Label on the left, value on the right; used by review and detail screens. */
-@Composable
-internal fun WalletValueRow(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    emphasized: Boolean = false,
-    valueColor: Color = MaterialTheme.colorScheme.onSurface,
-    maxLines: Int = 1,
-    onCopy: (() -> Unit)? = null,
-) {
-    val palette = LocalBitchatPalette.current
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 44.dp)
-            .padding(horizontal = 16.dp, vertical = 11.dp)
-            .semantics(mergeDescendants = true) {},
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, fontFamily = BitchatFontFamily, fontSize = 13.sp, color = palette.textTertiary)
-        Spacer(Modifier.width(12.dp))
-        Text(
-            value,
-            fontFamily = BitchatFontFamily,
-            fontSize = if (emphasized) 15.sp else 13.sp,
-            fontWeight = if (emphasized) FontWeight.SemiBold else FontWeight.Medium,
-            color = valueColor,
-            maxLines = maxLines,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f),
-        )
-        if (onCopy != null) CopyIcon(onCopy)
-    }
-}
-
-@Composable
-private fun CopyIcon(onCopy: () -> Unit) {
-    val haptics = rememberWalletHaptics()
-    var copied by remember { mutableStateOf(false) }
-    LaunchedEffect(copied) {
-        if (copied) {
-            kotlinx.coroutines.delay(1_500)
-            copied = false
-        }
-    }
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.wallet_copy)) {
-                onCopy()
-                haptics.tick()
-                copied = true
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        AnimatedContent(copied, transitionSpec = { fadeIn(tween(BitchatMotion.QUICK_MS)) togetherWith fadeOut(tween(BitchatMotion.QUICK_MS)) }, label = "copy") { done ->
-            Icon(
-                if (done) Icons.Filled.Check else Icons.Filled.ContentCopy,
-                contentDescription = stringResource(if (done) R.string.wallet_copied else R.string.wallet_copy),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp),
-            )
         }
     }
 }

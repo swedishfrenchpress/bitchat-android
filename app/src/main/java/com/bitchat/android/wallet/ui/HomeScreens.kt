@@ -12,11 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.CallMade
 import androidx.compose.material.icons.automirrored.filled.CallReceived
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.outlined.CloudUpload
@@ -47,15 +45,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bitchat.android.R
-import com.bitchat.android.ui.AboutSectionLabel
 import com.bitchat.android.ui.BitchatBadge
 import com.bitchat.android.ui.theme.BitchatFontFamily
 import com.bitchat.android.ui.theme.LocalBitchatPalette
 import com.bitchat.android.wallet.WalletService
+import com.bitchat.android.wallet.cashu.MintUrl
 import com.bitchat.android.wallet.engine.HistoryEntry
 import com.bitchat.android.wallet.engine.HistoryKind
 import com.bitchat.android.wallet.engine.HistoryStatus
 import com.bitchat.android.wallet.engine.MintBalance
+import com.bitchat.android.wallet.engine.WalletState
 import com.bitchat.android.wallet.engine.WalletException
 import kotlinx.coroutines.launch
 
@@ -92,7 +91,7 @@ internal fun HomeScreen(vm: WalletViewModel) {
                     fontFamily = BitchatFontFamily, fontSize = 14.sp, color = colorScheme.onSurfaceVariant,
                 )
             }
-            val pendingOut = state.pendingOut("sat")
+            val pendingOut = state.unclaimed()["sat"] ?: 0L
             if (pendingOut > 0 || pendingCount > 0) {
                 Spacer(Modifier.height(6.dp))
                 val parts = listOfNotNull(
@@ -153,31 +152,32 @@ internal fun HomeScreen(vm: WalletViewModel) {
             }
         }
 
+        // Home is balance, actions, activity. Mints live under settings.
         if (state.history.isNotEmpty()) {
-            AboutSectionLabel(stringResource(R.string.wallet_section_recent))
+            Spacer(Modifier.height(12.dp))
             WalletCard {
-                state.history.take(4).forEachIndexed { i, entry ->
+                state.history.take(5).forEachIndexed { i, entry ->
                     if (i > 0) WalletCardDivider()
                     HistoryRow(entry, hideBalance) { vm.push(WalletRoute.HistoryDetail(entry.id)) }
                 }
-                if (state.history.size > 4) {
+                if (state.history.size > 5) {
                     WalletCardDivider()
                     WalletRow(title = stringResource(R.string.wallet_see_all), titleColor = colorScheme.primary, onClick = { vm.push(WalletRoute.History) }, trailing = { Chevron() })
                 }
             }
         }
-
-        AboutSectionLabel(stringResource(R.string.wallet_section_mints))
-        WalletCard {
-            state.mints.forEachIndexed { i, mint ->
-                if (i > 0) WalletCardDivider()
-                MintRow(mint, hideBalance, unreachable = mint.mint.url in unreachable) { vm.push(WalletRoute.MintDetail(mint.mint.url)) }
-            }
-            WalletCardDivider()
-            WalletRow(title = stringResource(R.string.wallet_add_mint), icon = Icons.Filled.Add, titleColor = colorScheme.primary, onClick = { vm.startAddMint() })
-        }
     }
 }
+
+/**
+ * What our pending sends are worth per unit, as their history rows show it. The coins set
+ * aside also cover the recipient's claim fee, so the engine's reserve is slightly higher.
+ */
+internal fun WalletState.unclaimed(mintUrl: String? = null): Map<String, Long> =
+    history.filter { it.kind == HistoryKind.ECASH_SEND && it.isPending && (mintUrl == null || it.mintUrl == mintUrl) }
+        .groupBy { it.unit }
+        .mapValues { (_, entries) -> entries.sumOf { it.amount } }
+        .filterValues { it > 0 }
 
 @Composable
 internal fun Chevron() {
@@ -224,10 +224,11 @@ internal fun HistoryRow(entry: HistoryEntry, hidden: Boolean, onClick: () -> Uni
         incoming -> colorScheme.primary
         else -> colorScheme.onSurface
     }
+    // A finished entry needs only its time; anything else says what it is waiting for.
+    val completed = stringResource(R.string.wallet_status_completed)
     val subtitle = listOfNotNull(
-        historyStatus(context, entry),
+        historyStatus(context, entry).takeIf { it != completed },
         formatRelative(entry.updatedAt),
-        if (entry.viaChat) stringResource(R.string.wallet_note_via_chat) else null,
     ).joinToString(" · ")
     WalletRow(
         title = historyTitle(context, entry),
@@ -241,9 +242,6 @@ internal fun HistoryRow(entry: HistoryEntry, hidden: Boolean, onClick: () -> Uni
         onClick = onClick,
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (entry.isPending) {
-                    Icon(Icons.Filled.Schedule, contentDescription = null, tint = palette.accentOrange, modifier = Modifier.padding(end = 6.dp).size(14.dp))
-                }
                 Text(
                     if (hidden) stringResource(R.string.wallet_balance_hidden)
                     else (if (incoming) "+" else "−") + formatAmount(entry.amount, entry.unit),
@@ -362,42 +360,27 @@ internal fun HistoryDetailScreen(vm: WalletViewModel, id: String) {
             )
             Spacer(Modifier.height(6.dp))
             Text(historyTitle(context, entry) + " · " + historyStatus(context, entry), fontFamily = BitchatFontFamily, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+            // Where and when in one line; the fee only when there was one.
+            val meta = listOfNotNull(
+                mint?.host ?: MintUrl.host(entry.mintUrl),
+                formatDateTime(context, entry.createdAt),
+                entry.fee.takeIf { it > 0 }?.let { stringResource(R.string.wallet_fee_amount, formatAmount(it, entry.unit)) },
+            )
+            Spacer(Modifier.height(4.dp))
+            WalletNotice(meta.joinToString(" · "), centered = true)
+            entry.lockedUntil?.let {
+                WalletNotice(stringResource(R.string.wallet_detail_locked_until, formatDateTime(context, it * 1000)), centered = true)
+            }
+            entry.memo?.let {
+                WalletNotice(it, centered = true)
+            }
         }
         error?.let {
             WalletNotice(it.line(), tone = if (it.pending) NoticeTone.Warning else NoticeTone.Danger)
             Spacer(Modifier.height(8.dp))
         }
-        HistoryTimeline(entry)
-        Spacer(Modifier.height(12.dp))
         if (showToken && entry.token != null) {
             TokenShareBlock(entry.token)
-            Spacer(Modifier.height(12.dp))
-        }
-        // Amount and status are already in the header above.
-        WalletCard {
-            WalletValueRow(stringResource(R.string.wallet_detail_mint), mint?.displayName ?: entry.mintUrl)
-            if (entry.fee > 0) {
-                WalletCardDivider(plain = true)
-                WalletValueRow(stringResource(R.string.wallet_detail_fee), formatAmount(entry.fee, entry.unit))
-            }
-            WalletCardDivider(plain = true)
-            WalletValueRow(stringResource(R.string.wallet_detail_date), formatDateTime(context, entry.createdAt))
-            entry.memo?.let {
-                WalletCardDivider(plain = true)
-                WalletValueRow(stringResource(R.string.wallet_detail_memo), it, maxLines = 3)
-            }
-            entry.lockedUntil?.let {
-                WalletCardDivider(plain = true)
-                WalletValueRow(stringResource(R.string.wallet_detail_lock), stringResource(R.string.wallet_detail_locked_until, formatDateTime(context, it * 1000)), maxLines = 2)
-            }
-            entry.invoice?.takeIf { entry.kind == HistoryKind.LIGHTNING_SEND }?.let { invoice ->
-                WalletCardDivider(plain = true)
-                WalletValueRow(stringResource(R.string.wallet_detail_invoice), invoice.take(14) + "…", onCopy = { copyToClipboard(context, "invoice", invoice) })
-            }
-            entry.preimage?.let { pre ->
-                WalletCardDivider(plain = true)
-                WalletValueRow(stringResource(R.string.wallet_detail_proof_of_payment), pre.take(12) + "…", onCopy = { copyToClipboard(context, "preimage", pre) })
-            }
         }
     }
 
@@ -438,6 +421,13 @@ internal fun SettingsScreen(vm: WalletViewModel) {
         Spacer(Modifier.height(8.dp))
         WalletCard {
             WalletRow(
+                title = stringResource(R.string.wallet_mints_title),
+                painter = painterResource(R.drawable.ic_spec_ecash),
+                onClick = { vm.push(WalletRoute.Mints) },
+                trailing = { Chevron() },
+            )
+            WalletCardDivider()
+            WalletRow(
                 title = stringResource(R.string.wallet_settings_words),
                 subtitle = stringResource(if (vm.backedUp) R.string.wallet_settings_words_ok else R.string.wallet_settings_words_todo),
                 icon = Icons.Filled.Key,
@@ -448,7 +438,6 @@ internal fun SettingsScreen(vm: WalletViewModel) {
             WalletCardDivider()
             SettingSwitchRow(
                 title = stringResource(R.string.wallet_settings_nostr_backup),
-                subtitle = stringResource(R.string.wallet_settings_nostr_backup_desc),
                 icon = Icons.Outlined.CloudUpload,
                 checked = state.settings[WalletService.SETTING_NOSTR_BACKUP] == "true",
                 onChange = { on ->
@@ -459,7 +448,6 @@ internal fun SettingsScreen(vm: WalletViewModel) {
             WalletCardDivider()
             SettingSwitchRow(
                 title = stringResource(R.string.wallet_settings_hide_balance),
-                subtitle = stringResource(R.string.wallet_settings_hide_balance_desc),
                 icon = Icons.Filled.VisibilityOff,
                 checked = state.settings[WalletService.SETTING_HIDE_BALANCE] == "true",
                 onChange = { vm.setSetting(WalletService.SETTING_HIDE_BALANCE, it.toString()) },
@@ -484,7 +472,6 @@ internal fun SettingsScreen(vm: WalletViewModel) {
 @Composable
 private fun SettingSwitchRow(
     title: String,
-    subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     checked: Boolean,
     onChange: (Boolean) -> Unit,
@@ -492,7 +479,6 @@ private fun SettingSwitchRow(
     val colorScheme = MaterialTheme.colorScheme
     WalletRow(
         title = title,
-        subtitle = subtitle,
         icon = icon,
         onClick = { onChange(!checked) },
         trailing = {

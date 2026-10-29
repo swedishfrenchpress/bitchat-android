@@ -47,7 +47,7 @@ import com.bitchat.android.ui.theme.BitchatMotion
 /**
  * The wallet: one full-height Bitchat sheet hosting a small page stack. Pushes slide in from
  * the trailing edge, pops from the leading edge, both with a fade at Bitchat's emphasized
- * duration. The close button always closes the whole sheet; back walks the stack.
+ * duration. The root page has the close button; inner pages walk back with the arrow.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,6 +68,8 @@ fun WalletSheet(launch: WalletLaunch, onDismiss: () -> Unit) {
                 navigationIcon = if (stack.size > 1 && terminal == 0) {
                     { WalletBackIcon { vm.back() } }
                 } else null,
+                // One way out per page: close on the root, back arrow inside, Done on results.
+                showClose = stack.size == 1,
                 actions = {
                     if (stack.last() == WalletRoute.Home) WalletSettingsIcon { vm.push(WalletRoute.Settings) }
                 },

@@ -368,22 +368,17 @@ private fun ClaimReview(step: ReceiveEcashFlow.Step.Review, flow: ReceiveEcashFl
     }) {
         Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             AmountHero(i.receiveAmount ?: token.amount, token.unit)
-        }
-        WalletCard {
-            WalletValueRow(stringResource(R.string.wallet_review_mint), host)
-            if ((i.fee ?: 0) > 0) {
-                WalletCardDivider(plain = true)
-                WalletValueRow(stringResource(R.string.wallet_review_fee), formatAmount(i.fee!!, token.unit))
-            }
-            token.memo?.let {
-                WalletCardDivider(plain = true)
-                WalletValueRow(stringResource(R.string.wallet_review_memo), it, maxLines = 3)
-            }
+            Spacer(Modifier.height(4.dp))
+            WalletNotice(
+                listOfNotNull(host, i.fee?.takeIf { it > 0 }?.let { stringResource(R.string.wallet_fee_amount, formatAmount(it, token.unit)) }).joinToString(" · "),
+                centered = true,
+            )
+            token.memo?.let { WalletNotice(it, centered = true) }
         }
         Spacer(Modifier.height(8.dp))
         TrustNotes(i)
         if (!i.mintKnown && canClaim) {
-            WalletNotice(stringResource(R.string.wallet_unknown_mint_body, host), tone = NoticeTone.Warning, icon = Icons.Filled.WarningAmber)
+            WalletNotice(stringResource(R.string.wallet_unknown_mint_body), tone = NoticeTone.Warning, icon = Icons.Filled.WarningAmber, centered = true)
         }
     }
 }
@@ -397,22 +392,22 @@ private fun ClaimReview(step: ReceiveEcashFlow.Step.Review, flow: ReceiveEcashFl
 internal fun TrustNotes(i: CashuWallet.TokenInspection) {
     val context = LocalContext.current
     if (i.dleq == CashuWallet.DleqStatus.INVALID) {
-        WalletNotice(stringResource(R.string.wallet_error_signature_body), tone = NoticeTone.Danger, icon = Icons.Filled.WarningAmber)
+        WalletNotice(stringResource(R.string.wallet_error_signature_body), tone = NoticeTone.Danger, icon = Icons.Filled.WarningAmber, centered = true)
         return
     }
     when {
-        i.alreadyClaimed -> WalletNotice(stringResource(R.string.wallet_trust_already_claimed), tone = NoticeTone.Positive)
-        i.isOurPendingSend -> WalletNotice(stringResource(R.string.wallet_trust_own_send))
+        i.alreadyClaimed -> WalletNotice(stringResource(R.string.wallet_trust_already_claimed), tone = NoticeTone.Positive, centered = true)
+        i.isOurPendingSend -> WalletNotice(stringResource(R.string.wallet_trust_own_send), centered = true)
         else -> when (val lock = i.lock) {
-            CashuWallet.LockStatus.None -> WalletNotice(stringResource(R.string.wallet_trust_bearer), tone = NoticeTone.Warning, icon = Icons.Filled.LockOpen)
+            CashuWallet.LockStatus.None -> WalletNotice(stringResource(R.string.wallet_trust_bearer), tone = NoticeTone.Warning, icon = Icons.Filled.LockOpen, centered = true)
             is CashuWallet.LockStatus.ToUs -> WalletNotice(
                 if (lock.locktime != null) stringResource(R.string.wallet_trust_locked_you_until, formatDateTime(context, lock.locktime * 1000))
                 else stringResource(R.string.wallet_trust_locked_you),
-                tone = NoticeTone.Positive, icon = Icons.Filled.Lock,
+                tone = NoticeTone.Positive, icon = Icons.Filled.Lock, centered = true,
             )
-            is CashuWallet.LockStatus.RefundableByUs -> WalletNotice(stringResource(R.string.wallet_trust_refundable, formatDateTime(context, lock.locktime * 1000)), icon = Icons.Filled.Lock)
-            is CashuWallet.LockStatus.ToSomeoneElse -> WalletNotice(stringResource(R.string.wallet_trust_locked_other), tone = NoticeTone.Danger, icon = Icons.Filled.Lock)
-            CashuWallet.LockStatus.Unsupported -> WalletNotice(stringResource(R.string.wallet_trust_unsupported), tone = NoticeTone.Danger)
+            is CashuWallet.LockStatus.RefundableByUs -> WalletNotice(stringResource(R.string.wallet_trust_refundable, formatDateTime(context, lock.locktime * 1000)), icon = Icons.Filled.Lock, centered = true)
+            is CashuWallet.LockStatus.ToSomeoneElse -> WalletNotice(stringResource(R.string.wallet_trust_locked_other), tone = NoticeTone.Danger, icon = Icons.Filled.Lock, centered = true)
+            CashuWallet.LockStatus.Unsupported -> WalletNotice(stringResource(R.string.wallet_trust_unsupported), tone = NoticeTone.Danger, centered = true)
         }
     }
 }

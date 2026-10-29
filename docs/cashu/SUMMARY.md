@@ -51,16 +51,17 @@ seed-derived key, with no client tag. On by default with a toggle.
 **UI** (`wallet/ui`): one full-height Bitchat sheet with a page stack.
 - Onboarding, recovery words (blurred, screenshot-blocked) with a 3-word check.
 - Restore, with the Nostr mint-list lookup and manual mints.
-- Home: balance, Receive/Send, recent history, mints, a backup nudge, and an
-  offline line. Settings sit in the top bar.
+- Home: balance, Receive/Send, recent activity, a backup nudge, and an offline
+  line. The top-bar gear holds mints, recovery words, backup, and hide balance.
 - Receive: Lightning keypad, invoice QR, auto-polling; ecash paste, scan, or
   tap in chat, then a review with a one-line trust status, then claim.
 - Send: ecash keypad, review with fees and an optional lock, then a token card
   with QR, copy, share, and send-in-chat. Lightning: invoice, review with fee
   reserve and quote countdown, then paying, then the result.
-- Mints: list, add with preview and warning, detail, coin check, remove.
-- History, details with a step timeline (created → waiting → claimed, quote →
-  paying → paid), take back, and settings (hide balance, backup toggle).
+- Mints (under settings): list, add with a name-and-address preview and a
+  warning, detail with the balance held there, coin check, remove.
+- History and details (amount, status, mint and date in one line), with take
+  back for pending sends.
 - Wallet behaviors: keypad with shake and haptics on invalid input, inline
   errors under the amount, a Max pill, loaders that stay visible for a beat,
   terminal result pages without a back arrow, back stepping within a flow,
@@ -83,7 +84,7 @@ seed-derived key, with no client tag. On by default with a toggle.
 - Tokens stay plain `cashuB` text, so iOS and other wallets keep working.
 
 The thinking behind the chat behavior is in `integration.md`; individual
-calls are in `decisions.md` (D-001 to D-026).
+calls are in `decisions.md` (D-001 to D-027).
 
 ## How it was tested
 

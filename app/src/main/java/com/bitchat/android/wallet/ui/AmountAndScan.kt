@@ -146,7 +146,8 @@ internal fun AmountStep(
 
 @Composable
 internal fun MintPicker(mints: List<MintBalance>, selected: String?, unit: String, onSelect: (String) -> Unit) {
-    if (mints.isEmpty()) return
+    // With one mint there is nothing to choose, so nothing to show.
+    if (mints.size <= 1) return
     val current = mints.firstOrNull { it.mint.url == selected } ?: mints.first()
     var open by remember { mutableStateOf(false) }
     val palette = LocalBitchatPalette.current

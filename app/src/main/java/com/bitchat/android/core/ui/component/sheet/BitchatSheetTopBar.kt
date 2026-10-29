@@ -24,6 +24,8 @@ fun BitchatSheetTopBar(
     backgroundAlpha: Float = 0.98f,
     title: @Composable () -> Unit,
     navigationIcon: (@Composable () -> Unit)? = null,
+    // Pages pushed inside a sheet can rely on their back arrow alone.
+    showClose: Boolean = true,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     TopAppBar(
@@ -31,12 +33,14 @@ fun BitchatSheetTopBar(
         navigationIcon = { navigationIcon?.invoke() },
         actions = {
             actions()
-            val dismiss = LocalSheetDismiss.current
-            CloseButton(
-                onClick = { dismiss?.invoke() ?: onClose() },
-                // 2.dp from any preceding action, matching the conversation header's action spacing.
-                modifier = Modifier.padding(start = 2.dp, end = 16.dp)
-            )
+            if (showClose) {
+                val dismiss = LocalSheetDismiss.current
+                CloseButton(
+                    onClick = { dismiss?.invoke() ?: onClose() },
+                    // 2.dp from any preceding action, matching the conversation header's action spacing.
+                    modifier = Modifier.padding(start = 2.dp, end = 16.dp)
+                )
+            }
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.background.copy(alpha = backgroundAlpha),

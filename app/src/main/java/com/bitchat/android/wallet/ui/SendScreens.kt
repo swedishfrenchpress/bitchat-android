@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Lock
@@ -37,16 +36,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bitchat.android.R
 import com.bitchat.android.ui.AboutHorizontalPadding
 import com.bitchat.android.ui.theme.BitchatFontFamily
 import com.bitchat.android.ui.theme.BitchatMotion
-import com.bitchat.android.ui.theme.LocalBitchatPalette
 import com.bitchat.android.wallet.WalletService
 import com.bitchat.android.wallet.engine.Bolt11
 import com.bitchat.android.wallet.engine.CashuWallet
@@ -83,7 +78,6 @@ class SendEcashFlow(
     val step: StateFlow<Step> = _step.asStateFlow()
     val amount = MutableStateFlow(AmountDigits())
     val mint = MutableStateFlow(initialMint)
-    val memo = MutableStateFlow("")
     val problem = MutableStateFlow<ErrorCopy?>(null)
     private val historyId = CashuWallet.newId()
 
@@ -126,7 +120,6 @@ class SendEcashFlow(
                     wallet.send(
                         review.preview.mintUrl, review.preview.amount,
                         lock = lockRequest(review.lock),
-                        memo = memo.value,
                         viaChat = chat != null,
                         historyId = historyId,
                     )
@@ -223,7 +216,6 @@ internal fun SendEcashScreen(vm: WalletViewModel, flow: SendEcashFlow, onDismiss
 @Composable
 private fun SendReview(step: SendEcashFlow.Step.Review, flow: SendEcashFlow) {
     val p = step.preview
-    val memo by flow.memo.collectAsStateWithLifecycle()
     val colorScheme = MaterialTheme.colorScheme
     val peer = flow.chat?.peerLabel
     WalletPage(bottom = {
@@ -231,15 +223,22 @@ private fun SendReview(step: SendEcashFlow.Step.Review, flow: SendEcashFlow) {
     }) {
         Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             AmountHero(p.amount, p.unit)
+            // The recipient gets the amount; any fee comes on top.
+            if (p.fee > 0) {
+                Spacer(Modifier.height(4.dp))
+                WalletNotice(
+                    stringResource(R.string.wallet_fee_amount, formatAmount(p.fee, p.unit)) + " · " +
+                        stringResource(R.string.wallet_total_amount, formatAmount(p.total, p.unit)),
+                    centered = true,
+                )
+            }
+            // Only worth a line when the mint is down and this still works.
+            if (flow.mintOffline && p.offline) {
+                WalletNotice(stringResource(R.string.wallet_review_offline_ready), icon = Icons.Filled.CloudOff, centered = true)
+            }
         }
-        WalletCard {
-            WalletValueRow(stringResource(R.string.wallet_review_mint), flow.mint.value?.let { com.bitchat.android.wallet.cashu.MintUrl.host(it) } ?: "")
-            WalletCardDivider(plain = true)
-            WalletValueRow(stringResource(R.string.wallet_review_fees), formatAmount(p.fee, p.unit))
-            WalletCardDivider(plain = true)
-            WalletValueRow(stringResource(R.string.wallet_review_total), formatAmount(p.total, p.unit), emphasized = true)
-            if (flow.lockAvailable()) {
-                WalletCardDivider()
+        if (flow.lockAvailable()) {
+            WalletCard {
                 WalletRow(
                     title = stringResource(R.string.wallet_review_lock, peer ?: stringResource(R.string.wallet_peer_fallback)),
                     subtitle = stringResource(R.string.wallet_review_lock_desc),
@@ -253,17 +252,6 @@ private fun SendReview(step: SendEcashFlow.Step.Review, flow: SendEcashFlow) {
                     },
                 )
             }
-        }
-        Spacer(Modifier.height(12.dp))
-        WalletTextField(
-            value = memo, onValueChange = { flow.memo.value = it.take(80) },
-            placeholder = stringResource(R.string.wallet_review_memo_hint), singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        )
-        // Only worth a line when the mint is down and this still works.
-        if (flow.mintOffline && p.offline) {
-            Spacer(Modifier.height(8.dp))
-            WalletNotice(stringResource(R.string.wallet_review_offline_ready), icon = Icons.Filled.CloudOff)
         }
     }
 }
@@ -469,26 +457,17 @@ private fun MeltReview(preview: CashuWallet.MeltPreview, flow: SendLightningFlow
     }) {
         Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             AmountHero(q.amount, q.unit)
-        }
-        WalletCard {
-            WalletValueRow(stringResource(R.string.wallet_melt_amount), formatAmount(q.amount, q.unit))
-            WalletCardDivider(plain = true)
-            WalletValueRow(stringResource(R.string.wallet_melt_fee_reserve), formatAmount(q.feeReserve, q.unit))
-            if (preview.inputFee > 0) {
-                WalletCardDivider(plain = true)
-                WalletValueRow(stringResource(R.string.wallet_melt_mint_fee), formatAmount(preview.inputFee, q.unit))
+            Spacer(Modifier.height(4.dp))
+            // Network reserve and mint fee as one ceiling; unused reserve comes back as change.
+            WalletNotice(stringResource(R.string.wallet_fee_up_to, formatAmount(preview.maxTotal - q.amount, q.unit)), centered = true)
+            if (remaining != null) {
+                WalletNotice(
+                    if (expired) stringResource(R.string.wallet_error_quote_expired_title).lowercase()
+                    else stringResource(R.string.wallet_melt_quote_expires, formatCountdown(remaining)),
+                    tone = if (expired) NoticeTone.Danger else NoticeTone.Info,
+                    centered = true,
+                )
             }
-            WalletCardDivider(plain = true)
-            WalletValueRow(stringResource(R.string.wallet_melt_max_total), formatAmount(preview.maxTotal, q.unit), emphasized = true)
-        }
-        if (remaining != null) {
-            Spacer(Modifier.height(12.dp))
-            Text(
-                if (expired) stringResource(R.string.wallet_error_quote_expired_title) else stringResource(R.string.wallet_melt_quote_expires, formatCountdown(remaining)),
-                fontFamily = BitchatFontFamily, fontSize = 12.sp, textAlign = TextAlign.Center,
-                color = if (expired) MaterialTheme.colorScheme.error else LocalBitchatPalette.current.textTertiary,
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
     }
 }

@@ -189,3 +189,28 @@ Explainer boxes are gone. The rules that replaced them:
   history.
 - Error bodies still say whether funds are safe and what to do next, as
   fragments ("nothing was spent · try again").
+
+### D-027: Super-minimal screens
+A second on-device review asked for the wallet to be "super simple and
+minimal". Every screen now shows an amount, at most two lines, and its actions.
+- **One way out per page.** The close button is on the root page only. Inner
+  pages have the back arrow; result pages end with Done. (The shared
+  `BitchatSheetTopBar` gained an optional `showClose`, default on, so other
+  sheets are unchanged.)
+- **Home** is balance, Receive/Send, and recent activity. Mints moved into
+  settings.
+- **Reviews** lose their label/value cards:
+  - send: "fee 2 sat · total 23 sat" under the amount;
+  - claim: "mint · fee" and the trust line;
+  - Lightning: "fee up to 3 sat" and the quote countdown.
+- **Mint picker** is hidden when there is only one mint.
+- **Mint pages** drop the capability table, fee rate, and units. The preview is
+  the name and address plus the warning. The detail page is the balance held
+  there, the mint's message if any, a quiet "Check coins", and Remove.
+- **History detail** drops the step timeline and the invoice and preimage rows.
+  The status line already says where it stands.
+
+Given up, on purpose:
+- Writing a memo on send. Received memos are still shown.
+- Copying an invoice or preimage from history. Both are still stored, so they
+  can come back behind a long-press if anyone needs proof of payment.

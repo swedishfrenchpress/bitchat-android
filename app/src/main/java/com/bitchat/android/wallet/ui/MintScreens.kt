@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,11 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bitchat.android.R
-import com.bitchat.android.ui.AboutSectionLabel
 import com.bitchat.android.ui.theme.BitchatFontFamily
 import com.bitchat.android.ui.theme.BitchatMotion
 import com.bitchat.android.wallet.WalletService
 import com.bitchat.android.wallet.cashu.MintInfo
+import com.bitchat.android.wallet.cashu.MintUrl
 import com.bitchat.android.wallet.engine.CashuWallet
 import com.bitchat.android.wallet.engine.WalletError
 import com.bitchat.android.wallet.engine.WalletException
@@ -157,44 +158,22 @@ internal fun AddMintScreen(vm: WalletViewModel, flow: AddMintFlow) {
                 // Back (arrow or gesture) returns to the address; no separate Cancel.
                 WalletButton(stringResource(R.string.wallet_add_mint_confirm), onClick = flow::confirm, loading = s.adding)
             }) {
-                MintSummary(s.preview.url, s.preview.info, s.preview.keysets.filter { it.active }.maxOfOrNull { it.inputFeePpk } ?: 0, s.preview.units)
+                MintSummary(s.preview.url, s.preview.info)
                 Spacer(Modifier.height(8.dp))
-                WalletNotice(stringResource(R.string.wallet_add_mint_warning), tone = NoticeTone.Warning, icon = Icons.Filled.WarningAmber)
+                WalletNotice(stringResource(R.string.wallet_add_mint_warning), tone = NoticeTone.Warning, icon = Icons.Filled.WarningAmber, centered = true)
             }
         }
     }
 }
 
+/** Who the mint is: name and address, nothing else. Mint-supplied text is bounded. */
 @Composable
-private fun MintSummary(url: String, info: MintInfo?, feePpk: Long, units: Set<String>) {
+private fun MintSummary(url: String, info: MintInfo?) {
     val colorScheme = MaterialTheme.colorScheme
-    Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        androidx.compose.material3.Icon(painterResource(R.drawable.ic_spec_ecash), contentDescription = null, tint = colorScheme.primary, modifier = Modifier.padding(bottom = 8.dp))
-        Text(info?.name?.take(40) ?: com.bitchat.android.wallet.cashu.MintUrl.host(url), fontFamily = BitchatFontFamily, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colorScheme.onSurface)
-        Text(com.bitchat.android.wallet.cashu.MintUrl.host(url), fontFamily = BitchatFontFamily, fontSize = 12.sp, color = colorScheme.onSurfaceVariant)
-        info?.description?.takeIf { it.isNotBlank() }?.let {
-            Spacer(Modifier.height(8.dp))
-            Text(it.take(200), fontFamily = BitchatFontFamily, fontSize = 13.sp, color = colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 28.dp))
-        }
-    }
-    // What the mint can do, as one dot-separated line; anything missing is simply absent.
-    val features = listOfNotNull(
-        stringResource(R.string.wallet_mint_feature_lightning).takeIf { info?.mintMethods?.any { it.method == "bolt11" } == true },
-        stringResource(R.string.wallet_mint_feature_restore).takeIf { info?.supports(9) == true },
-        stringResource(R.string.wallet_mint_feature_lock).takeIf { info?.supports(11) == true },
-        stringResource(R.string.wallet_mint_feature_offline).takeIf { info?.supports(12) == true },
-    )
-    WalletCard {
-        WalletValueRow(stringResource(R.string.wallet_mint_supports), features.joinToString(" · ").ifEmpty { "–" }, maxLines = 2)
-        WalletCardDivider(plain = true)
-        WalletValueRow(stringResource(R.string.wallet_mint_fee), if (feePpk == 0L) stringResource(R.string.wallet_mint_fee_none) else stringResource(R.string.wallet_mint_fee_value, feePpk.toString()))
-        WalletCardDivider(plain = true)
-        WalletValueRow(stringResource(R.string.wallet_mint_units), units.sorted().joinToString(" · "))
-    }
-    info?.motd?.takeIf { it.isNotBlank() }?.let {
-        AboutSectionLabel(stringResource(R.string.wallet_mint_motd))
-        // Mint-supplied text: shown as plain, bounded text, never as a link or markup.
-        WalletNotice(it.take(280))
+    Column(Modifier.fillMaxWidth().padding(vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        androidx.compose.material3.Icon(painterResource(R.drawable.ic_spec_ecash), contentDescription = null, tint = colorScheme.primary, modifier = Modifier.padding(bottom = 12.dp))
+        Text(info?.name?.take(40) ?: MintUrl.host(url), fontFamily = BitchatFontFamily, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colorScheme.onSurface)
+        WalletNotice(MintUrl.host(url), centered = true)
     }
 }
 
@@ -212,40 +191,41 @@ internal fun MintDetailScreen(vm: WalletViewModel, url: String) {
     val allUnspent = stringResource(R.string.wallet_mint_checked_none)
     val resources = androidx.compose.ui.platform.LocalResources.current
     WalletPage(bottom = {
-        WalletButton(stringResource(R.string.wallet_mint_check_coins), loading = checking, tone = WalletButtonTone.Neutral, onClick = {
-            checking = true
-            scope.launch {
-                checkResult = try {
-                    val removed = vm.wallet.checkProofStates(url)
-                    if (removed == 0) allUnspent else resources.getString(R.string.wallet_mint_checked, removed)
-                } catch (e: WalletException) {
-                    errorCopy(context, e.error).line()
-                }
-                checking = false
-            }
-        })
         WalletButton(stringResource(R.string.wallet_mint_remove), onClick = { confirmRemove = true }, tone = WalletButtonTone.Destructive)
     }) {
         if (vm.wallet.isSuspect(url)) {
-            WalletNotice(stringResource(R.string.wallet_mint_suspect), tone = NoticeTone.Danger, icon = Icons.Filled.WarningAmber)
+            WalletNotice(stringResource(R.string.wallet_mint_suspect), tone = NoticeTone.Danger, icon = Icons.Filled.WarningAmber, centered = true)
         }
-        MintSummary(url, mint.info, mint.keysets.filter { it.active }.maxOfOrNull { it.inputFeePpk } ?: 0, mint.units)
-        AboutSectionLabel(stringResource(R.string.wallet_mint_balance))
-        WalletCard {
-            val rows = balance.available.entries.filter { it.value > 0 }.ifEmpty { listOf(java.util.AbstractMap.SimpleEntry("sat", 0L)) }
-            rows.forEachIndexed { i, (unit, amount) ->
-                if (i > 0) WalletCardDivider()
-                WalletValueRow(unit, formatAmount(amount, unit), emphasized = true)
+        // The balance held here, who holds it, and anything the mint wants to say.
+        Column(Modifier.fillMaxWidth().padding(vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            AmountHero(balance.available["sat"] ?: 0, "sat")
+            balance.available.filter { it.key != "sat" && it.value > 0 }.forEach { (unit, amount) ->
+                Text(formatAmount(amount, unit), fontFamily = BitchatFontFamily, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            balance.pendingOut.entries.filter { it.value > 0 }.forEach { (unit, amount) ->
-                WalletCardDivider(plain = true)
-                WalletValueRow(stringResource(R.string.wallet_note_waiting_claim), formatAmount(amount, unit))
+            Spacer(Modifier.height(6.dp))
+            Text(mint.displayName, fontFamily = BitchatFontFamily, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            WalletNotice(mint.host, centered = true)
+            state.unclaimed(url).forEach { (unit, amount) ->
+                WalletNotice(stringResource(R.string.wallet_pending_out, formatAmount(amount, unit)), tone = NoticeTone.Warning, centered = true)
             }
+            // Mint-supplied text: plain and bounded, never a link or markup.
+            mint.info?.motd?.takeIf { it.isNotBlank() }?.let { WalletNotice(it.take(280), centered = true) }
         }
-        checkResult?.let {
-            Spacer(Modifier.height(4.dp))
-            WalletNotice(it)
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            WalletTextAction(stringResource(R.string.wallet_mint_check_coins), enabled = !checking, onClick = {
+                checking = true
+                scope.launch {
+                    checkResult = try {
+                        val removed = vm.wallet.checkProofStates(url)
+                        if (removed == 0) allUnspent else resources.getString(R.string.wallet_mint_checked, removed)
+                    } catch (e: WalletException) {
+                        errorCopy(context, e.error).line()
+                    }
+                    checking = false
+                }
+            })
         }
+        checkResult?.let { WalletNotice(it, centered = true) }
     }
     if (confirmRemove) {
         AlertDialog(

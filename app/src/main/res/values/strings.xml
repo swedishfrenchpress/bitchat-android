@@ -676,8 +676,6 @@
     <string name="wallet_continue" tools:ignore="MissingTranslation">Continue</string>
     <string name="wallet_cancel" tools:ignore="MissingTranslation">Cancel</string>
     <string name="wallet_retry" tools:ignore="MissingTranslation">Try again</string>
-    <string name="wallet_copy" tools:ignore="MissingTranslation">Copy</string>
-    <string name="wallet_copied" tools:ignore="MissingTranslation">Copied</string>
     <string name="wallet_share" tools:ignore="MissingTranslation">Share</string>
     <string name="wallet_paste" tools:ignore="MissingTranslation">Paste</string>
     <string name="wallet_scan" tools:ignore="MissingTranslation">Scan QR</string>
@@ -712,8 +710,6 @@
     <string name="wallet_pending_in" tools:ignore="MissingTranslation">%1$d pending</string>
     <string name="wallet_receive" tools:ignore="MissingTranslation">Receive</string>
     <string name="wallet_send" tools:ignore="MissingTranslation">Send</string>
-    <string name="wallet_section_recent" tools:ignore="MissingTranslation">Recent</string>
-    <string name="wallet_section_mints" tools:ignore="MissingTranslation">Mints</string>
     <string name="wallet_see_all" tools:ignore="MissingTranslation">See all</string>
     <string name="wallet_add_mint" tools:ignore="MissingTranslation">Add mint</string>
     <string name="wallet_no_mints_body" tools:ignore="MissingTranslation">add a mint to start</string>
@@ -746,9 +742,6 @@
     <string name="wallet_token_input_title" tools:ignore="MissingTranslation">Claim ecash</string>
     <string name="wallet_token_input_hint" tools:ignore="MissingTranslation">cashuB…</string>
     <string name="wallet_token_input_invalid" tools:ignore="MissingTranslation">not a Cashu token</string>
-    <string name="wallet_review_fee" tools:ignore="MissingTranslation">fee</string>
-    <string name="wallet_review_mint" tools:ignore="MissingTranslation">mint</string>
-    <string name="wallet_review_memo" tools:ignore="MissingTranslation">note</string>
     <string name="wallet_review_claim" tools:ignore="MissingTranslation">Claim</string>
     <string name="wallet_review_take_back" tools:ignore="MissingTranslation">Take back</string>
     <string name="wallet_trust_bearer" tools:ignore="MissingTranslation">unlocked · claim it before the sender spends it</string>
@@ -760,7 +753,7 @@
     <string name="wallet_trust_own_send" tools:ignore="MissingTranslation">your unclaimed token</string>
     <string name="wallet_trust_unsupported" tools:ignore="MissingTranslation">uses conditions bitchat can\'t check</string>
     <string name="wallet_unknown_mint_title" tools:ignore="MissingTranslation">New mint</string>
-    <string name="wallet_unknown_mint_body" tools:ignore="MissingTranslation">new mint %1$s · only claim if you trust it</string>
+    <string name="wallet_unknown_mint_body" tools:ignore="MissingTranslation">new mint · only claim if you trust it</string>
     <string name="wallet_unknown_mint_continue" tools:ignore="MissingTranslation">Trust and claim</string>
     <string name="wallet_claimed_title" tools:ignore="MissingTranslation">Claimed</string>
     <string name="wallet_claimed_body" tools:ignore="MissingTranslation">%1$s added to your wallet</string>
@@ -769,13 +762,13 @@
     <string name="wallet_claim_queued_title" tools:ignore="MissingTranslation">Claim queued</string>
     <string name="wallet_claim_queued_body" tools:ignore="MissingTranslation">claims when the mint is back · until then the sender can still spend it</string>
 
-    <string name="wallet_review_fees" tools:ignore="MissingTranslation">fee</string>
-    <string name="wallet_review_total" tools:ignore="MissingTranslation">total</string>
     <string name="wallet_review_lock" tools:ignore="MissingTranslation">Lock to %1$s</string>
     <string name="wallet_review_lock_desc" tools:ignore="MissingTranslation">only they can claim it · yours again after 7 days</string>
     <string name="wallet_review_offline_ready" tools:ignore="MissingTranslation">offline · uses coins you already hold</string>
-    <string name="wallet_review_memo_hint" tools:ignore="MissingTranslation">note (optional)</string>
     <string name="wallet_review_create" tools:ignore="MissingTranslation">Create token</string>
+    <string name="wallet_fee_amount" tools:ignore="MissingTranslation">fee %1$s</string>
+    <string name="wallet_total_amount" tools:ignore="MissingTranslation">total %1$s</string>
+    <string name="wallet_fee_up_to" tools:ignore="MissingTranslation">fee up to %1$s</string>
     <string name="wallet_token_title" tools:ignore="MissingTranslation">Token ready</string>
     <string name="wallet_token_body_bearer" tools:ignore="MissingTranslation">anyone with it can claim it · take it back from history</string>
     <string name="wallet_token_body_locked" tools:ignore="MissingTranslation">only %1$s can claim it · yours again after 7 days</string>
@@ -793,10 +786,6 @@
     <string name="wallet_melt_input_title" tools:ignore="MissingTranslation">Pay invoice</string>
     <string name="wallet_melt_input_hint" tools:ignore="MissingTranslation">lnbc…</string>
     <string name="wallet_melt_invalid" tools:ignore="MissingTranslation">not a Lightning invoice</string>
-    <string name="wallet_melt_amount" tools:ignore="MissingTranslation">amount</string>
-    <string name="wallet_melt_fee_reserve" tools:ignore="MissingTranslation">max network fee</string>
-    <string name="wallet_melt_mint_fee" tools:ignore="MissingTranslation">mint fee</string>
-    <string name="wallet_melt_max_total" tools:ignore="MissingTranslation">max total</string>
     <string name="wallet_melt_pay" tools:ignore="MissingTranslation">Pay</string>
     <string name="wallet_melt_quote_expires" tools:ignore="MissingTranslation">quote valid for %1$s</string>
     <string name="wallet_melt_quote_refresh" tools:ignore="MissingTranslation">Get new quote</string>
@@ -875,17 +864,6 @@
     <string name="wallet_add_mint_suggest_test" tools:ignore="MissingTranslation">Use testnut · fake sats</string>
     <string name="wallet_add_mint_warning" tools:ignore="MissingTranslation">a mint holds your funds · use one you trust</string>
     <string name="wallet_add_mint_confirm" tools:ignore="MissingTranslation">Add mint</string>
-    <string name="wallet_mint_supports" tools:ignore="MissingTranslation">supports</string>
-    <string name="wallet_mint_feature_lightning" tools:ignore="MissingTranslation">lightning</string>
-    <string name="wallet_mint_feature_restore" tools:ignore="MissingTranslation">restore</string>
-    <string name="wallet_mint_feature_lock" tools:ignore="MissingTranslation">locks</string>
-    <string name="wallet_mint_feature_offline" tools:ignore="MissingTranslation">offline checks</string>
-    <string name="wallet_mint_fee" tools:ignore="MissingTranslation">fee per coin</string>
-    <string name="wallet_mint_fee_value" tools:ignore="MissingTranslation">%1$s ppk</string>
-    <string name="wallet_mint_fee_none" tools:ignore="MissingTranslation">none</string>
-    <string name="wallet_mint_units" tools:ignore="MissingTranslation">units</string>
-    <string name="wallet_mint_motd" tools:ignore="MissingTranslation">Message from the mint</string>
-    <string name="wallet_mint_balance" tools:ignore="MissingTranslation">Balance</string>
     <string name="wallet_mint_check_coins" tools:ignore="MissingTranslation">Check coins</string>
     <string name="wallet_mint_checked" tools:ignore="MissingTranslation">removed %1$d spent coins</string>
     <string name="wallet_mint_checked_none" tools:ignore="MissingTranslation">all coins unspent</string>
@@ -917,39 +895,11 @@
     <string name="wallet_note_payment_pending" tools:ignore="MissingTranslation">payment in progress</string>
     <string name="wallet_note_quote_expired" tools:ignore="MissingTranslation">expired unpaid</string>
     <string name="wallet_note_rejected" tools:ignore="MissingTranslation">refused by the mint</string>
-    <string name="wallet_note_via_chat" tools:ignore="MissingTranslation">via chat</string>
     <string name="wallet_note_invoice_paid" tools:ignore="MissingTranslation">invoice already paid · nothing spent</string>
     <string name="wallet_note_partial" tools:ignore="MissingTranslation">partly spent · claimed the rest</string>
     <string name="wallet_mint_suspect" tools:ignore="MissingTranslation">bad signatures from this mint · move your coins elsewhere</string>
     <string name="wallet_detail_title" tools:ignore="MissingTranslation">Details</string>
-    <string name="wallet_detail_fee" tools:ignore="MissingTranslation">fee</string>
-    <string name="wallet_detail_mint" tools:ignore="MissingTranslation">mint</string>
-    <string name="wallet_detail_date" tools:ignore="MissingTranslation">date</string>
-    <string name="wallet_detail_memo" tools:ignore="MissingTranslation">note</string>
-    <string name="wallet_detail_invoice" tools:ignore="MissingTranslation">invoice</string>
-    <string name="wallet_detail_proof_of_payment" tools:ignore="MissingTranslation">proof of payment</string>
-    <string name="wallet_detail_locked_until" tools:ignore="MissingTranslation">until %1$s</string>
-    <string name="wallet_detail_lock" tools:ignore="MissingTranslation">lock</string>
-    <string name="wallet_step_token_created" tools:ignore="MissingTranslation">token created</string>
-    <string name="wallet_step_waiting_claim" tools:ignore="MissingTranslation">waiting to be claimed</string>
-    <string name="wallet_step_claimed" tools:ignore="MissingTranslation">claimed</string>
-    <string name="wallet_step_taken_back" tools:ignore="MissingTranslation">taken back</string>
-    <string name="wallet_step_quoted" tools:ignore="MissingTranslation">fee quoted</string>
-    <string name="wallet_step_paying" tools:ignore="MissingTranslation">paying</string>
-    <string name="wallet_step_paid" tools:ignore="MissingTranslation">paid</string>
-    <string name="wallet_step_failed" tools:ignore="MissingTranslation">didn\'t go through</string>
-    <string name="wallet_step_invoice" tools:ignore="MissingTranslation">invoice created</string>
-    <string name="wallet_step_payment" tools:ignore="MissingTranslation">payment received</string>
-    <string name="wallet_step_minted" tools:ignore="MissingTranslation">ecash issued</string>
-    <string name="wallet_step_expired" tools:ignore="MissingTranslation">expired</string>
-    <string name="wallet_step_token_received" tools:ignore="MissingTranslation">token received</string>
-    <string name="wallet_step_swapped" tools:ignore="MissingTranslation">claimed with the mint</string>
-    <string name="wallet_step_spent" tools:ignore="MissingTranslation">already spent</string>
-    <string name="wallet_cd_step" tools:ignore="MissingTranslation">%1$s: %2$s</string>
-    <string name="wallet_step_state_done" tools:ignore="MissingTranslation">done</string>
-    <string name="wallet_step_state_current" tools:ignore="MissingTranslation">in progress</string>
-    <string name="wallet_step_state_failed" tools:ignore="MissingTranslation">did not happen</string>
-    <string name="wallet_step_state_next" tools:ignore="MissingTranslation">not yet</string>
+    <string name="wallet_detail_locked_until" tools:ignore="MissingTranslation">locked until %1$s</string>
     <string name="wallet_detail_reclaim" tools:ignore="MissingTranslation">Take back</string>
     <string name="wallet_detail_reclaim_confirm_title" tools:ignore="MissingTranslation">Take this back?</string>
     <string name="wallet_detail_reclaim_confirm_body" tools:ignore="MissingTranslation">If it\'s still unclaimed, it comes back and the shared token stops working.</string>
@@ -961,9 +911,7 @@
     <string name="wallet_settings_words_ok" tools:ignore="MissingTranslation">backed up</string>
     <string name="wallet_settings_words_todo" tools:ignore="MissingTranslation">not backed up</string>
     <string name="wallet_settings_nostr_backup" tools:ignore="MissingTranslation">Back up mint list to Nostr</string>
-    <string name="wallet_settings_nostr_backup_desc" tools:ignore="MissingTranslation">encrypted · unlinkable</string>
     <string name="wallet_settings_hide_balance" tools:ignore="MissingTranslation">Hide balance</string>
-    <string name="wallet_settings_hide_balance_desc" tools:ignore="MissingTranslation">tap the balance to show it</string>
     <string name="wallet_settings_show_words_title" tools:ignore="MissingTranslation">Show recovery words?</string>
     <string name="wallet_settings_show_words_body" tools:ignore="MissingTranslation">Make sure nobody can see your screen.</string>
     <string name="wallet_settings_show_words_confirm" tools:ignore="MissingTranslation">Show</string>
