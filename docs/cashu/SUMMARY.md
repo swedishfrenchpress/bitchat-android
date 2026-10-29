@@ -59,7 +59,12 @@ seed-derived key, with no client tag. On by default with a toggle.
   with QR, copy, share, and send-in-chat. Lightning: invoice, review with fee
   reserve and quote countdown, then paying, then the result.
 - Mints: list, add with preview and warning, detail, coin check, remove.
-- History, details, take back, and settings (hide balance, backup toggle).
+- History, details with a step timeline (created → waiting → claimed, quote →
+  paying → paid), take back, and settings (hide balance, backup toggle).
+- Wallet behaviors: keypad with shake and haptics on invalid input, inline
+  errors under the amount, a Max pill, loaders that stay visible for a beat,
+  terminal result pages without a back arrow, back stepping within a flow,
+  and amounts that auto-size at large font scales.
 - Every error has calm copy in string resources: what happened, whether funds
   are safe, and what to do next.
 
@@ -80,8 +85,8 @@ calls are in `decisions.md` (D-001 to D-025).
 
 | Suite | Count | Result |
 |---|---|---|
-| Full app unit suite (`./gradlew :app:testDebugUnitTest`) | 942 tests, 9 skipped (6 are the opt-in live tests) | pass |
-| Wallet unit tests: vectors, codec, engine against an in-process fake mint with real crypto and fault injection, persistence, backup, UI logic | 102 | pass |
+| Full app unit suite (`./gradlew :app:testDebugUnitTest`) | 946 tests, 9 skipped (6 are the opt-in live tests) | pass |
+| Wallet unit tests: vectors, codec, engine against an in-process fake mint with real crypto and fault injection, persistence, backup, UI logic | 106 | pass |
 | Live testnut (`CASHU_TESTNUT=1 ./gradlew :app:testDebugUnitTest --tests '*TestnutIntegrationTest' --rerun`) | 6: keysets, mint, send, receive with DLEQ, double spend, reclaim, melt with change, P2PK enforcement, seed restore, usd unit | pass |
 | On-device panic wipe (`WalletPanicWipeInstrumentedTest`, emulator API 37, real Keystore) | 1 | pass |
 | On-device Compose UI tests (`WalletUiInstrumentedTest`) | 5 | **not runnable here**, see known issues |
