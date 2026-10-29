@@ -85,9 +85,10 @@ calls are in `decisions.md` (D-001 to D-025).
 
 | Suite | Count | Result |
 |---|---|---|
-| Full app unit suite (`./gradlew :app:testDebugUnitTest`) | 946 tests, 9 skipped (6 are the opt-in live tests) | pass |
+| Full app unit suite (`./gradlew :app:testDebugUnitTest`) | 957 tests, 20 skipped (17 are the opt-in live tests) | pass, stable over 3 reruns |
 | Wallet unit tests: vectors, codec, engine against an in-process fake mint with real crypto and fault injection, persistence, backup, UI logic | 106 | pass |
 | Live testnut (`CASHU_TESTNUT=1 ./gradlew :app:testDebugUnitTest --tests '*TestnutIntegrationTest' --rerun`) | 6: keysets, mint, send, receive with DLEQ, double spend, reclaim, melt with change, P2PK enforcement, seed restore, usd unit | pass |
+| Live edge cases against testnut (`TestnutEdgeCaseTest`, same opt-in) | 11: drops mid-mint, mid-swap and mid-melt with real restore, app kill mid-send, mint offline, double spend, unknown and malformed tokens, partial double spend, unit mismatch, dust and fees under the real 100 ppk fee, expired melt quote, double tap, wrong and partial seed | pass |
 | On-device panic wipe (`WalletPanicWipeInstrumentedTest`, emulator API 37, real Keystore) | 1 | pass |
 | On-device Compose UI tests (`WalletUiInstrumentedTest`) | 5 | **not runnable here**, see known issues |
 | `lintDebug` | no new findings on changed lines of shared files; wallet findings fixed | pass |
@@ -105,11 +106,27 @@ calls are in `decisions.md` (D-001 to D-025).
 - clear app data, then restore from the words, with the mint list found on
   Nostr and **98 sat recovered**.
 
-Four bugs found only on the device were fixed: the screenshot leak, sats with
-decimals, the clipboard preview, and the false wallet detection. All are in
-`edge-cases.md`.
+**The real chat surface, on device.** A debug-only mode renders the real
+`ChatScreen` with a real `ChatViewModel`, built exactly as `MainActivity` does
+but without the onboarding that requires system location. Verified there:
+- `/wallet` suggested and opening the wallet from the real composer;
+- About → Settings → Wallet row;
+- the DM header coin action, through send, review, and "Send in chat";
+- the token arriving as a card in the DM transcript and persisting across restart;
+- tapping our own card, which offers "Take back";
+- taking it back, after which the card updates in place to "You took it back".
 
-All 68 edge cases (network drops mid-mint, mid-melt, and mid-swap; app kills;
+Two bugs surfaced on that path and were fixed: a send started from a DM before
+the wallet loaded had no mint selected, and our own cards sat on the wrong side
+in bubbles mode.
+
+Six other bugs found only on the device were fixed: the screenshot leak, sats
+with decimals, the clipboard preview, the false wallet detection, the add-mint
+page not closing, and amount clipping at large font scales. All are in
+`edge-cases.md`, which also maps every case from the brief to its live testnut
+test, or explains why it can only be faked.
+
+All 70 edge cases (network drops mid-mint, mid-melt, and mid-swap; app kills;
 double spends; malformed, spent, and unknown-mint tokens; offline mint; keyset
 rotation; unit mismatch; zero, dust, and overflow; fees over amount; expired
 quotes; double taps; wrong and partial seeds; plus what the hunt turned up) are
@@ -123,12 +140,16 @@ logged with result, fix, and test in `edge-cases.md`.
    UI tests are written and should pass on API 36 or older, or after an
    Espresso bump, which goes through the dependency and reproducible-build
    process.
-2. **The full chat screen was not exercised on device.** Bitchat's onboarding
-   requires system location services, which the privacy rules forbid enabling
-   even on an emulator. Chat cards were checked in a debug card gallery and in
-   unit and instrumented tests; `/wallet` has a unit test; the DM header action
-   was checked by code review and build only. A quick pass on a physical phone (and Mesh Lab,
-   since messaging is touched) is needed before merging.
+2. **Onboarding and real peers were not exercised.** The chat surface was
+   verified on device through a debug host that skips Bitchat's onboarding,
+   because onboarding requires system location, which the privacy rules forbid
+   enabling. Not exercised:
+   - the onboarding path itself;
+   - a token arriving from a **real peer** over BLE or Nostr (the emulator has
+     no Bluetooth and there was no second device);
+   - a lock offered to a real favorite with a known npub.
+
+   These need a physical-phone pass and Mesh Lab before merging.
 3. **Locked sends we made are not restorable from the seed** (random P2PK
    secrets). If we wipe and the recipient never claims, those coins are lost
    to us. No NUT defines deterministic P2PK secrets yet.
