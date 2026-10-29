@@ -73,6 +73,13 @@ object WalletService {
     /** Cheap check usable from UI code; does not open the database. */
     fun hasWallet(context: Context): Boolean = vault(context).hasWallet()
 
+    /**
+     * Cheapest possible check for chat rendering: a file stat, no Keystore or decryption on
+     * the main thread. True once recovery words have been stored on this device.
+     */
+    fun walletExists(context: Context): Boolean =
+        _hasWallet.value || vault != null && vault!!.hasWallet() || hasPrefsFile(context.applicationContext)
+
     private fun build(context: Context): CashuWallet {
         appContext = context
         val vault = vault(context)

@@ -82,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bitchat.android.ui.theme.BitchatFontFamily
 import com.bitchat.android.R
+import com.bitchat.android.wallet.ui.isSettled
 import com.bitchat.android.core.ui.component.text.AnnotatedClickableText
 import com.bitchat.android.mesh.MeshService
 import com.bitchat.android.model.BitchatMessage
@@ -1165,17 +1166,25 @@ internal fun CashuPaymentChip(
         .joinToString(" · ")
         .ifEmpty { stringResource(R.string.cashu_pay_via) }
     var showMenu by remember { mutableStateOf(false) }
+    // The in-app wallet's view of this token: claimable, claimed, ours and pending, locked...
+    // Computed from local state only. The composer preview (showActions = false) skips it.
+    val statusLine = if (showActions) com.bitchat.android.wallet.ui.rememberCashuCardLine(token) else null
+    val settled = statusLine?.isSettled == true
+    val accent = if (settled) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) else MaterialTheme.colorScheme.primary
 
     Box {
         Row(
             modifier = modifier
-                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                .border(1.dp, accent.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                 .background(
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
+                    if (settled) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                    else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
                     RoundedCornerShape(12.dp)
                 )
                 .combinedClickable(
-                    onClick = onClick ?: { redeemCashu(context, token, preferWallet = true) },
+                    onClick = onClick ?: {
+                        com.bitchat.android.wallet.ui.WalletLauncher.open(com.bitchat.android.wallet.ui.WalletLaunch.Claim(token))
+                    },
                     onLongClick = if (showActions) {
                         { showMenu = true }
                     } else {
@@ -1187,6 +1196,7 @@ internal fun CashuPaymentChip(
                         append(context.getString(R.string.cashu_payment_description))
                         append(": ")
                         append(primaryLabel)
+                        statusLine?.let { append(". ${it.text}") }
                         info?.memo?.let { append(", $it") }
                     }
                 }
@@ -1200,8 +1210,17 @@ internal fun CashuPaymentChip(
                 Text(
                     primaryLabel,
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                    color = if (settled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSecondaryContainer
                 )
+                statusLine?.let { line ->
+                    Text(
+                        line.text,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = line.color,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 info?.memo?.let {
                     Text(
                         it,
@@ -1225,6 +1244,15 @@ internal fun CashuPaymentChip(
                     showMenu = false
                 }
             )
+            if (statusLine?.status == com.bitchat.android.wallet.engine.CashuWallet.CardStatus.OUR_PENDING_SEND) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.cashu_card_take_back)) },
+                    onClick = {
+                        showMenu = false
+                        com.bitchat.android.wallet.ui.WalletLauncher.open(com.bitchat.android.wallet.ui.WalletLaunch.Claim(token))
+                    }
+                )
+            }
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.cashu_redeem_wallet)) },
                 onClick = {

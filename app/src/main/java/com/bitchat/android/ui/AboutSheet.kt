@@ -57,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -383,6 +384,29 @@ fun AboutSheet(
                     }
 
                     if (selectedTab == AboutTab.Settings) {
+                    // Wallet entry: a plain row rather than a header icon, so the wallet stays
+                    // out of sight for anyone glancing at the chat screen.
+                    item(key = "wallet") {
+                        Column {
+                            AboutSectionLabel(text = stringResource(R.string.wallet_about_row_title))
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = AboutHorizontalPadding),
+                                color = colorScheme.surface,
+                                shape = AboutCardShape
+                            ) {
+                                com.bitchat.android.wallet.ui.WalletRow(
+                                    title = stringResource(R.string.wallet_about_row_title),
+                                    subtitle = stringResource(R.string.wallet_about_row_desc),
+                                    painter = painterResource(R.drawable.ic_spec_ecash),
+                                    onClick = { com.bitchat.android.wallet.ui.WalletLauncher.open() },
+                                    trailing = { com.bitchat.android.wallet.ui.Chevron() }
+                                )
+                            }
+                        }
+                    }
+
                     // Appearance Section
                     item(key = "appearance") {
                         Column {

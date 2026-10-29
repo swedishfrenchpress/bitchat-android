@@ -1910,6 +1910,40 @@ fun PrivateChatSheet(
                         },
                         title = titleText
                     ) {
+                        // Send ecash into this conversation. Only shown once a wallet exists,
+                        // so the header stays unchanged for people who never use it.
+                        val walletReady by com.bitchat.android.wallet.WalletService.hasWallet.collectAsStateWithLifecycle()
+                        val sheetContext = androidx.compose.ui.platform.LocalContext.current
+                        if (walletReady || com.bitchat.android.wallet.WalletService.walletExists(sheetContext)) {
+                            ConversationHeaderAction(
+                                onClick = {
+                                    // Lock to the peer only when we hold their main Nostr identity
+                                    // (favorites). Geohash DM keys are per-location identities their
+                                    // wallet would not sign with, so those sends stay bearer tokens.
+                                    val npub = if (isNostrPeer) null else favoriteRelationship?.peerNostrPublicKey
+                                    val lockKey = npub
+                                        ?.let(com.bitchat.android.services.ContactIdentityResolver::nostrPubkeyHex)
+                                        ?.let(com.bitchat.android.wallet.WalletService::nostrLockKeyFor)
+                                    com.bitchat.android.wallet.ui.WalletLauncher.open(
+                                        com.bitchat.android.wallet.ui.WalletLaunch.SendToChat(
+                                            peerLabel = displayName,
+                                            lockPubkey = lockKey,
+                                            isPublic = false,
+                                            deliver = { token -> viewModel.sendMessage(token) }
+                                        )
+                                    )
+                                },
+                                contentDescription = stringResource(R.string.wallet_cd_send_ecash)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_spec_ecash),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(HeaderIconSize),
+                                    tint = colorScheme.primary
+                                )
+                            }
+                        }
+
                         ConversationHeaderAction(
                             onClick = { viewModel.toggleFavorite(peerID) },
                             contentDescription = if (isFavorite) {

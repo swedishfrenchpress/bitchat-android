@@ -78,6 +78,8 @@ class CashuWallet(
         ledger = Ledger()
         apis.clear()
         inFlight.clear()
+        refundKeyCache = emptyList()
+        synchronized(cardCache) { cardCache.clear() }
         publish()
         ok
     }
@@ -393,8 +395,8 @@ class CashuWallet(
                 lockedUntil = lock?.locktimeSeconds, lockedToPeer = lock != null,
             )
             if (plan.exact != null) {
-                val token = encode(Token(mintUrl, unit, plan.exact, cleanMemo))
-                val entry = base.copy(token = token)
+                val tokenObject = Token(mintUrl, unit, plan.exact, cleanMemo)
+                val entry = base.copy(token = encode(tokenObject), tokenFingerprint = fingerprint(tokenObject))
                 commitLocked(WalletChanges(
                     putProofs = plan.exact.map { stored(it, mintUrl, unit, ProofStatus.SENT_PENDING, historyId) },
                     putHistory = listOf(entry),
@@ -490,6 +492,57 @@ class CashuWallet(
             op
         }
         return runOperation(op) { swapAndFinalize(op, HistoryStatus.RECLAIMED) }
+    }
+
+    // MARK: - Chat card status
+
+    enum class CardStatus {
+        CLAIMABLE, LOCKED_TO_US, LOCKED_TO_OTHER, CLAIMED_BY_US, CLAIM_QUEUED, SPENT,
+        OUR_PENDING_SEND, OUR_SEND_CLAIMED, OUR_SEND_RECLAIMED, UNREADABLE,
+    }
+
+    private val cardCache = object : LinkedHashMap<String, Pair<Ledger, CardStatus>>(64, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<Ledger, CardStatus>>?) = size > 256
+    }
+
+    /**
+     * What a token in a conversation means to us, from local state only: no mint contact and
+     * no signature math, so it is cheap enough to evaluate while a chat scrolls. Cached until
+     * the wallet changes.
+     */
+    fun cardStatus(raw: String): CardStatus {
+        val snapshot = ledger
+        synchronized(cardCache) { cardCache[raw]?.takeIf { it.first === snapshot }?.let { return it.second } }
+        val status = computeCardStatus(raw, snapshot)
+        synchronized(cardCache) { cardCache[raw] = snapshot to status }
+        return status
+    }
+
+    private fun computeCardStatus(raw: String, snapshot: Ledger): CardStatus {
+        val token = TokenCodec.decodeOrNull(raw) ?: return CardStatus.UNREADABLE
+        val fp = fingerprint(token)
+        snapshot.history.values.filter { it.tokenFingerprint == fp }.maxByOrNull { it.updatedAt }?.let { entry ->
+            return when (entry.kind) {
+                HistoryKind.ECASH_SEND -> when (entry.status) {
+                    HistoryStatus.PENDING -> CardStatus.OUR_PENDING_SEND
+                    HistoryStatus.RECLAIMED -> CardStatus.OUR_SEND_RECLAIMED
+                    HistoryStatus.COMPLETED -> CardStatus.OUR_SEND_CLAIMED
+                    else -> CardStatus.OUR_PENDING_SEND
+                }
+                else -> when (entry.status) {
+                    HistoryStatus.COMPLETED -> CardStatus.CLAIMED_BY_US
+                    HistoryStatus.PENDING -> CardStatus.CLAIM_QUEUED
+                    else -> CardStatus.SPENT
+                }
+            }
+        }
+        if (token.proofs.any { snapshot.proofs[it.secret]?.status == ProofStatus.SENT_PENDING }) return CardStatus.OUR_PENDING_SEND
+        return when (lockStatus(token.proofs)) {
+            is LockStatus.ToUs -> if (token.proofs.any { P2pk.kind(it.secret) != null }) CardStatus.LOCKED_TO_US else CardStatus.CLAIMABLE
+            is LockStatus.ToSomeoneElse, LockStatus.Unsupported -> CardStatus.LOCKED_TO_OTHER
+            is LockStatus.RefundableByUs -> CardStatus.OUR_PENDING_SEND
+            LockStatus.None -> CardStatus.CLAIMABLE
+        }
     }
 
     // MARK: - Lightning send (NUT-05 / NUT-08)
@@ -785,7 +838,8 @@ class CashuWallet(
             updatedAt = now,
         )
         if (op.kind == OperationKind.SEND_SWAP && history != null) {
-            history = history.copy(token = encode(Token(op.mintUrl, op.unit, forSend, history.memo)))
+            val token = Token(op.mintUrl, op.unit, forSend, history.memo)
+            history = history.copy(token = encode(token), tokenFingerprint = fingerprint(token))
         }
         if (op.kind == OperationKind.RECLAIM && history != null) history = history.copy(token = null)
         commitLocked(WalletChanges(
@@ -1102,10 +1156,17 @@ class CashuWallet(
     /** (compressed pubkey, private key) pairs we can sign with: extra keys plus our refund keys. */
     private fun signingKeyPairs(): List<Pair<String, BigInteger>> {
         val refundCount = ledger.settings[KEY_P2PK_COUNTER]?.toLongOrNull() ?: 0L
-        val seed = seedProvider()
-        val refund = if (seed == null) emptyList() else (0 until refundCount).map { Nut13.p2pkPrivateKey(seed, it) }
-        return (extraSigningKeys() + refund).map { P2pk.compressedPublicKey(it) to it }
+        val refund = refundKeyCache.takeIf { it.size.toLong() == refundCount } ?: run {
+            val seed = seedProvider()
+            (if (seed == null) emptyList() else (0 until refundCount).map { Nut13.p2pkPrivateKey(seed, it) })
+                .map { P2pk.compressedPublicKey(it) to it }
+                .also { refundKeyCache = it }
+        }
+        return extraSigningKeys().map { P2pk.compressedPublicKey(it) to it } + refund
     }
+
+    @Volatile
+    private var refundKeyCache: List<Pair<String, BigInteger>> = emptyList()
 
     // MARK: - Internals: misc
 

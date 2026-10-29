@@ -29,7 +29,8 @@ class CommandProcessor(
         CommandSuggestion("/pay", emptyList(), "<token> [public]", "send a Cashu ecash token"),
         CommandSuggestion("/slap", emptyList(), "<nickname>", "slap someone with a trout"),
         CommandSuggestion("/unblock", emptyList(), "<nickname>", "unblock a peer"),
-        CommandSuggestion("/w", emptyList(), null, "see who's online")
+        CommandSuggestion("/w", emptyList(), null, "see who's online"),
+        CommandSuggestion("/wallet", emptyList(), null, "open your Cashu wallet")
     )
     
     // MARK: - Command Processing
@@ -43,6 +44,7 @@ class CommandProcessor(
             "/j", "/join" -> handleJoinCommand(parts, myPeerID)
             "/m", "/msg" -> handleMessageCommand(parts, meshService, viewModel)
             "/pay" -> handlePayCommand(command, meshService, myPeerID, onSendMessage, viewModel)
+            "/wallet" -> com.bitchat.android.wallet.ui.WalletLauncher.open()
             "/w" -> handleWhoCommand(meshService, viewModel)
             "/clear" -> handleClearCommand()
             "/pass" -> handlePassCommand(parts, myPeerID)

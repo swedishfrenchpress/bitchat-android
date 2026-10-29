@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp" android:height="20dp" android:viewportWidth="20" android:viewportHeight="20">
+    <!-- A plain coin: deliberately not a bitcoin or currency glyph, so the wallet stays discreet. -->
+    <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.25"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M10,2.6a7.4,7.4 0,1 1,0 14.8a7.4,7.4 0,1 1,0 -14.8Z"/>
+    <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.25"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M10,5.9a4.1,4.1 0,1 1,0 8.2a4.1,4.1 0,1 1,0 -8.2Z"/>
+</vector>

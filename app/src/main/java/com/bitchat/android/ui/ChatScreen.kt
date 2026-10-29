@@ -951,6 +951,10 @@ private fun ChatDialogs(
         )
     }
 
+    // Wallet: opened from About, /wallet, a payment card, or a DM. Shown last so it stacks
+    // above whichever sheet launched it.
+    val walletLaunch by com.bitchat.android.wallet.ui.WalletLauncher.request.collectAsStateWithLifecycle()
+
     if (privateChatSheetPeer != null) {
         PrivateChatSheet(
             isPresented = true,
@@ -960,6 +964,13 @@ private fun ChatDialogs(
                 viewModel.hidePrivateChatSheet()
                 viewModel.endPrivateChat()
             }
+        )
+    }
+
+    walletLaunch?.let { launch ->
+        com.bitchat.android.wallet.ui.WalletSheet(
+            launch = launch,
+            onDismiss = com.bitchat.android.wallet.ui.WalletLauncher::close
         )
     }
 }

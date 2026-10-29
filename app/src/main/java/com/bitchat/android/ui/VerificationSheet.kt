@@ -406,7 +406,7 @@ private fun ScanTabContent(
 }
 
 @Composable
-private fun ScannerView(
+internal fun ScannerView(
     onScan: (String) -> Unit
 ) {
     val context = LocalContext.current
