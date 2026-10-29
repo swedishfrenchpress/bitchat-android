@@ -116,6 +116,8 @@ class CashuWallet(
         val now = clock()
         val existing = ledger.mints[preview.url]
         val merged = mergeKeysets(existing?.keysets.orEmpty(), preview.keysets)
+        // The periodic refresh usually finds nothing new; skip the write then.
+        if (existing != null && existing.info == preview.info && existing.keysets == merged) return@withLock existing
         val record = MintRecord(preview.url, preview.info, merged, existing?.addedAt ?: now, now)
         commitLocked(WalletChanges(putMints = listOf(record)))
         record

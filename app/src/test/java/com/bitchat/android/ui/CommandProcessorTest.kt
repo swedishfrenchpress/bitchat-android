@@ -208,4 +208,26 @@ class CommandProcessorTest {
     assertTrue(chatState.getMentionSuggestionsValue().isEmpty())
 
   }
+
+  @Test
+  fun `wallet command opens the wallet sheet without sending anything`() {
+    com.bitchat.android.wallet.ui.WalletLauncher.close()
+    var sent = false
+
+    val handled = commandProcessor.processCommand(
+      command = "/wallet",
+      meshService = meshService,
+      myPeerID = "peer-id",
+      onSendMessage = { _, _, _ -> sent = true },
+      viewModel = null
+    )
+
+    assertTrue(handled)
+    assertFalse(sent)
+    assertEquals(
+      com.bitchat.android.wallet.ui.WalletLaunch.Home,
+      com.bitchat.android.wallet.ui.WalletLauncher.request.value
+    )
+    com.bitchat.android.wallet.ui.WalletLauncher.close()
+  }
 }

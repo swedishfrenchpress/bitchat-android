@@ -3,6 +3,9 @@
 Each milestone ends with `./gradlew :app:testDebugUnitTest` green and a
 commit. Live testnut checks run with `-Pcashu.testnut=true`.
 
+Status at hand-off: every milestone is done; see `SUMMARY.md` for what was
+verified and how.
+
 | # | Milestone | Deliverables |
 |---|---|---|
 | M0 | Setup and research | Branch, `audit.md`, UX research, `decisions.md`, this plan |
@@ -17,7 +20,7 @@ commit. Live testnut checks run with `-Pcashu.testnut=true`.
 | M9 | Chat integration | State-aware claimable payment cards (unclaimed, claimed, spent, yours, pending), auto-detect `cashuA`/`cashuB`, send ecash from a DM (P2PK to a known Nostr key), honest offline/double-spend copy, reclaim from history and from your own sent card. |
 | M10 | Recovery and backup | NUT-13 restore (batches of 100, stop after 3 empty batches), NUT-27 publish on mint-list change, fetch on restore, manual mint entry fallback. |
 | M11 | Edge-case hunt | Fault-injection tests (network drop mid mint/melt/swap, kill mid-op, double spend, malformed/spent/unknown tokens, offline mint, keyset rotation, unit mismatch, zero/dust/overflow, fees over amount, expired quotes, double taps, wrong/partial seed). Logged in `edge-cases.md`. Opt-in testnut integration suite. |
-| M12 | Polish | Screen-by-screen review against Bitchat style and the wallet UX patterns, accessibility, haptics, copy. `SUMMARY.md`. |
+| M12 | Polish (done, ongoing) | Screen-by-screen review against Bitchat style and the wallet UX patterns, accessibility, haptics, copy. `SUMMARY.md`. |
 
 ## Package layout
 
@@ -40,3 +43,15 @@ app/src/main/java/com/bitchat/android/wallet/
   ambiguous failure the wallet asks the mint to re-sign the same outputs.
 - Counters advance **before** a request leaves the device, so a crash can
   never reuse a secret.
+
+## Status
+
+| # | State | Commit (subject) |
+|---|---|---|
+| M0 | done | UX research for the Cashu wallet |
+| M1 | done | Add Cashu protocol core with NUT golden-vector tests |
+| M2, M3 | done | Add Cashu mint client and crash-safe wallet engine; Add opt-in live testnut integration tests |
+| M4, M10 (backup) | done | Persist the wallet in sealed SQLite and wipe it on panic |
+| M5 to M9 | done | Add the wallet sheet and wire it into chat |
+| M11 | done | Salvage partly spent tokens, flag mints with bad DLEQ, document edge cases |
+| M12 | done | Polish wallet screens after on-device review; Fix wallet lint findings…; Make the wallet panic wipe race-proof… |
