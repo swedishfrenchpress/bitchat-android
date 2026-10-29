@@ -1487,6 +1487,14 @@ class ChatViewModel(
         
         // Clear all cryptographic data
         if (!clearAllCryptographicData()) wipeComplete = false
+
+        // Cashu wallet: recovery words, coins, pending tokens, history and mint list. Only the
+        // recovery words, kept off-device, can bring the funds back.
+        try {
+            if (!com.bitchat.android.wallet.WalletService.panicWipe(getApplication())) wipeComplete = false
+        } catch (_: Exception) {
+            wipeComplete = false
+        }
         
         // Clear all notifications
         notificationManager.clearAllNotifications(removeConversationShortcuts = true)
