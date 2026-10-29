@@ -450,7 +450,14 @@ internal fun AmountHero(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.Center,
     ) {
-        Text(number, fontFamily = BitchatFontFamily, fontWeight = FontWeight.Bold, fontSize = size, letterSpacing = (-0.5).sp, color = color, maxLines = 1)
+        // Shrinks instead of clipping at large system font scales or long amounts.
+        androidx.compose.foundation.text.BasicText(
+            number,
+            style = androidx.compose.ui.text.TextStyle(fontFamily = BitchatFontFamily, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp, color = color),
+            maxLines = 1,
+            autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 20.sp, maxFontSize = size),
+            modifier = Modifier.weight(1f, fill = false),
+        )
         Text(
             " $unit",
             fontFamily = BitchatFontFamily,

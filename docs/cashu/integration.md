@@ -20,9 +20,11 @@ Bitchat moves text over four kinds of channel:
 | Geohash channel (Nostr) | Anyone subscribed to that geohash, anywhere | Public Nostr events |
 
 So **a token posted publicly belongs to the fastest claimer**. Bitchat already
-required `/pay <token> public` for this. The wallet keeps the same stance: the
-send-in-chat button shows a last-chance dialog in public channels ("whoever
-claims this token first gets it"). DMs are the default place for money.
+required `/pay <token> public` for this, and the wallet keeps that stance: its
+send-in-chat entry exists only in DMs. Posting a token publicly stays a
+deliberate `/pay … public`. The send flow also carries a last-chance dialog
+("whoever claims this token first gets it") for any future public entry point.
+DMs are the place for money.
 
 Tokens travel as plain message text (`cashuB…`, or legacy `cashuA…`). No new
 packet type was added, so:

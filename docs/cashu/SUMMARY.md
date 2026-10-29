@@ -69,7 +69,8 @@ seed-derived key, with no client tag. On by default with a toggle.
 - The DM header gets a send-ecash action that offers a lock to the peer's
   Nostr key when known.
 - About → Settings → Wallet, and `/wallet`.
-- Public channels get a last-chance warning before posting a bearer token.
+- Sending from the wallet into chat is DM-only; public posting stays the
+  explicit `/pay … public`.
 - Tokens stay plain `cashuB` text, so iOS and other wallets keep working.
 
 The thinking behind the chat behavior is in `integration.md`; individual
@@ -103,7 +104,7 @@ Four bugs found only on the device were fixed: the screenshot leak, sats with
 decimals, the clipboard preview, and the false wallet detection. All are in
 `edge-cases.md`.
 
-All 66 edge cases (network drops mid-mint, mid-melt, and mid-swap; app kills;
+All 68 edge cases (network drops mid-mint, mid-melt, and mid-swap; app kills;
 double spends; malformed, spent, and unknown-mint tokens; offline mint; keyset
 rotation; unit mismatch; zero, dust, and overflow; fees over amount; expired
 quotes; double taps; wrong and partial seeds; plus what the hunt turned up) are

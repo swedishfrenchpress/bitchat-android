@@ -270,7 +270,7 @@ internal fun MintDetailScreen(vm: WalletViewModel, url: String) {
                     scope.launch {
                         try {
                             vm.wallet.removeMint(url, force = true)
-                            vm.back()
+                            vm.popRoute()
                         } catch (e: WalletException) {
                             checkResult = errorCopy(context, e.error).let { it.title + ". " + it.body }
                         }

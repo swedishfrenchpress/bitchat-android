@@ -154,6 +154,11 @@ class WalletViewModel(app: Application) : AndroidViewModel(app) {
         return true
     }
 
+    /** Pops the top page unconditionally; for flows finishing on their own, not for user back. */
+    fun popRoute() {
+        if (_stack.value.size > 1) _stack.value = _stack.value.dropLast(1)
+    }
+
     fun popTo(route: WalletRoute) {
         val index = _stack.value.indexOfLast { it == route }
         if (index >= 0) _stack.value = _stack.value.take(index + 1)
@@ -211,7 +216,7 @@ class WalletViewModel(app: Application) : AndroidViewModel(app) {
 
     fun startSendLightning() = push(WalletRoute.SendLightning(SendLightningFlow(getApplication(), wallet, viewModelScope, defaultMint())))
 
-    fun startAddMint(prefill: String? = null) = push(WalletRoute.AddMint(AddMintFlow(getApplication(), wallet, viewModelScope, prefill) { back() }))
+    fun startAddMint(prefill: String? = null) = push(WalletRoute.AddMint(AddMintFlow(getApplication(), wallet, viewModelScope, prefill) { popRoute() }))
 
     /** The last-used mint that still exists, else the one holding the most sats. */
     fun defaultMint(): String? {

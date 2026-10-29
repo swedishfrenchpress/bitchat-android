@@ -63,6 +63,10 @@ object WalletService {
     /** Storage for the engine. Tests swap in an in-memory store where no Keystore exists. */
     internal var storeFactory: (Context) -> com.bitchat.android.wallet.engine.WalletStore = { SqliteWalletStore(it) }
 
+    /** Mint client factory. Tests swap in an in-process fake mint. */
+    internal var apiFactory: com.bitchat.android.wallet.mint.MintApiFactory =
+        com.bitchat.android.wallet.mint.MintApiFactory { url -> HttpMintApi(url) { OkHttpProvider.httpClient() } }
+
     fun wallet(context: Context): CashuWallet = synchronized(lock) {
         engine ?: build(context.applicationContext).also { engine = it }
     }
@@ -100,7 +104,7 @@ object WalletService {
         val vault = vault(context)
         val wallet = CashuWallet(
             store = storeFactory(context),
-            apiFactory = { url -> HttpMintApi(url) { OkHttpProvider.httpClient() } },
+            apiFactory = apiFactory,
             seedProvider = { vault.seed() },
             extraSigningKeys = { nostrSigningKeys(context) },
         )
