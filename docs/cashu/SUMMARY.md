@@ -80,8 +80,8 @@ calls are in `decisions.md` (D-001 to D-025).
 
 | Suite | Count | Result |
 |---|---|---|
-| Full app unit suite (`./gradlew :app:testDebugUnitTest`) | 936 tests, 9 skipped (6 are the opt-in live tests) | pass |
-| Wallet unit tests: vectors, codec, engine against an in-process fake mint with real crypto and fault injection, persistence, backup, UI logic | 97 | pass |
+| Full app unit suite (`./gradlew :app:testDebugUnitTest`) | 942 tests, 9 skipped (6 are the opt-in live tests) | pass |
+| Wallet unit tests: vectors, codec, engine against an in-process fake mint with real crypto and fault injection, persistence, backup, UI logic | 102 | pass |
 | Live testnut (`CASHU_TESTNUT=1 ./gradlew :app:testDebugUnitTest --tests '*TestnutIntegrationTest' --rerun`) | 6: keysets, mint, send, receive with DLEQ, double spend, reclaim, melt with change, P2PK enforcement, seed restore, usd unit | pass |
 | On-device panic wipe (`WalletPanicWipeInstrumentedTest`, emulator API 37, real Keystore) | 1 | pass |
 | On-device Compose UI tests (`WalletUiInstrumentedTest`) | 5 | **not runnable here**, see known issues |
