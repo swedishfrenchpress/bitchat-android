@@ -215,13 +215,15 @@ internal fun MintDetailScreen(vm: WalletViewModel, url: String) {
     var checkResult by remember { mutableStateOf<String?>(null) }
     var confirmRemove by remember { mutableStateOf(false) }
     val funds = balance.available.entries.filter { it.value > 0 } + balance.pendingOut.entries.filter { it.value > 0 }
+    val allUnspent = stringResource(R.string.wallet_mint_checked_none)
+    val resources = androidx.compose.ui.platform.LocalResources.current
     WalletPage(bottom = {
         WalletButton(stringResource(R.string.wallet_mint_check_coins), loading = checking, tone = WalletButtonTone.Neutral, onClick = {
             checking = true
             scope.launch {
                 checkResult = try {
                     val removed = vm.wallet.checkProofStates(url)
-                    if (removed == 0) context.getString(R.string.wallet_mint_checked_none) else context.getString(R.string.wallet_mint_checked, removed)
+                    if (removed == 0) allUnspent else resources.getString(R.string.wallet_mint_checked, removed)
                 } catch (e: WalletException) {
                     errorCopy(context, e.error).let { it.title + ". " + it.body }
                 }

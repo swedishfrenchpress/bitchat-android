@@ -30,6 +30,7 @@ class MnemonicVault internal constructor(private val prefs: SharedPreferences) {
     }
 
     /** Stores validated [words]. Synchronous: the wallet must not exist without its words. */
+    @android.annotation.SuppressLint("UseKtx") // the commit() result is the point
     fun store(words: List<String>): Boolean {
         require(Bip39.validate(words) == Bip39.Validation.Valid) { "invalid recovery words" }
         synchronized(lock) {
@@ -42,6 +43,7 @@ class MnemonicVault internal constructor(private val prefs: SharedPreferences) {
         get() = prefs.getBoolean(KEY_BACKED_UP, false)
         set(value) = prefs.edit { putBoolean(KEY_BACKED_UP, value) }
 
+    @android.annotation.SuppressLint("UseKtx") // the commit() result is the point
     fun clear(): Boolean = synchronized(lock) {
         cachedSeed?.fill(0)
         cachedSeed = null

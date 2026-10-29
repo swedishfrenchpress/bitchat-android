@@ -672,7 +672,6 @@
     <string name="cd_channel_activity">%1$d people, %2$d messages in the last hour</string>
     <!-- Cashu wallet. Copy rule: say what happened, whether funds are safe, and what to do next. -->
     <string name="wallet_title" tools:ignore="MissingTranslation">Wallet</string>
-    <string name="wallet_cd_open" tools:ignore="MissingTranslation">Open wallet</string>
     <string name="wallet_done" tools:ignore="MissingTranslation">Done</string>
     <string name="wallet_continue" tools:ignore="MissingTranslation">Continue</string>
     <string name="wallet_cancel" tools:ignore="MissingTranslation">Cancel</string>
@@ -704,7 +703,6 @@
     <string name="wallet_words_hidden_cd" tools:ignore="MissingTranslation">Recovery words hidden. Double tap to reveal.</string>
     <string name="wallet_words_written" tools:ignore="MissingTranslation">I wrote them down</string>
     <string name="wallet_words_later" tools:ignore="MissingTranslation">Later</string>
-    <string name="wallet_confirm_title" tools:ignore="MissingTranslation">Check your words</string>
     <string name="wallet_confirm_prompt" tools:ignore="MissingTranslation">Which is word #%1$d?</string>
     <string name="wallet_confirm_wrong" tools:ignore="MissingTranslation">That\'s not word #%1$d. Check your list and try again.</string>
     <string name="wallet_confirm_done_title" tools:ignore="MissingTranslation">Recovery words checked</string>
@@ -741,16 +739,13 @@
     <string name="wallet_send_lightning_desc" tools:ignore="MissingTranslation">Pay a Lightning invoice</string>
 
     <string name="wallet_amount_title_receive" tools:ignore="MissingTranslation">Amount to receive</string>
-    <string name="wallet_amount_title_send" tools:ignore="MissingTranslation">Amount to send</string>
     <string name="wallet_amount_available" tools:ignore="MissingTranslation">%1$s available</string>
     <string name="wallet_amount_over_balance" tools:ignore="MissingTranslation">More than your %1$s balance</string>
     <string name="wallet_amount_below_min" tools:ignore="MissingTranslation">Minimum is %1$s</string>
     <string name="wallet_amount_above_max" tools:ignore="MissingTranslation">Maximum is %1$s</string>
     <string name="wallet_cd_delete" tools:ignore="MissingTranslation">Delete digit</string>
     <string name="wallet_cd_choose_mint" tools:ignore="MissingTranslation">Mint: %1$s. Double tap to change.</string>
-    <string name="wallet_choose_mint" tools:ignore="MissingTranslation">Choose mint</string>
 
-    <string name="wallet_invoice_title" tools:ignore="MissingTranslation">Pay this invoice</string>
     <string name="wallet_invoice_waiting" tools:ignore="MissingTranslation">Waiting for payment</string>
     <string name="wallet_invoice_expires" tools:ignore="MissingTranslation">Expires in %1$s</string>
     <string name="wallet_invoice_expired_title" tools:ignore="MissingTranslation">Invoice expired</string>
@@ -765,7 +760,6 @@
     <string name="wallet_token_input_title" tools:ignore="MissingTranslation">Claim ecash</string>
     <string name="wallet_token_input_hint" tools:ignore="MissingTranslation">cashuB… or cashuA…</string>
     <string name="wallet_token_input_invalid" tools:ignore="MissingTranslation">That doesn\'t look like a Cashu token.</string>
-    <string name="wallet_review_claim_title" tools:ignore="MissingTranslation">Claim ecash</string>
     <string name="wallet_review_you_receive" tools:ignore="MissingTranslation">You receive</string>
     <string name="wallet_review_token_value" tools:ignore="MissingTranslation">Token value</string>
     <string name="wallet_review_fee" tools:ignore="MissingTranslation">Mint fee</string>
@@ -787,7 +781,6 @@
     <string name="wallet_unknown_mint_title" tools:ignore="MissingTranslation">New mint</string>
     <string name="wallet_unknown_mint_body" tools:ignore="MissingTranslation">This token is from %1$s, a mint you haven\'t used. Claiming adds it to your wallet. The mint holds the funds, so only continue if you trust it.</string>
     <string name="wallet_unknown_mint_continue" tools:ignore="MissingTranslation">Trust and claim</string>
-    <string name="wallet_claiming" tools:ignore="MissingTranslation">Claiming</string>
     <string name="wallet_claimed_title" tools:ignore="MissingTranslation">Claimed</string>
     <string name="wallet_claimed_body" tools:ignore="MissingTranslation">%1$s is now in your wallet.</string>
     <string name="wallet_taken_back_title" tools:ignore="MissingTranslation">Taken back</string>
@@ -795,18 +788,15 @@
     <string name="wallet_claim_queued_title" tools:ignore="MissingTranslation">Claim queued</string>
     <string name="wallet_claim_queued_body" tools:ignore="MissingTranslation">Can\'t reach the mint right now. Bitchat claims it automatically once it can. Until then, the sender could still spend it.</string>
 
-    <string name="wallet_send_review_title" tools:ignore="MissingTranslation">Review</string>
     <string name="wallet_review_they_receive" tools:ignore="MissingTranslation">They receive</string>
     <string name="wallet_review_fees" tools:ignore="MissingTranslation">Fees</string>
     <string name="wallet_review_total" tools:ignore="MissingTranslation">Total</string>
     <string name="wallet_review_lock" tools:ignore="MissingTranslation">Lock to %1$s</string>
     <string name="wallet_review_lock_desc" tools:ignore="MissingTranslation">Only they can claim it. If they don\'t within 7 days, you can take it back.</string>
-    <string name="wallet_review_lock_offline" tools:ignore="MissingTranslation">Locking needs the mint, which can\'t be reached right now.</string>
     <string name="wallet_review_offline_ready" tools:ignore="MissingTranslation">Ready offline: uses coins you already hold.</string>
     <string name="wallet_review_needs_mint" tools:ignore="MissingTranslation">Needs the mint to make exact change.</string>
     <string name="wallet_review_memo_hint" tools:ignore="MissingTranslation">Memo (optional)</string>
     <string name="wallet_review_create" tools:ignore="MissingTranslation">Create token</string>
-    <string name="wallet_creating" tools:ignore="MissingTranslation">Creating token</string>
     <string name="wallet_token_title" tools:ignore="MissingTranslation">Token ready</string>
     <string name="wallet_token_body_bearer" tools:ignore="MissingTranslation">Anyone with this token can claim it. Share it privately.</string>
     <string name="wallet_token_body_locked" tools:ignore="MissingTranslation">Locked: only %1$s can claim it.</string>
@@ -825,7 +815,6 @@
     <string name="wallet_melt_input_title" tools:ignore="MissingTranslation">Pay invoice</string>
     <string name="wallet_melt_input_hint" tools:ignore="MissingTranslation">lnbc…</string>
     <string name="wallet_melt_invalid" tools:ignore="MissingTranslation">That doesn\'t look like a Lightning invoice.</string>
-    <string name="wallet_melt_review_title" tools:ignore="MissingTranslation">Review payment</string>
     <string name="wallet_melt_amount" tools:ignore="MissingTranslation">Amount</string>
     <string name="wallet_melt_fee_reserve" tools:ignore="MissingTranslation">Network fee, up to</string>
     <string name="wallet_melt_mint_fee" tools:ignore="MissingTranslation">Mint fee</string>
@@ -1002,8 +991,6 @@
     <string name="wallet_restore_done_found" tools:ignore="MissingTranslation">Recovered %1$s</string>
     <string name="wallet_restore_done_nothing" tools:ignore="MissingTranslation">No unspent ecash at these mints. If you used other mints, add them and restore again.</string>
     <string name="wallet_restore_mint_failed" tools:ignore="MissingTranslation">%1$s couldn\'t be checked</string>
-    <string name="wallet_restore_replace_title" tools:ignore="MissingTranslation">Replace this wallet?</string>
-    <string name="wallet_restore_replace_body" tools:ignore="MissingTranslation">This phone already has a wallet. Restoring other words removes it first; make sure you have its recovery words.</string>
 
     <string name="cashu_card_claim" tools:ignore="MissingTranslation">Tap to claim</string>
     <string name="cashu_card_claimed" tools:ignore="MissingTranslation">Claimed</string>

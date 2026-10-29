@@ -249,9 +249,4 @@ class WalletViewModel(app: Application) : AndroidViewModel(app) {
     fun setSetting(key: String, value: String?) {
         viewModelScope.launch { runCatching { wallet.putSetting(key, value) } }
     }
-
-    override fun onCleared() {
-        syncJob?.cancel()
-        super.onCleared()
-    }
 }

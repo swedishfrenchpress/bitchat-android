@@ -1,18 +1,17 @@
 package com.bitchat.android.wallet.ui
 
-import android.app.Activity
 import android.app.Application
 import android.view.View
 import android.view.ViewParent
 import android.view.Window
 import android.view.WindowManager
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,16 +35,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -58,6 +53,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bitchat.android.R
 import com.bitchat.android.ui.AboutHorizontalPadding
 import com.bitchat.android.ui.AboutSectionLabel
@@ -73,7 +70,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 // MARK: - Onboarding
 
@@ -188,7 +184,7 @@ internal fun BackupScreen(vm: WalletViewModel, flow: BackupFlow) {
 @Composable
 private fun SecureWindow() {
     val view = LocalView.current
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
     DisposableEffect(view, activity) {
         val windows = listOfNotNull(sheetWindow(view), activity?.window).distinct()
         windows.forEach { it.addFlags(WindowManager.LayoutParams.FLAG_SECURE) }

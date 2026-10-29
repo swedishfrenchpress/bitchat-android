@@ -75,12 +75,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -100,11 +100,11 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
-import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.text.NumberFormat
 import java.util.Currency
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 // MARK: - Formatting
 
@@ -160,6 +160,8 @@ internal fun rememberReducedMotion(): Boolean {
  * Copies wallet data marked as sensitive, so Android 13+ hides it from the clipboard preview
  * overlay and keyboard suggestions: a token on the clipboard is spendable money.
  */
+// EXTRA_IS_SENSITIVE is a plain string extra; older Android versions simply ignore it.
+@android.annotation.SuppressLint("InlinedApi")
 internal fun copyToClipboard(context: Context, label: String, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     val clip = ClipData.newPlainText(label, text).apply {
@@ -649,12 +651,13 @@ internal fun WalletTextField(
 
 /**
  * A QR code on white with a quiet zone, so phones scan it from the dark theme too. Uses
- * error-correction L to fit longer tokens; returns false when the data is too long to encode.
+ * error-correction L to fit longer tokens. Callers check [MAX_QR_LENGTH] first; data that
+ * still cannot be encoded renders nothing.
  */
 @Composable
-internal fun WalletQrCode(data: String, contentDescription: String, modifier: Modifier = Modifier, size: Dp = 240.dp): Boolean {
+internal fun WalletQrCode(data: String, contentDescription: String, modifier: Modifier = Modifier, size: Dp = 240.dp) {
     val sizePx = with(LocalDensity.current) { size.roundToPx() }
-    val bitmap = remember(data, sizePx) { qrBitmap(data, sizePx) } ?: return false
+    val bitmap = remember(data, sizePx) { qrBitmap(data, sizePx) } ?: return
     Box(
         modifier = modifier
             .size(size + 24.dp)
@@ -665,7 +668,6 @@ internal fun WalletQrCode(data: String, contentDescription: String, modifier: Mo
     ) {
         Image(bitmap.asImageBitmap(), contentDescription = null, modifier = Modifier.size(size).aspectRatio(1f))
     }
-    return true
 }
 
 private fun qrBitmap(data: String, sizePx: Int): Bitmap? = runCatching {
