@@ -73,6 +73,13 @@ class MnemonicVault internal constructor(private val prefs: SharedPreferences) {
         }
 
         /** Deletes the preferences file itself after clearing, so nothing is left on disk. */
-        fun deleteFile(context: Context): Boolean = context.deleteSharedPreferences(PREFS_NAME)
+        fun deleteFile(context: Context): Boolean = deletePreferencesFile(context, PREFS_NAME)
+
+        /** `deleteSharedPreferences`, with a direct file delete where the platform lacks it. */
+        internal fun deletePreferencesFile(context: Context, name: String): Boolean =
+            runCatching { context.deleteSharedPreferences(name) }.getOrElse {
+                val file = java.io.File(context.applicationInfo.dataDir, "shared_prefs/$name.xml")
+                !file.exists() || file.delete()
+            }
     }
 }

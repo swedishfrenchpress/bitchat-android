@@ -1,6 +1,8 @@
 package com.bitchat.android.wallet.data
 
+import android.app.Application
 import android.content.Context
+import org.robolectric.annotation.Config
 import androidx.test.core.app.ApplicationProvider
 import com.bitchat.android.services.InMemoryConversationStorageCipher
 import com.bitchat.android.wallet.WalletService
@@ -28,6 +30,7 @@ import org.robolectric.RobolectricTestRunner
 import java.math.BigInteger
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], application = Application::class)
 class WalletPersistenceRobolectricTest {
     private lateinit var context: Context
     private val clock = TestClock()

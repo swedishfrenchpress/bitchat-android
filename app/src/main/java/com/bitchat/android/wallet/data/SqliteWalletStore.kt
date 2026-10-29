@@ -38,6 +38,13 @@ class SqliteWalletStore internal constructor(
     private val lock = Any()
     private var helper: Helper? = null
 
+    /**
+     * Set by [wipe] and never cleared. A straggling write after a panic wipe (an operation
+     * finishing in the background) must fail rather than recreate the database under a new key.
+     */
+    @Volatile
+    private var wiped = false
+
     private class Helper(context: Context, name: String) : SQLiteOpenHelper(context, name, null, VERSION) {
         init {
             setWriteAheadLoggingEnabled(true)
@@ -65,6 +72,7 @@ class SqliteWalletStore internal constructor(
     }
 
     private fun db(): SQLiteDatabase = synchronized(lock) {
+        if (wiped) throw java.io.IOException("wallet store was wiped")
         (helper ?: Helper(appContext, databaseName).also { helper = it }).writableDatabase
     }
 
@@ -126,6 +134,7 @@ class SqliteWalletStore internal constructor(
 
     override suspend fun wipe(): Boolean = withContext(dispatcher) {
         synchronized(lock) {
+            wiped = true
             runCatching { helper?.close() }
             helper = null
         }

@@ -6,6 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.dp
+import com.bitchat.android.ui.CashuPaymentChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import com.bitchat.android.ui.theme.BitchatTheme
@@ -17,12 +22,17 @@ import com.bitchat.android.wallet.ui.WalletSheet
  * on a device or emulator without the mesh onboarding (Bluetooth, location services).
  *
  * `adb shell am start -n com.bitchat.droid/com.bitchat.android.testhook.WalletPreviewActivity`
- * Optional extra `token` opens the claim flow for that token.
+ * Optional extra `token` opens the claim flow for that token. Extra `cards=true` shows chat
+ * payment cards instead: a synthetic claimable token plus the wallet's own pending sends.
  */
 class WalletPreviewActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val launch = intent.getStringExtra("token")?.let { WalletLaunch.Claim(it, viaChat = false) } ?: WalletLaunch.Home
+        if (intent.getBooleanExtra("cards", false)) {
+            setContent { BitchatTheme { CardGallery() } }
+            return
+        }
         setContent {
             BitchatTheme {
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -30,5 +40,27 @@ class WalletPreviewActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun CardGallery() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val wallet = androidx.compose.runtime.remember { com.bitchat.android.wallet.WalletService.wallet(context) }
+    val state by wallet.state.collectAsState()
+    val synthetic = com.bitchat.android.wallet.cashu.TokenCodec.encodeV4(
+        com.bitchat.android.wallet.cashu.Token(
+            "https://mint.example", "sat",
+            listOf(com.bitchat.android.wallet.cashu.Proof(21, "00ad268c4d1f5826", "a".repeat(64), "02" + "11".repeat(32))),
+            memo = "coffee",
+        )
+    )
+    androidx.compose.foundation.layout.Column(
+        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(16.dp),
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+    ) {
+        CashuPaymentChip(synthetic)
+        state.history.mapNotNull { it.token }.forEach { CashuPaymentChip(it) }
+        CashuPaymentChip(synthetic, onClick = {}, showActions = false)
     }
 }

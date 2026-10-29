@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -59,6 +60,9 @@ object WalletService {
 
     val suggestTestMint: Boolean get() = BuildConfig.DEBUG
 
+    /** Storage for the engine. Tests swap in an in-memory store where no Keystore exists. */
+    internal var storeFactory: (Context) -> com.bitchat.android.wallet.engine.WalletStore = { SqliteWalletStore(it) }
+
     fun wallet(context: Context): CashuWallet = synchronized(lock) {
         engine ?: build(context.applicationContext).also { engine = it }
     }
@@ -74,17 +78,28 @@ object WalletService {
     fun hasWallet(context: Context): Boolean = vault(context).hasWallet()
 
     /**
-     * Cheapest possible check for chat rendering: a file stat, no Keystore or decryption on
-     * the main thread. True once recovery words have been stored on this device.
+     * Cheapest possible check for chat rendering: a plain marker preference, so no Keystore or
+     * decryption runs on the main thread. The encrypted file alone is not proof: it is created
+     * as soon as the wallet sheet is opened, before any words exist.
      */
     fun walletExists(context: Context): Boolean =
-        _hasWallet.value || vault != null && vault!!.hasWallet() || hasPrefsFile(context.applicationContext)
+        _hasWallet.value || markerPrefs(context).getBoolean(MARKER_EXISTS, false)
+
+    private const val MARKER_PREFS = "bitchat_wallet_state"
+    private const val MARKER_EXISTS = "exists"
+
+    private fun markerPrefs(context: Context) =
+        context.applicationContext.getSharedPreferences(MARKER_PREFS, Context.MODE_PRIVATE)
+
+    private fun setMarker(context: Context, exists: Boolean) {
+        markerPrefs(context).edit().apply { if (exists) putBoolean(MARKER_EXISTS, true) else clear() }.commit()
+    }
 
     private fun build(context: Context): CashuWallet {
         appContext = context
         val vault = vault(context)
         val wallet = CashuWallet(
-            store = SqliteWalletStore(context),
+            store = storeFactory(context),
             apiFactory = { url -> HttpMintApi(url) { OkHttpProvider.httpClient() } },
             seedProvider = { vault.seed() },
             extraSigningKeys = { nostrSigningKeys(context) },
@@ -101,6 +116,7 @@ object WalletService {
     fun createWallet(context: Context): List<String> {
         val words = Bip39.generate()
         check(vault(context).store(words)) { "could not store recovery words" }
+        setMarker(context, true)
         _hasWallet.value = true
         wallet(context).refreshSeedState()
         engine?.let { e -> scope.launch { runCatching { e.putSetting(SETTING_NOSTR_BACKUP, "true") } } }
@@ -110,6 +126,7 @@ object WalletService {
     /** Installs restored recovery words. The caller then runs [CashuWallet.restore] on chosen mints. */
     fun installRecoveredWords(context: Context, words: List<String>) {
         check(vault(context).store(words)) { "could not store recovery words" }
+        setMarker(context, true)
         vault(context).backedUp = true
         _hasWallet.value = true
         wallet(context).refreshSeedState()
@@ -181,10 +198,16 @@ object WalletService {
      * Erases the wallet completely: database, Keystore key, recovery words, and the prefs file.
      * Returns true only if every step confirmed. Safe to call when no wallet was ever created.
      */
-    suspend fun panicWipe(context: Context): Boolean {
+    suspend fun panicWipe(context: Context): Boolean = panicWipeStages(context).values.all { it }
+
+    /** Each wipe stage and whether it confirmed. Separate so a failure can be pinpointed. */
+    internal suspend fun panicWipeStages(context: Context): Map<String, Boolean> {
         val ctx = context.applicationContext
         val (currentEngine, currentVault) = synchronized(lock) {
-            backupJob?.cancel()
+            // Stop everything first so nothing can write after the wipe: loads, recovery,
+            // backup publishing. A fresh scope serves any wallet created afterwards.
+            scope.cancel()
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
             backupJob = null
             (engine to vault).also {
                 engine = null
@@ -205,8 +228,10 @@ object WalletService {
             else -> true
         }
         val fileDeleted = !hasPrefsFile(ctx) || MnemonicVault.deleteFile(ctx)
+        setMarker(ctx, false)
+        val markerDeleted = MnemonicVault.deletePreferencesFile(ctx, MARKER_PREFS) || !markerPrefs(ctx).contains(MARKER_EXISTS)
         _hasWallet.value = false
-        return engineWiped && vaultCleared && fileDeleted
+        return mapOf("store" to engineWiped, "words" to vaultCleared, "wordsFile" to fileDeleted, "marker" to markerDeleted)
     }
 
     private fun hasPrefsFile(context: Context): Boolean =
